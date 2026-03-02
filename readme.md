@@ -376,6 +376,34 @@ graph TD
 ### 5. 标准化文件提取
 利用正则表达式精准拦截 Coder 输出中的 Markdown 格式块（如 `### File: main.py\n ```python ... ``` `），自动生成本地文件。对于 `readme.md`，还会智能地进行追加拼接，保留完整的实验文档。
 
+好的，以下是为您补充的关于 3 个 Agent 上下文管理方式的详细解析，您可以直接将其添加到 README 文档的“详细实现解析”部分：
+
+### 6. 精准的上下文压缩与管理策略 (Context Management)
+在长时间、多步骤的代码生成与执行过程中，LLM 的上下文窗口极易被冗长的代码和报错信息撑爆。为了保证推理的高效与准确，系统对三个 Agent 采取了截然不同且极其精细的上下文管理策略：
+
+*   **Orchestrator Agent (项目管家) —— 动态摘要与状态快照**
+    *   **策略**：**每次进入新的 Step，强行清空历史对话 (`clear_history()`)。**
+    *   **构建上下文**：不依赖于原生的多轮对话记忆，而是在每次调用前，重新为其拼装一个高度浓缩的“状态快照” (State Snapshot)。
+    *   **快照内容**：
+        1.  **全局背景**：Idea 的核心背景与方法论。
+        2.  **历史成果 (Past Summaries)**：之前所有成功步骤的 `Summary` 集合（由 Orchestrator 自己在上一步 `PASS_STEP` 时精炼生成），实现了信息的极致压缩。
+        3.  **当前战场 (Workspace State)**：当前工作目录下所有 `.py` 和 `.md` 文件的完整最新代码内容。
+        4.  **当前任务**：当前 Step 的具体目标与验收标准。
+    *   **优势**：管家永远拥有“上帝视角”和最新代码，同时避免了被失败重试过程中的大量垃圾对话干扰判断。
+
+*   **Coding Agent (AI 程序员) —— 无状态、指令驱动**
+    *   **策略**：**每次收到编写代码的请求时，强行清空历史对话 (`clear_history()`)。**
+    *   **构建上下文**：Coder 完全是一个“无状态的打工人”。它的上下文仅包含三个核心要素：
+        1.  **管家指令**：Orchestrator 在上一轮生成的具体的 `Coder_Prompt`（例如报错信息、修改意见、新增功能要求）。
+        2.  **当前代码库**：工作目录下所有代码文件的最新状态。
+        3.  **环境情报**：当前虚拟环境前 1000 字符的 `pip list` 列表（防止重复安装依赖导致超时）。
+    *   **优势**：强制 Coder 每次都基于最新的真实文件状态和明确指令进行全量代码输出，杜绝了 LLM 因为“幻觉”修改了不存在的变量，或生成“假设性”的代码片段。
+
+*   **Monitor Agent (实时监控助手) —— 滑动窗口与瞬时记忆**
+    *   **策略**：**不保留任何历史对话，纯粹的单轮响应。**
+    *   **构建上下文**：采用“滑动窗口”截取法。当触发监控时，系统仅提取控制台输出的**最后 150 行** (`recent_output`) 以及**实时的硬件状态**（显存/内存使用率）。
+    *   **优势**：保证了监控的极速响应与超低 Token 消耗。Monitor 只需要通过瞬时的尾部输出判断程序是否陷入了死循环或正在疯狂抛出重复的异常，而不需要知道程序的完整运行历史。
+
 ---
 
 ## 🚀 使用指南
@@ -425,3 +453,116 @@ experiments/
     ├── baseline_zf.py           # (自动生成的代码) 传统 ZF 迫零算法对比
     └── proposed_ai_model.py     # (自动生成的代码) 包含创新点的深度学习模型
 ```
+
+以下是为您编写的 **Deep Experiment & Data Collection (深度实验与数据收集)** 模块的 README 文档部分。严格延续了前文的专业排版、安全 Mermaid 语法以及对上下文管理机制的深度解析。
+
+您可以直接将以下内容追加到您现有的 README 文档中：
+
+---
+
+# 📊 Aether: Deep Experiment & Data Collection 模块详解
+
+## 📖 模块简介
+如果说前一个模块是为了“让代码能跑通”，那么 **Deep Experiment & Data Collection** 模块则是为了 **“让数据能发顶会 (如 IEEE TCOM)”**。
+初步生成的代码往往只包含了基础的验证（例如极少的 Epoch、单一点的 SNR），其产生的数据量和对比维度远不足以支撑一篇高质量的学术论文。
+
+该模块接管初步跑通的仿真代码工作区，**首先通过 AST (抽象语法树) 解析代码依赖并生成详尽的接口文档，随后化身为资深科研人员，自主设计多组、多维度的严谨对比实验计划。** 它通过不断修改输入参数（不修改底层 Python 代码），自动化地调用批处理脚本进行大规模数据收集，并在执行后智能提取出可直接用于论文绘制图表的核心数据。
+
+---
+
+## ⚙️ 核心工作流程图
+
+本模块的执行分为“代码理解与文档生成”和“深度实验与数据提取”两个连续的阶段：
+
+```mermaid
+graph TD
+    Start(["启动深度实验模块"]) --> ASTParse["AST 语法树解析与依赖抽取"]
+    
+    subgraph Phase1 ["阶段一：代码结构理解与接口提取 (README Generator)"]
+        ASTParse --> TopoSort["拓扑排序 (处理依赖图，从叶子节点开始)"]
+        TopoSort --> ReadmeLoop{"遍历所有的 .py 文件"}
+        ReadmeLoop -- "未遍历完" --> LLMReadme["LLM: 结合整体科研计划与该文件源码"]
+        LLMReadme --> ExtractArgs["提取该文件的核心功能与命令行参数 (argparse)"]
+        ExtractArgs --> ReadmeLoop
+        ReadmeLoop -- "遍历结束" --> SaveDoc["汇总生成 Comprehensive_Project_README.txt"]
+    end
+
+    SaveDoc --> Phase2Start
+    
+    subgraph Phase2 ["阶段二：顶会级实验规划与执行 (Executor & Monitor)"]
+        Phase2Start["读取 PreviousSummary 与当前目录结构"] --> MakePlan["Executor: 制定多维对比实验计划 (>=4组)"]
+        MakePlan --> ExpLoop{"遍历实验计划中的每一个 Step"}
+        
+        ExpLoop -- "执行当前 Step" --> GenBat["Executor: 编写带复杂参数配置的 run.bat"]
+        GenBat --> RunSim["在隔离环境中执行仿真代码"]
+        
+        RunSim --> MonitorSim{"Monitor: 实时监控时长与资源"}
+        MonitorSim -- "预估超过2小时 / NaN" --> ForceKill["强杀进程 & 反馈建议"]
+        ForceKill --> FixBat["Executor: 结合源码修复/降低参数规模"]
+        FixBat --> RunSim
+        
+        MonitorSim -- "运行结束退出码 0" --> EvalData{"Executor: 评估运行结果与数据提取"}
+        EvalData -- "不满足论文要求 (RETRY)" --> GenBat
+        EvalData -- "满足要求 (PASS)" --> ExtractData["提取干净的最终对比数据 (如BER, 复杂度)"]
+    end
+    
+    ExtractData --> UpdateHistory["追加写入 execute_history.txt"]
+    UpdateHistory --> ExpLoop
+    ExpLoop -- "所有计划执行完毕" --> End(["收集完成，供后续写论文使用"])
+
+    %% 样式定义
+    classDef generator fill:#e2e3e5,stroke:#383d41,stroke-width:2px,color:#000;
+    classDef executor fill:#d4edda,stroke:#28a745,stroke-width:2px,color:#000;
+    classDef monitor fill:#f8d7da,stroke:#dc3545,stroke-width:2px,color:#000;
+    
+    class TopoSort,LLMReadme,ExtractArgs generator;
+    class MakePlan,GenBat,FixBat,EvalData,ExtractData executor;
+    class MonitorSim,ForceKill monitor;
+```
+
+---
+
+## 🛠️ 详细实现解析
+
+### 1. 逆向工程与 AST 依赖解析 (阶段一)
+AI 编写的代码往往缺乏详尽的维护文档。本模块通过 Python 内置的 `ast` 库遍历所有 `.py` 文件：
+*   **精准提取依赖**：拦截 `import X` 和 `from X import Y`，构建本地文件依赖有向图。
+*   **拓扑排序处理**：确保 AI 在理解代码时，**“由底向上”**（从不依赖任何模块的基础文件开始，一直到顶层的 `main.py`）进行理解。
+*   **强制接口暴露**：强迫 LLM 分析出每个 Python 文件的命令行调用参数及其物理意义，这为后续 Executor 通过 `.bat` 动态调参奠定了坚实基础。
+
+### 2. 严苛的论文级实验规划 (TCOM-Level Planning)
+Executor 并非盲目运行代码，而是被赋予了明确的**“唯论文导向”**视角：
+*   **只调参，不改码**：系统限制 Executor **绝对不能修改原本的 Python 代码**，只能通过命令行参数（如调整网络层数、特征维度、SNR 范围）来控制实验。
+*   **多维对比要求**：强制要求制定至少 4 种对比计划（包含性能与复杂度），必须探讨特定场景（如宽带与窄带对比、大模型与基线的对比），且要求足够密集的采样点支撑高质量图表。
+
+### 3. 时间感知与资源监控熔断 (Time-Aware Monitoring)
+在此阶段，由于涉及海量数据的训练与测试，最容易出现“跑几天几夜跑不完”的情况。
+*   Monitor Agent 的 Prompt 被特别升级：不仅监控报错和死循环，还要求其**根据前 150 行输出的日志进度，预估该程序是否会执行超过 2 小时**。
+*   一旦预估超时，Monitor 会果断下达 `KILL` 指令，并总结当前显存使用率反馈给 Executor，迫使 Executor 在下一轮生成 `run.bat` 时调小 `batch_size` 或适度降低规模。
+
+### 4. 自动化数据清洗与提取
+每次运行结束后，控制台日志往往包含几千行的进度条和 Loss 打印。Executor 会扮演数据分析师，从这堆“沙子”中“淘金”：过滤掉中间过程，只提取最终的 BER、SNR、运行耗时等**可以直接用于论文画图的数据列表**，并以 JSON 格式结构化保存到 `execute_history.txt` 中。
+
+---
+
+## 🧠 三大 Agent 上下文管理策略详解
+
+由于本模块涉及大量的源码阅读和海量日志分析，极其容易导致 Token 溢出。系统采用了极度克制且定制化的上下文策略：
+
+### 1. Readme Generator Agent (文档生成器) —— 单发无记忆模式
+*   **策略**：每次分析一个新文件前，执行 `clear_history()`。
+*   **构建上下文**：上下文中只包含三项核心信息：全局的科研计划 (Plan)、前期执行概述 (Overview)、以及**当前正在处理的单一 Python 文件的全部源码**。
+*   **优势**：避免了在处理底层模块时被顶层模块的代码干扰。借助之前的拓扑排序，它能以前后一致的逻辑完美抽取每份文件的命令行参数，而不消耗多余 Token。
+
+### 2. Executor Agent (实验执行员) —— 随用随清、外置长期记忆
+*   **策略**：无论是在制定实验计划、编写 `.bat`、修复报错，还是提取数据环节，**每一次网络请求前必然执行 `clear_history()`**。它没有任何原生的多轮对话记忆。
+*   **构建上下文 (外置记忆体)**：
+    *   Executor 的“记忆”被物理固化在了外部文本文件 `execute_history.txt` 中。
+    *   当它需要编写下一步的 `.bat` 时，它的上下文会由：**当前单步指令 + PreviousSummary (全局背景) + execute_history (之前所有成功提取的实验数据)** 拼接而成。
+    *   当脚本报错时，它的上下文会替换为：**报错日志 + 该脚本调用的特定几个 .py 文件的源码**（仅按需读取，绝不把整个项目源码塞进去）。
+*   **优势**：实现了极低成本的长上下文推理。Executor 不会被前几次试错失败的垃圾对话误导，始终基于最干净、已确定的“知识库”进行下一步决策。
+
+### 3. Monitor Agent (监控器) —— 瞬时切片与预估
+*   **策略**：完全无状态，定时触发。
+*   **构建上下文**：仅包含截取的**最后 150 行标准输出 (stdout)** 以及**实时的 `nvidia-smi` 和物理内存信息**。
+*   **优势**：极低的资源消耗。由于被注入了“预估整体执行时间是否超过 2 小时”的特殊系统提示词，Monitor 可以仅凭这 150 行打印出的如 `Epoch 1/100, ETA: 3000s` 的信息切片，迅速做出精准的阻断决策。
