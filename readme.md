@@ -566,3 +566,145 @@ Executor 并非盲目运行代码，而是被赋予了明确的**“唯论文导
 *   **策略**：完全无状态，定时触发。
 *   **构建上下文**：仅包含截取的**最后 150 行标准输出 (stdout)** 以及**实时的 `nvidia-smi` 和物理内存信息**。
 *   **优势**：极低的资源消耗。由于被注入了“预估整体执行时间是否超过 2 小时”的特殊系统提示词，Monitor 可以仅凭这 150 行打印出的如 `Epoch 1/100, ETA: 3000s` 的信息切片，迅速做出精准的阻断决策。
+
+
+以下是为您编写的 **Paper Writing (论文撰写)** 模块的 README 文档部分。该模块是整个 Aether 系统的最终输出端，其逻辑设计极为精妙。文档严格延续了前文的专业排版、标准的 Mermaid 语法以及对**上下文精准切片管理**的深度解析。
+
+您可以直接将以下内容追加到您现有的 README 文档的最后一部分：
+
+---
+
+# 📝 Aether: Paper Writing 模块详解
+
+## 📖 模块简介
+**Paper Writing (论文撰写)** 是 Aether 系统的“收官之作”。它的核心任务是将前面模块生成的抽象 Idea、仿真代码、实验日志和提取出的核心数据，**全自动化地转化为一篇符合 IEEE TCOM (通信领域顶级期刊) 标准的、可直接编译的 LaTeX 格式学术论文。**
+
+为了达到顶级学术期刊的严苛要求，该模块摒弃了一次性生成全文的粗糙做法，而是构建了一个 **“虚拟科研写作团队”**：
+1. **Literature Searcher (文献检索员)**：通过 OpenAlex 动态检索并筛选最相关的参考文献，自动生成 BibTeX。
+2. **Lead Author (第一作者/统筹者)**：根据实验结果生成详尽的逐段落写作大纲与配图计划。
+3. **Section Writer (分章节撰稿人)**：严格遵循 IEEE 标准，逐章进行客观、严谨的学术写作，并直接使用 `pgfplots` 将实验数据转化为 LaTeX 矢量图代码。
+4. **Editor (学术编辑)**：对生成的 LaTeX 代码进行交叉审查与语法修复 (Refinement)。
+
+---
+
+## ⚙️ 核心工作流程图
+
+本模块采用**高度序列化**的链式生成工作流：
+
+```mermaid
+graph TD
+    Start(["启动论文撰写主程序"]) --> LoadFiles["加载实验目录下的所有前置文件 (Idea, Plan, 源码, 数据总结)"]
+    
+    subgraph Phase1 ["阶段一：动态文献检索 (Literature Search)"]
+        LoadFiles --> OpenAlexSearch["使用初始关键词请求 OpenAlex API"]
+        OpenAlexSearch --> LLMFilter["LLM: 筛选强相关文献 -> 生成 BibTeX"]
+        LLMFilter --> UpdateKeywords["LLM: 提出新的检索关键词 (AND/OR 逻辑)"]
+        UpdateKeywords -- "循环 N 轮" --> OpenAlexSearch
+        UpdateKeywords -- "检索结束" --> SaveBib["生成 reference.bib"]
+    end
+
+    subgraph Phase2 ["阶段二：论文大纲统筹 (Orchestrator)"]
+        SaveBib --> LeadAuthor["Lead Author: 审阅实验数据 (execute_history)"]
+        LeadAuthor --> MakeOutline["输出 JSON 格式的 6 大标准章节大纲与配图计划"]
+    end
+    
+    subgraph Phase3 ["阶段三：流式章节撰写与精修 (Sequential Writing & Refine)"]
+        MakeOutline --> SectionLoop{"按大纲顺序遍历 6 个章节"}
+        SectionLoop -- "未写完" --> ContextSlicer["上下文切片分配 (仅分配该章节必须的参考材料)"]
+        ContextSlicer --> Writer["Section Writer: 遵循 TCOM 严苛标准输出 LaTeX"]
+        Writer --> Editor["Editor: 修复 LaTeX 语法，审核学术客观性 (Refine)"]
+        Editor --> SaveTex["保存单章节 .tex 并加入累积历史"]
+        SaveTex --> SectionLoop
+    end
+    
+    SectionLoop -- "全部章节撰写完毕" --> Compile["拼接生成主文件 main.tex (IEEEtran)"]
+    Compile --> End(["🎉 获得完整的 LaTeX 论文源码包"])
+
+    %% 样式定义
+    classDef searcher fill:#e2e3e5,stroke:#383d41,stroke-width:2px,color:#000;
+    classDef author fill:#d4edda,stroke:#28a745,stroke-width:2px,color:#000;
+    classDef writer fill:#cce5ff,stroke:#007bff,stroke-width:2px,color:#000;
+    
+    class OpenAlexSearch,LLMFilter,UpdateKeywords,SaveBib searcher;
+    class LeadAuthor,MakeOutline author;
+    class ContextSlicer,Writer,Editor,SaveTex writer;
+```
+
+---
+
+## 🛠️ 详细实现解析
+
+### 1. 动态拓展的文献检索网 (Dynamic Literature Search)
+系统并非一次性盲搜。在 `do_literature_search` 中，系统会进行多轮（默认10轮）迭代：
+* 检索员根据当前的 Idea 向 OpenAlex 获取一批文献。
+* LLM 剔除边缘相关的灌水文章，提取精华并格式化为 BibTeX。
+* **智能关键词演进**：LLM 必须在每轮结束时根据已看到的文献，提出更精准的逻辑查询词（如 `"Massive MIMO" AND "Deep Learning"`），从而像真实学者一样顺藤摸瓜，不断拓展参考文献库。
+
+### 2. 严苛的 TCOM 级章节定向 Prompt (Section-Specific Prompting)
+模块内嵌了长达数百词的 `sys_prompt_specific`，对不同章节下达了极为明确的“死命令”：
+* **Abstract**: 150-250词，禁止引用，必须给出明确的定量提升数据（如百分比）。
+* **Introduction**: 必须采用“漏斗型”逻辑（背景 -> 现有缺陷 -> 动机 -> 逐点贡献列表）。
+* **System Model**: 强制使用 IEEE 标准数学符号排版，必须声明信道分布、AWGN 等基础假设。
+* **Numerical Results**: 必须保持绝对的科学客观性。**如果 AI 方案在某些区域表现不佳，必须如实报告并从物理层面解释原因，严禁报喜不报忧。** 并且强制要求使用 `pgfplots` 在 LaTeX 中直接画出 2-3 张性能对比图。
+
+### 3. 学术编辑修复机制 (Editor Refinement)
+因为让大模型直接输出包含大量公式和 `\begin{tikzpicture}` (pgfplots) 的纯 LaTeX 极其容易出现漏写大括号等语法错误。系统在生成初稿后，会引入额外的 Editor Agent 循环（`refine_times=1`），专门检查 LaTeX 语法和学术语气的连贯性。
+
+---
+
+## 🧠 三大 Agent 上下文管理策略详解 (精妙的按需分配机制)
+
+长篇论文撰写最致命的问题就是 **Token 爆炸** 和 **LLM 幻觉（如在结论里写出了系统模型里的代码）**。本模块通过一套极度优雅的**“上下文动态切片与累积拼接”**策略解决了这一难题：
+
+### 1. 动态按需切片 (Context Slicing) - 避免信息过载
+Section Writer 在撰写不同章节时，系统会通过 `if/elif` 逻辑，**只给它喂当前章节绝对必需的背景文件**，绝不将整个项目文件全塞进去：
+* **写 Intro 时**：只给 `Idea`, `Plan`, `执行数据` 和 `reference.bib`（因为要写文献综述）。绝不给 Python 源码。
+* **写 System Model / Proposed Method 时**：只给 `Idea`, `Plan` 和 **`Python 源码`**。不给实验数据（因为这部分只谈理论），强迫 LLM 从源码中逆向提取出最严谨的数学模型。
+* **写 Numerical Results 时**：只给 `Idea`, `Plan` 和 **`execute_history (实验结果数据)`**。强迫其基于真实跑出来的数据进行画图和分析。
+
+### 2. 状态累积记忆 (Accumulated LaTeX) - 保持行文连贯性
+如何保证第六章 (Conclusion) 的总结不会和第一章 (Intro) 的内容脱节？
+* 策略：每当一个章节的 LaTeX 代码通过审核并保存后，它会被追加到 `self.accumulated_latex` 字典中。
+* 在生成下一个章节时，**之前所有已写好的章节 LaTeX 源码将作为前置 Context 喂给大模型**。
+* **优势**：保证了全篇论文数学符号的统一性（比如前面用 $\mathbf{H}$ 表示信道矩阵，后面就不会突然变成 $G$），并实现了完美的段落承上启下。
+
+### 3. Orchestrator 的超脱视角
+统筹大纲的 Lead Author 在生成写作计划时，**只看高度浓缩的 `PreviousSummary.txt` 和 `execute_history.txt`**。这使得大纲的逻辑完全建立在“已成定局”的客观数据之上，不会因为看了底层代码而产生逻辑越界。
+
+---
+
+## 🚀 使用指南
+
+### 1. 准备实验目录
+确保您在上一个模块（数据收集模块）中已经成功生成了以下文件，并存放于实验目录下（如 `experiments/20260301_211831`）：
+* `idea.txt` (或通过主控程序提取)
+* `plan.txt`
+* 各类 `.py` 仿真源码
+* `PreviousSummary.txt`
+* `execute_history.txt` (包含供画图使用的完整结构化数据)
+
+### 2. 运行主程序
+您可以直接调用脚本执行撰写流程。为了保证 LaTeX 和学术思维的质量，**强烈建议此步骤使用最高级别的推理模型 (如 `gpt-4o`, `claude-3-5-sonnet` 或 `gemini-1.5-pro`)**。
+
+```bash
+python paper_writer.py
+```
+
+### 3. 📂 输出示例
+整个流程大约需要 15-30 分钟。运行结束后，您将在根目录下的 `papers/时间戳/` 文件夹中获得一套可以直接在 Overleaf 中编译的 LaTeX 工程：
+
+```text
+papers/
+└── 20241026_183022/
+    ├── lit_search.log         # 记录文献检索的思维与过滤过程
+    ├── paper_plan.json        # 论文 6 大章节的大纲设计规划
+    ├── reference.bib          # 自动生成并清洗的参考文献库
+    ├── abstract.tex           # 各个独立生成的章节内容
+    ├── introduction.tex
+    ├── system_model.tex
+    ├── proposed_method.tex
+    ├── numerical_results.tex  # 内部包含使用 pgfplots 画图的 LaTeX 代码
+    ├── conclusion.tex
+    └── main.tex               # 最终的主拼接文件 (IEEEtran 模板)
+```
+此时，您只需将该文件夹打包压缩为 `.zip`，上传至 Overleaf，即可点击 Compile 获得一篇排版精美、配有高清矢量图的 IEEE 学术论文。
