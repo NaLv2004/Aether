@@ -1,4 +1,106 @@
-这是一份为您量身定制的 `Aether` 项目中 `IdeaGenerator` 模块的 README 文档。文档采用专业的技术语言编写，详细拆解了代码的实现逻辑，并配有易于理解的 Mermaid 流程图。
+# Aether: Towards fully automated communication research
+
+graph TD
+    %% ==========================================
+    %% 阶段 0: 初始化与配置
+    %% ==========================================
+    UserStart(["User: Theme & Config"]) -->|Theme.txt| IdeaGen_Module
+    
+    %% ==========================================
+    %% 模块 1: Idea Generator (创意生成)
+    %% ==========================================
+    subgraph Module1 ["1. Idea Generator (Student-Teacher)"]
+        direction TB
+        IdeaGen_Module["Generate & Review Ideas"]
+        IdeaGen_Output[("Output: all_ideas.json")]
+    end
+    
+    IdeaGen_Module --> IdeaGen_Output
+
+    %% ==========================================
+    %% 模块 2: Research Planner (计划制定)
+    %% ==========================================
+    subgraph Module2 ["2. Research Planner (Planning)"]
+        direction TB
+        Planner_Input[("Input: all_ideas.json")]
+        Planner_Process["Make & Verify Plan"]
+        Planner_Output[("Output: research_plans.json")]
+    end
+    
+    IdeaGen_Output --> Planner_Input
+    Planner_Input --> Planner_Process
+    Planner_Process --> Planner_Output
+
+    %% ==========================================
+    %% 模块 3: Code Gen & Execution (初步代码落地)
+    %% ==========================================
+    subgraph Module3 ["3. Code Gen & Execution (Coding)"]
+        direction TB
+        Coder_Input[("Input: research_plans.json")]
+        Coder_Process["Write Code & Debug"]
+        Coder_Output1[("Output: .py Codes")]
+        Coder_Output2[("Output: Experiment_Summary.txt")]
+    end
+
+    Planner_Output --> Coder_Input
+    Coder_Input --> Coder_Process
+    Coder_Process --> Coder_Output1
+    Coder_Process --> Coder_Output2
+
+    %% ==========================================
+    %% 模块 4: Deep Experiment (深度数据收集)
+    %% ==========================================
+    subgraph Module4 ["4. Deep Experiment (Data Collection)"]
+        direction TB
+        Exp_Input1[("Input: .py Codes")]
+        Exp_Input2[("Input: Experiment_Summary.txt")]
+        Exp_Phase1["Phase 1: AST Parse & Doc Gen"]
+        Exp_Phase2["Phase 2: Multi-dim Batched Sims"]
+        Exp_Output[("Output: execute_history.txt")]
+    end
+
+    Coder_Output1 --> Exp_Input1
+    Coder_Output2 --> Exp_Input2
+    Exp_Input1 --> Exp_Phase1
+    Exp_Input2 --> Exp_Phase1
+    Exp_Phase1 --> Exp_Phase2
+    Exp_Phase2 --> Exp_Output
+
+    %% ==========================================
+    %% 模块 5: Paper Writing (论文撰写)
+    %% ==========================================
+    subgraph Module5 ["5. Paper Writing (Authoring)"]
+        direction TB
+        Writer_Input1[("Input: execute_history.txt")]
+        Writer_Input2[("Input: Codes & Plans")]
+        Writer_LitSearch["Lit Search & BibTeX"]
+        Writer_Drafting["Write Sections & Plot"]
+        Writer_Output[("Output: Full LaTeX Project")]
+    end
+
+    Exp_Output --> Writer_Input1
+    Coder_Output1 --> Writer_Input2
+    Writer_Input1 --> Writer_LitSearch
+    Writer_Input2 --> Writer_LitSearch
+    Writer_LitSearch --> Writer_Drafting
+    Writer_Drafting --> Writer_Output
+
+    %% ==========================================
+    %% 最终产出
+    %% ==========================================
+    FinalResult(["🎉 Final IEEE Paper (PDF)"])
+    Writer_Output --> FinalResult
+
+    %% ==========================================
+    %% 样式定义 (美化)
+    %% ==========================================
+    classDef file fill:#f9f9f9,stroke:#333,stroke-width:1px,stroke-dasharray: 5 5;
+    classDef process fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
+    classDef module fill:#fff,stroke:#666,stroke-width:1px;
+
+    class IdeaGen_Output,Planner_Input,Planner_Output,Coder_Input,Coder_Output1,Coder_Output2,Exp_Input1,Exp_Input2,Exp_Output,Writer_Input1,Writer_Input2,Writer_Output file;
+    class IdeaGen_Module,Planner_Process,Coder_Process,Exp_Phase1,Exp_Phase2,Writer_LitSearch,Writer_Drafting process;
+    class Module1,Module2,Module3,Module4,Module5 module;
 
 ---
 
