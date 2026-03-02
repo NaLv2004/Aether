@@ -1,0 +1,64 @@
+{
+        "Task_ID": "idea_1_agent_1",
+        "Original_Idea_Title": "Graph-Based Near-Field Detection for XL-MIMO via Dynamic Visibility Region Discovery",
+        "Original_Idea": {
+            "Name": "Graph-VR-Det",
+            "Title": "Graph-Based Near-Field Detection for XL-MIMO via Dynamic Visibility Region Discovery",
+            "Background": "在极大规模MIMO（XL-MIMO）中，天线阵列的空间非平稳性导致每个用户只能被部分天线（Visibility Region, VR）有效覆盖。传统的全阵列处理会导致严重的噪声积累和计算浪费。",
+            "Hypothesis": "将XL-MIMO检测建模为动态图上的消息传递问题。利用图神经网络（GNN）自动发现用户与天线子集之间的‘强连接’（即VR），并仅在连接边上进行证据处理（Evidence Processing）。这种稀疏激活机制能将计算复杂度从天线总数的线性关系降低为VR大小的线性关系。",
+            "Methodology": "1. 建立用户-天线二部图，边权重由初始导频信号的能量分布确定。2. 开发基于GNN的稀疏检测算子，通过多层图卷积实现空间信息的融合。3. 引入近场波束分裂（Beam Splitting）的补偿机制，修正GNN的消息传递核。4. 在0.1THz频段、千级天线阵列的非平稳信道模型下进行端到端仿真。"
+        },
+        "Final_Decision": "Pass",
+        "Teacher_Final_Feedback": "Perfect plan.",
+        "Detailed_Plan": [
+            {
+                "idx": 1,
+                "name": "步骤1：建立窄带近场非平稳信道模型与数据集构建 (System Model - Narrowband Dataset)",
+                "content": "目标：构建窄带近场信道矩阵，并生成固定数量的训练/测试数据集。设基站天线数 $N=256$，用户数 $K=8$。\n1. 坐标与物理参数：天线间距 $d=\\lambda/2$。天线坐标 $\\mathbf{q}_n = [0, (n-1-N/2)d, 0]^T$。用户坐标 $\\mathbf{p}_k$ 随机分布在距离基站 $D \\in [5, 30]$ 米的近场菲涅尔区内。\n2. 真实VR掩码 $\\mathbf{M}$：为每个用户随机选定中心天线，可视半径 $R_v = 0.3N$。在半径内的 $M_{n,k}=1$，否则为0。\n3. 信道矩阵生成：$H_{n,k} = M_{n,k} \\cdot \\frac{\\lambda}{4\\pi r_{n,k}} \\cdot e^{-j \\frac{2\\pi}{\\lambda} r_{n,k}}$，其中 $r_{n,k} = \\|\\mathbf{p}_k - \\mathbf{q}_n\\|_2$。\n4. 数据集生成与保存：编写脚本，批量生成数据。设定训练集样本数 10000，验证集 1000，测试集 1000。每个样本包含：$\\mathbf{H} \\in \\mathbb{C}^{N \\times K}$, 真实发送QPSK符号 $\\mathbf{x} \\in \\mathbb{C}^{K \\times 1}$, 接收信号 $\\mathbf{y} = \\mathbf{H}\\mathbf{x} + \\mathbf{n} \\in \\mathbb{C}^{N \\times 1}$ (SNR均匀分布在[-5, 15]dB)。所有数据必须保存到绝对路径 `/workspace/dataset_narrowband.pt` 中。\n5. DataLoader设置：设定 `batch_size = 64`。",
+                "expected_outcome": "成功运行数据生成脚本，在 `/workspace/dataset_narrowband.pt` 看到生成的文件。验证数据张量维度：H的shape应为 `(10000, 256, 8)`，y的shape应为 `(10000, 256)`。"
+            },
+            {
+                "idx": 2,
+                "name": "步骤2：实施传统基线方法 (Baselines - Traditional ZF/MMSE)",
+                "content": "目标：在步骤1生成的窄带测试集（1000个样本）上测试传统线性检测算法。\n1. Full-ZF：对每个样本，$\\hat{\\mathbf{x}}_{ZF} = (\\mathbf{H}^H \\mathbf{H})^{-1} \\mathbf{H}^H \\mathbf{y}$。\n2. Full-MMSE：$\\hat{\\mathbf{x}}_{MMSE} = (\\mathbf{H}^H \\mathbf{H} + \\sigma^2 \\mathbf{I}_K)^{-1} \\mathbf{H}^H \\mathbf{y}$，其中 $\\sigma^2$ 从样本的SNR计算得出。\n3. Genie-Aided VR-MMSE：利用数据集中隐藏的真实 $\\mathbf{M}$，令 $\\mathbf{H}_{genie} = \\mathbf{H} \\odot \\mathbf{M}$，然后执行MMSE检测。\n4. 评估逻辑：将检测出的 $\\hat{\\mathbf{x}}$ 逆映射为比特，与真实的 $\\mathbf{x}$ 比特计算误码率(BER)。",
+                "expected_outcome": "代码成功跑通，正确处理Batched矩阵求逆（如使用 `torch.linalg.inv`）。输出三种方法的BER vs SNR 曲线数据字典，预期 Genie-Aided VR-MMSE 性能最好。"
+            },
+            {
+                "idx": 3,
+                "name": "步骤3：实施基础AI方法 (Baselines - Fully-Connected MPNN)",
+                "content": "目标：实现并训练一个全连接的MPNN。为防止维度灾难，严格定义张量维度。\n1. 初始特征映射 (Embedding层)：\n   - 天线节点初始特征 $\\mathbf{v}_n^{(0)} = [\\Re(y_n), \\Im(y_n)]^T \\in \\mathbb{R}^2$，通过 `Linear(2, 64)` 映射为 $\\mathbf{h}_{v,n}^{(0)} \\in \\mathbb{R}^{64}$。\n   - 用户节点初始特征 $\\mathbf{u}_k^{(0)} = [0, 0]^T \\in \\mathbb{R}^2$，通过 `Linear(2, 64)` 映射为 $\\mathbf{h}_{u,k}^{(0)} \\in \\mathbb{R}^{64}$。\n   - 边特征 $\\mathbf{e}_{n,k} = [\\Re(H_{n,k}), \\Im(H_{n,k})]^T \\in \\mathbb{R}^2$，通过 `Linear(2, 64)` 映射为 $\\mathbf{h}_{e,n,k} \\in \\mathbb{R}^{64}$。\n2. 消息传递层 (迭代 $L=4$ 次)：\n   - $\\text{MLP}_{A2U}$: 输入维度 $64+64+64=192$，隐藏层 128，输出维度 64。\n   - 用户更新 $\\text{MLP}_U$: 输入维度 $64+64=128$（自身特征+聚合消息），输出维度 64。\n   - $\\text{MLP}_{U2A}$: 输入维度 $192$，输出维度 64。\n   - 天线更新 $\\text{MLP}_A$: 输入维度 $128$，输出维度 64。\n3. 读出层：对最终的 $\\mathbf{h}_{u,k}^{(4)}$ 使用 `Linear(64, 2)` 输出复数符号的实部和虚部预测。\n4. 训练：使用MSE Loss，在10000个训练样本上训练，保存模型权重至绝对路径 `/workspace/mpnn_full.pth`。",
+                "expected_outcome": "MPNN模型成功搭建，训练过程无 `RuntimeError: shape mismatch` 报错。Loss平稳下降，在测试集上的BER接近Full-MMSE。"
+            },
+            {
+                "idx": 4,
+                "name": "步骤4：创新方案1 - 动态可见区域(VR)发现与稀疏图构建 (Innovative Scheme Part 1)",
+                "content": "目标：利用导频能量动态发现VR，基于窄带数据集生成稀疏的 `edge_index`。\n1. 导频模拟：令导频 $\\mathbf{X}_p = \\mathbf{I}_K$。接收导频 $\\mathbf{Y}_p = \\mathbf{H} + \\mathbf{N}_p$。\n2. 能量计算：能量矩阵 $\\mathbf{E} \\in \\mathbb{R}^{N \\times K}$，$E_{n,k} = |[\\mathbf{Y}_p]_{n,k}|^2$。\n3. 阈值与稀疏边提取：对每个用户 $k$（按列），保留能量最大的前 $S$ 个天线（如 $S = 0.3N \\approx 77$）。生成二值化邻接矩阵 $\\mathbf{A}_{sparse}$。\n4. 转换为PyG格式：将 $\\mathbf{A}_{sparse}$ 转换为 PyTorch Geometric (PyG) 所需的 `edge_index` 格式（维度为 `[2, num_edges]`）。",
+                "expected_outcome": "编写独立的函数 `get_sparse_edge_index(H, SNR)`。对测试集的一个Batch运行，验证输出的 `edge_index` 中边的数量 `num_edges` 严格等于 `Batch_size * K * S`。"
+            },
+            {
+                "idx": 5,
+                "name": "步骤5：创新方案2 - 基于稀疏图的GNN检测算子 (Innovative Scheme Part 2)",
+                "content": "目标：利用步骤4提取的 `edge_index`，将步骤3的MPNN改造为Sparse-GNN并重新训练。\n1. 架构修改：复用步骤3的特征映射层和MLP维度（全部为64维）。\n2. 稀疏聚合：在消息传递时，使用 PyG 的 `MessagePassing` 基类或 `torch_scatter.scatter_mean`。对于给定的 `edge_index`，只计算这 `num_edges` 条边上的 $\\mathbf{m}_{n \\to k}$ 和 $\\mathbf{m}_{k \\to n}$，并按 `edge_index` 进行聚合更新。\n3. 训练与保存：在窄带训练集上，每次前向传播前先调用 `get_sparse_edge_index` 动态生成图结构，然后输入Sparse-GNN训练。模型保存至 `/workspace/sparse_gnn_narrowband.pth`。",
+                "expected_outcome": "Sparse-GNN训练收敛。通过 `torch.profiler` 或 `fvcore` 统计FLOPs，证明Sparse-GNN的单次前向传播计算量显著低于步骤3的Full-MPNN，且BER性能不掉点。"
+            },
+            {
+                "idx": 6,
+                "name": "步骤6：宽带OFDM信道升级与数据重构 (Innovative Scheme Part 3 - Wideband Data)",
+                "content": "目标：引入0.1THz宽带特性，重写信道生成逻辑，暴露波束分裂问题。\n1. 宽带参数：中心频率 $f_c = 0.1$ THz，带宽 $B = 10$ GHz，子载波数 $F = 16$。子载波频率 $f_m = f_c + \\frac{B}{F}(m - F/2)$。\n2. 宽带信道矩阵 $\\mathbf{H}_{wb}$ 生成：$H_{n,k,m} = M_{n,k} \\cdot \\frac{c}{4\\pi f_m r_{n,k}} \\cdot e^{-j \\frac{2\\pi f_m}{c} r_{n,k}}$。注意此时加入了维度 $F$。\n3. 数据集重构：生成宽带数据集（5000训练集，1000测试集以防内存溢出）。张量维度为：$\\mathbf{H}_{wb}$ shape `(5000, 256, 8, 16)`，$\\mathbf{x}$ shape `(5000, 8, 16)`，$\\mathbf{y}$ shape `(5000, 256, 16)`。保存至 `/workspace/dataset_wideband.pt`。\n4. 基线验证：在宽带测试集上循环 $F$ 个子载波，分别独立运行 Full-MMSE，记录平均BER作为宽带传统基线。",
+                "expected_outcome": "成功生成包含维度 $F=16$ 的宽带数据集。传统基线能够在宽带数据上跑通，并输出受波束分裂影响的BER基准线。"
+            },
+            {
+                "idx": 7,
+                "name": "步骤7：频率感知Sparse-GNN实现 (Innovative Scheme Part 4 - Freq-Aware GNN)",
+                "content": "目标：处理 `(N, K, F)` 维度的宽带数据，实现联合频域建图和频率感知特征。\n1. 联合频域建图：在导频阶段，计算每个子载波的能量矩阵 $\\mathbf{E}_m$，然后求平均 $\\bar{\\mathbf{E}} = \\frac{1}{F}\\sum_m \\mathbf{E}_m$。基于 $\\bar{\\mathbf{E}}$ 使用步骤4的阈值法，为所有子载波生成一个共享的、稳定的 `edge_index`。\n2. 边特征升维：原边特征为2维，现在修改为：$\\mathbf{e}_{n,k,m} = [\\Re(H_{n,k,m}), \\Im(H_{n,k,m}), \\frac{f_m - f_c}{f_c}]^T \\in \\mathbb{R}^3$。将归一化频率偏移作为额外特征拼接。\n3. 维度适配与训练：修改Embedding层中的边映射，从 `Linear(2, 64)` 改为 `Linear(3, 64)`。其余MLP维度(192->128->64)完全保持不变。将每个子载波的数据视为图上的并行特征通道进行训练。保存模型至 `/workspace/sparse_gnn_wideband.pth`。",
+                "expected_outcome": "代码成功处理 `(Batch, N, K, F)` 数据并无维度报错。频率感知Sparse-GNN在宽带数据集上完成训练，预期其BER显著优于逐子载波独立处理的Baseline，证明频率特征补偿了波束分裂。"
+            },
+            {
+                "idx": 8,
+                "name": "步骤8：大规模天线扩展与最终对比评估 (Comparison & Scale-up)",
+                "content": "目标：将天线规模扩展至 $N=1024$，评估算法的可扩展性，并生成最终图表。\n1. 规模扩展测试：利用步骤6的逻辑，仅生成100个 $N=1024, K=8, F=16$ 的宽带测试样本。不需要重新训练，直接加载 `/workspace/sparse_gnn_wideband.pth` 进行Zero-shot推理（因为GNN处理的是局部边，对图规模具有泛化性）。\n2. 复杂度统计：针对 $N=256$ 和 $N=1024$，分别运行 Full-MMSE, Full-MPNN (若显存允许), 和 Proposed Freq-Aware Sparse-GNN，记录单次推断的耗时(ms)和理论FLOPs。\n3. 绘图与保存：\n   - `fig_ber.png`: 绘制宽带场景下，Proposed GNN 与 Full-MMSE, Genie-Aided MMSE 的 BER-SNR 曲线。\n   - `fig_complexity.png`: 绘制横轴为天线数 $N \\in \\{256, 1024\\}$，纵轴为计算复杂度的对数柱状图。\n   所有图表保存在 `/workspace/` 目录下。",
+                "expected_outcome": "成功在 $N=1024$ 时完成推理而不OOM。输出的两张图表清晰证明：Proposed方案在BER上逼近Genie-Aided上限，且在 $N=1024$ 时复杂度远低于Full-MMSE，完美验证科研Idea。"
+            }
+        ],
+        "Agent_Task_ID": "idea_1_agent_1"
+}
