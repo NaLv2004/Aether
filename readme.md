@@ -1,5 +1,5 @@
 # Aether: Towards fully automated communication research
-
+```mermaid
 graph TD
     %% ==========================================
     %% 阶段 0: 初始化与配置
@@ -101,7 +101,7 @@ graph TD
     class IdeaGen_Output,Planner_Input,Planner_Output,Coder_Input,Coder_Output1,Coder_Output2,Exp_Input1,Exp_Input2,Exp_Output,Writer_Input1,Writer_Input2,Writer_Output file;
     class IdeaGen_Module,Planner_Process,Coder_Process,Exp_Phase1,Exp_Phase2,Writer_LitSearch,Writer_Drafting process;
     class Module1,Module2,Module3,Module4,Module5 module;
-
+```
 ---
 
 # 🧠 Aether: IdeaGenerator 模块详解
