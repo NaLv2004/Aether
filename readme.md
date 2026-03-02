@@ -19,42 +19,53 @@
 
 ```mermaid
 graph TD
-    Start([启动主程序 main]) --> ReadTheme[读取研究主题 txt]
+    Start(["启动主程序 main"]) --> ReadTheme["读取研究主题 txt"]
     
-    subgraph 阶段一：Idea 生成与打磨 (Student Agents)
-        ReadTheme --> InitStudents[并发启动 N 个 Student Agent]
+    subgraph Phase1 ["阶段一：Idea 生成与打磨 (Student Agents)"]
+        InitStudents["并发启动 N 个 Student Agent"]
+        StudentLoop{"迭代满或满意?"}
+        Generate["生成/优化 Idea & 提取 Queries"]
+        OpenAlex1["调用 OpenAlex API 检索文献"]
+        Feedback1["将文献摘要反馈给 LLM"]
+        OutputIdeas["保存该 Agent 的 Ideas"]
+        
+        ReadTheme --> InitStudents
         InitStudents --> StudentLoop
-        
-        StudentLoop{迭代次数满或满意?}
-        StudentLoop -- 未结束 --> Generate[基于提示词生成/优化 Idea <br> 提取 Search Queries]
-        Generate --> OpenAlex1[调用 OpenAlex API 检索相关文献]
-        OpenAlex1 --> Feedback1[将文献摘要反馈给 LLM]
+        StudentLoop -- "未结束" --> Generate
+        Generate --> OpenAlex1
+        OpenAlex1 --> Feedback1
         Feedback1 --> StudentLoop
-        
-        StudentLoop -- I'm done / 达上限 --> OutputIdeas[保存该 Agent 的 Ideas]
+        StudentLoop -- "I'm done / 达上限" --> OutputIdeas
     end
 
-    OutputIdeas --> MergeIdeas[合并并打乱所有候选 Ideas]
+    MergeIdeas["合并并打乱所有候选 Ideas"]
+    OutputIdeas --> MergeIdeas
     
-    subgraph 阶段二：新颖性审查与打分 (Teacher Agents)
-        MergeIdeas --> InitTeachers[并发启动 M 个 Teacher Agent 分配评估任务]
+    subgraph Phase2 ["阶段二：新颖性审查与打分 (Teacher Agents)"]
+        InitTeachers["并发启动 M 个 Teacher Agent"]
+        TeacherLoop{"Decision == Finished?"}
+        Review["审阅 Idea & 提出查重 Queries"]
+        OpenAlex2["调用 OpenAlex API 查重"]
+        Feedback2["将检索结果反馈给审稿 LLM"]
+        MakeScore["给出评审意见及 Score (1-10)"]
+        
+        MergeIdeas --> InitTeachers
         InitTeachers --> TeacherLoop
-        
-        TeacherLoop{Decision == Finished?}
-        TeacherLoop -- Pending --> Review[审阅 Idea <br> 提出查重 Search Queries]
-        Review --> OpenAlex2[调用 OpenAlex API 检索是否撞车]
-        OpenAlex2 --> Feedback2[将文献反馈给审稿 LLM]
+        TeacherLoop -- "Pending" --> Review
+        Review --> OpenAlex2
+        OpenAlex2 --> Feedback2
         Feedback2 --> TeacherLoop
-        
-        TeacherLoop -- Finished --> Score[给出详细评审意见及 Score 1-10]
+        TeacherLoop -- "Finished" --> MakeScore
     end
     
-    Score --> SaveResult([输出结果至 Log 与 JSON])
+    SaveResult(["输出结果至 Log 与 JSON"])
+    MakeScore --> SaveResult
 
-    classDef student fill:#d4edda,stroke:#28a745,stroke-width:2px;
-    classDef teacher fill:#f8d7da,stroke:#dc3545,stroke-width:2px;
-    class InitStudents,StudentLoop,Generate,Feedback1 student;
-    class InitTeachers,TeacherLoop,Review,Feedback2 teacher;
+    %% 样式定义
+    classDef student fill:#d4edda,stroke:#28a745,stroke-width:2px,color:#000;
+    classDef teacher fill:#f8d7da,stroke:#dc3545,stroke-width:2px,color:#000;
+    class InitStudents,StudentLoop,Generate,OpenAlex1,Feedback1,OutputIdeas student;
+    class InitTeachers,TeacherLoop,Review,OpenAlex2,Feedback2,MakeScore teacher;
 ```
 
 ---
