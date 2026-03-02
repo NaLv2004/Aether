@@ -287,3 +287,141 @@ python research_planner.py \
     }
 ]
 ```
+这是一份为您量身定制的 `Aether` 项目中 `Code Generator & Execution` (代码生成与初步执行) 模块的 README 文档。本文档延续了之前的结构与专业风格，详细拆解了代码落地的核心逻辑，并配有标准的 Mermaid 流程图。
+
+---
+
+# 💻 Aether: Code Generator & Execution 模块详解
+
+## 📖 模块简介
+**Code Generator & Execution** 是 Aether 系统的“双手”与“实验台”。它的核心任务是接收 `Research Planner` 生成的细粒度研究计划，在真实的本地环境（Conda）中编写 Python 仿真代码、执行脚本，并根据运行结果不断进行 Debug 和优化，直至完成科研设想的初步落地。
+
+该模块突破了传统单点代码生成的局限，采用创新的 **“管家-码农-监工” (Orchestrator-Coder-Monitor) 三智能体协同架构**：
+1. **Orchestrator Agent (项目管家)**：负责统筹推进。它不写具体代码，而是向 Coder 下达指令、动态修改运行参数、验收运行结果，并决定是进入下一步还是打回重做。
+2. **Coding Agent (AI程序员)**：负责纯粹的工程实现。根据管家指令编写带有高度可调参数（`argparse`）的 Python 代码及运行批处理脚本（`.bat`）。
+3. **Monitor Agent (实时监控助手)**：作为底层“安全阀”，实时读取控制台和硬件资源状态，精准狙击死循环、模型发散（NaN）或长时间卡死，防止资源浪费。
+
+---
+
+## ⚙️ 核心工作流程图
+
+以下是代码生成与执行模块的完整执行逻辑图：
+
+```mermaid
+graph TD
+    Start(["启动执行主程序"]) --> LoadPlan["读取 Research Plan (JSON)"]
+    LoadPlan --> InitWorkspace["创建独立实验工作区 (experiments/时间戳)"]
+    InitWorkspace --> StepLoop{"遍历 Plan 的每个 Step"}
+    
+    StepLoop -- "完成所有 Step" --> End(["实验成功结束"])
+    StepLoop -- "未完成" --> OrchestratorEval["Orchestrator: 结合上下文思考当前目标"]
+    
+    subgraph ExecutionPhase ["核心迭代：编写 - 运行 - 监控 - 验收 (最多 10 次重试)"]
+        OrchestratorEval --> OrchAction{"Action 决策"}
+        
+        OrchAction -- "PROMPT_CODER <br> (指导编程)" --> CoderWrite["Coder: 编写 .py 与 run.bat <br> 暴露超参数"]
+        CoderWrite --> RunCode["在隔离的 Conda 环境中执行 run.bat"]
+        
+        OrchAction -- "RUN_CODE <br> (自行调参执行)" --> CustomScript["Orchestrator: 生成自定义参数的 bat"]
+        CustomScript --> RunCode
+        
+        RunCode --> RealTimeMonitor{"Monitor Agent <br> 实时监控控制台与 GPU 状态"}
+        RealTimeMonitor -- "发现死循环/NaN <br> (KILL)" --> ForceKill["强制杀死进程 (taskkill)"]
+        ForceKill --> OrchAction
+        
+        RealTimeMonitor -- "正常运行结束" --> GetOutput["获取完整 Stdout/Stderr"]
+        GetOutput --> OrchCheck{"Orchestrator <br> 验收运行结果"}
+        
+        OrchCheck -- "REJECT_STEP <br> (打回重做)" --> OrchAction
+    end
+    
+    OrchCheck -- "PASS_STEP <br> (验收通过)" --> UpdateContext["记录 Summary，进入下一步"]
+    UpdateContext --> StepLoop
+    
+    OrchCheck -- "重试超限 (MAX_RETRIES)" --> Backtrack["触发回溯机制 (退回上一 Step)"]
+    Backtrack --> StepLoop
+
+    %% 样式定义
+    classDef orchestrator fill:#d4edda,stroke:#28a745,stroke-width:2px,color:#000;
+    classDef coder fill:#cce5ff,stroke:#007bff,stroke-width:2px,color:#000;
+    classDef monitor fill:#f8d7da,stroke:#dc3545,stroke-width:2px,color:#000;
+    
+    class OrchestratorEval,OrchAction,CustomScript,OrchCheck orchestrator;
+    class CoderWrite coder;
+    class RealTimeMonitor,ForceKill monitor;
+```
+
+---
+
+## 🛠️ 详细实现解析
+
+### 1. 实时硬件与进程监控机制 (Monitor Agent)
+传统大模型在执行代码时，如果遇到 `while True` 或模型训练崩溃卡死，往往会导致整个流程挂起。本模块引入了工业级的监控与打断机制：
+* **异步非阻塞读取**：通过后台线程 (`reader_thread`) 和 `queue` 实时收集 stdout/stderr，不影响主程序的响应。
+* **硬件状态感知**：运行时通过 `subprocess` 调用 `nvidia-smi` 和 `wmic`，获取真实的 GPU 显存和物理内存状态，连同最近的控制台输出一起喂给 Monitor Agent。
+* **智能熔断 (Kill Switch)**：每隔 200 秒，Monitor 会判断代码是否处于“无意义耗时”状态。若判定异常，直接调用 Windows 底层 `taskkill /F /T` 强杀进程树，并将报错信息反馈给 Orchestrator 进行修复。
+
+### 2. 极致的参数化要求与免重写测试
+* **命令行暴露 (argparse)**：Prompt 严格要求 Coder 必须通过 `argparser` 将仿真环境的所有超参数（如信噪比、Epoch、学习率等）暴露到命令行。
+* **Orchestrator 越权操作**：如果 Orchestrator 认为代码逻辑无误，仅仅是参数设置不好导致结果不达预期。它可以直接输出 `RUN_CODE` 指令，自己重写 `run.bat` (如 `python main.py --lr 0.05`)，**绕过 Coder 直接重新运行测试**，极大地节省了 Token 和代码重写时间。
+
+### 3. 禁止文件 I/O 传参 (强迫模块化)
+* **设计巧思**：Prompt 中包含一条严格铁律：“绝对不允许将中间结果保存到文件中再在后续读取”。这强迫 Coder 必须将代码写成规范的函数或类，通过 `import` 的方式在后续步骤中调用之前的方法。这保证了代码的高内聚、低耦合，避免了工作区充满垃圾 `.npy` 或 `.csv` 文件。
+
+### 4. 容错与回溯机制 (Backtracking)
+科研代码极少能一次跑通。
+* **最大重试限制**：如果在一个 Step 中，Orchestrator 频繁打回重做或程序连续崩溃达到 `MAX_RETRIES` (默认10次)，系统判定“此路不通”。
+* **动态回退**：系统会自动将进度 `step_idx -= 1`，清除当前步的冗余上下文，退回到上一个成功的步骤重新开始，模拟真实科研中“退一步海阔天空”的排错思路。
+
+### 5. 标准化文件提取
+利用正则表达式精准拦截 Coder 输出中的 Markdown 格式块（如 `### File: main.py\n ```python ... ``` `），自动生成本地文件。对于 `readme.md`，还会智能地进行追加拼接，保留完整的实验文档。
+
+---
+
+## 🚀 使用指南
+
+### 1. 环境准备
+该模块实际执行生成的代码，强烈建议在带有 GPU 支持的 Windows 环境下运行，并提前准备好专门的 Conda 虚拟环境（确保环境安全隔离）：
+
+```bash
+# 创建供 AI 瞎折腾的专属环境
+conda create -n AutoGenOld python=3.10 numpy torch pandas scipy -y
+```
+
+### 2. 运行主程序
+将 `Research Planner` 输出的计划 JSON 文件喂给当前程序：
+
+```bash
+python experiment_performer.py \
+    --plan_file "final_research_plans/idea_1_plans.json" \
+    --orchestrator "gemini-3.1-pro-preview" \
+    --coder "gemini-3.1-pro-preview"
+```
+
+### 3. 参数说明
+| 参数名 | 默认值 | 描述 |
+| :--- | :--- | :--- |
+| `--plan_file` | `final_research_plans\single_plan.json` | 步骤二 (Planner) 生成的单个具体研究计划文件。 |
+| `--orchestrator` | `gemini-3.1-pro-preview` | 项目管家 (决策者) 使用的 LLM 模型。 |
+| `--coder` | `gemini-3.1-pro-preview` | 程序员 (代码编写者) 使用的 LLM 模型。 |
+
+*注：脚本内置了常量 `CONDA_ENV_NAME = "AutoGenOld"` 和 `MAX_RETRIES = 10`，可直接在代码头部根据需要修改。*
+
+---
+
+## 📂 输出示例 (实验工作区)
+
+每次启动实验，系统都会在 `experiments/` 目录下创建一个以时间戳命名的新文件夹。一个成功的实验执行完毕后，工作区结构如下：
+
+```text
+experiments/
+└── 20241026_143022/
+    ├── orchestrator.log         # 记录管家的所有思考、决策与评价
+    ├── coder.log                # 记录代码生成的详细 Prompt 与返回
+    ├── experiment_summary.txt   # 每次 PASS_STEP 后的总结，构成了最终的实验报告
+    ├── run.bat                  # Coder 生成的最终执行脚本
+    ├── readme.md                # 包含所有步骤说明与命令行参数列表的合并文档
+    ├── system_model.py          # (自动生成的代码) 定义信道与传输模型
+    ├── baseline_zf.py           # (自动生成的代码) 传统 ZF 迫零算法对比
+    └── proposed_ai_model.py     # (自动生成的代码) 包含创新点的深度学习模型
+```
