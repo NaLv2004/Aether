@@ -100,7 +100,7 @@ def main():
     # run experiment
     plan_and_execute_experiments(parser_experiment)
     
-    # to be done: create plan.txt, idea.txt, etc.
+    # to do: create plan.txt, idea.txt, etc.
     # compose article
     parser_writeup = argparse.ArgumentParser(description="生成科研文章")
     perform_writeup(OUTPUT_PATH_SUB['code_gen'])
