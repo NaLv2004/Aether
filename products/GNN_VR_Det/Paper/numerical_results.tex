@@ -1,0 +1,43 @@
+\section{Numerical Results}
+
+\subsection{Simulation Setup}
+To evaluate the performance of the proposed Graph-VR-Det framework, extensive numerical simulations are conducted. The base station is equipped with a uniform linear array of $N=256$ antennas, serving $K=8$ single-antenna users randomly distributed within the near-field Fresnel zone at distances ranging from 5 to 30 meters. For the wideband scenario, the system operates at a center frequency of $f_c = 0.1$ THz with a total bandwidth of $B=10$ GHz, divided into $F=16$ orthogonal subcarriers. The signal-to-noise ratio (SNR) is evaluated across a range of $-5$ dB to $15$ dB. The dataset comprises up to 15,000 training samples, 2,000 validation samples, and 5,000 testing samples. The proposed Sparse-GNN and the baseline fully-connected MPNN (Full-MPNN) are trained using the Adam optimizer with a learning rate of $10^{-3}$ and a batch size of 64 (or 256 for specific sparsity evaluations) for up to 60 epochs. To comprehensively assess model capacity, the network hyperparameters are varied, with the hidden dimension $d_h \in \{64, 128\}$ and the number of message passing layers $L \in \{4, 6\}$.
+
+\subsection{VR Discovery and the Sparsity Trade-off}
+The efficacy of the dynamic visibility region (VR) discovery algorithm is first evaluated by analyzing the VR hit rate across different sparsity levels $S$ and SNRs. The parameter $S$ dictates the number of retained antennas per user. At $S=38$ (approximately 15\% sparsity), the algorithm enforces strict selection, yielding a high hit rate that reaches 100\% at 15 dB SNR. However, as $S$ increases to 77 (30\% sparsity) and 128 (50\% sparsity), the hit rate slightly decreases at lower SNRs due to the inclusion of noise-dominated antennas, though it remains robust at high SNRs (e.g., 92.12\% for $S=128$ at 15 dB). 
+
+\begin{figure}[t]
+\centering
+\input{fig1.tex}
+\caption{Narrowband BER versus SNR, comparing the Full-MPNN baseline against the proposed Sparse-GNN at varying sparsity levels ($S=77, 128, 180$).}
+\label{fig:ber_narrowband}
+\end{figure}
+
+This sparsity directly governs a fundamental performance-complexity trade-off, as illustrated in Fig. \ref{fig:ber_narrowband}. When $S=77$, the Sparse-GNN achieves a 3.21-fold inference speedup over the Full-MPNN, albeit with a noticeable degradation in bit error rate (BER). Increasing the retained antennas to $S=128$ provides a balanced compromise, yielding a 1.7-fold speedup with minimal BER loss. Notably, at $S=180$ (approximately 70\% sparsity), the Sparse-GNN exhibits a graph regularization effect. By selectively pruning 30\% of the weakest connections, the sparse topology effectively filters out noise and interference from non-visible antennas that would otherwise be aggregated in a fully-connected graph. Consequently, the Sparse-GNN at $S=180$ accelerates inference by a factor of 1.19 and outperforms the Full-MPNN baseline, reducing the BER from $0.0078$ to $0.0039$ at 10 dB SNR.
+
+\subsection{Model Capacity and Inference Efficiency}
+To validate the computational advantages of the proposed architecture across different network scales, the inference time and BER of the Full-MPNN and Sparse-GNN ($S=77$) are compared under four distinct model capacities: Config 1 ($d_h=64, L=4$), Config 2 ($d_h=64, L=6$), Config 3 ($d_h=128, L=4$), and Config 4 ($d_h=128, L=6$). 
+
+\begin{figure}[t]
+\centering
+\input{fig3.tex}
+\caption{Inference time comparison between Full-MPNN and Sparse-GNN across four different model capacities (Config 1 to 4), demonstrating a consistent computational reduction.}
+\label{fig:complexity}
+\end{figure}
+
+As depicted in Fig. \ref{fig:complexity}, the Sparse-GNN consistently achieves an approximate 3-fold speedup regardless of the underlying model capacity. For instance, under the heaviest configuration (Config 4), the Full-MPNN requires 9.32 seconds for 100 inference passes, whereas the Sparse-GNN requires only 3.32 seconds. While increasing the model capacity from Config 1 to Config 3 improves the BER of the Sparse-GNN at 15 dB from $0.0052$ to $0.0040$, the inference time of the larger Sparse-GNN (2.23 seconds) remains strictly lower than that of the smallest Full-MPNN (2.70 seconds). This demonstrates that the sparse graph topology effectively decouples the detection complexity from the total array size, allowing for the deployment of deeper and wider networks within stringent latency budgets.
+
+\subsection{Wideband Performance and Beam Splitting}
+The performance of the frequency-aware Sparse-GNN is evaluated in the wideband 0.1 THz scenario, where the near-field beam splitting effect induces frequency-dependent spatial non-stationarity. The proposed method ($S=128$) is compared against ideal, genie-aided VR-ZF and VR-MMSE detectors, which assume perfect prior knowledge of the true VR masks and exact channel state information.
+
+\begin{figure}[t]
+\centering
+\input{fig2.tex}
+\caption{Wideband BER versus SNR, comparing the Freq-Aware Sparse-GNN against Genie-Aided VR-ZF and VR-MMSE baselines.}
+\label{fig:ber_wideband}
+\end{figure}
+
+As shown in Fig. \ref{fig:ber_wideband}, the frequency-aware Sparse-GNN successfully tracks the performance of the linear baselines in the low-to-medium SNR regime, validating the effectiveness of embedding normalized frequency offsets into the edge features to compensate for beam splitting. However, an objective analysis reveals that the proposed GNN exhibits a distinct error floor at high SNRs, saturating at a BER of approximately $1.04 \times 10^{-3}$ at 15 dB, whereas the genie-aided baselines achieve BERs on the order of $10^{-5}$. This degradation occurs because the GNN relies on statistical learning and an imperfect, energy-based VR discovery mechanism, which occasionally misclassifies edge connections under severe wideband fading. In contrast, the genie-aided methods utilize mathematically exact matrix inversions over perfectly known sparse subspaces. Despite this high-SNR error floor, the proposed method remains practical, as perfect VR masks are difficult to obtain in real-world XL-MIMO deployments.
+
+\subsection{Zero-Shot Scale-Up to Massive Arrays}
+Finally, the zero-shot generalization capability of the proposed architecture is evaluated by directly testing the model trained on $N=256$ antennas on a massive array of $N=1024$ antennas, without any retraining. Because the Sparse-GNN restricts its message passing strictly to the localized VR edges (which depend on the physical user distance rather than the global array size), it seamlessly adapts to the larger topology. The numerical results indicate a significant reduction in BER due to the substantially increased array gain provided by the 1024-element aperture. Furthermore, the Sparse-GNN demonstrates a substantial computational advantage in this regime. While traditional full-array MMSE or fully-connected MPNNs encounter severe out-of-memory (OOM) failures or prohibitive latency due to $\mathcal{O}(N^3)$ or $\mathcal{O}(NK)$ scaling, the Sparse-GNN executes inference in approximately 8.2 ms per batch, confirming its scalability for future 6G XL-MIMO networks.

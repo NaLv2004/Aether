@@ -1,7 +1,0 @@
-"Original_Idea": {
-            "Name": "Graph-VR-Det",
-            "Title": "Graph-Based Near-Field Detection for XL-MIMO via Dynamic Visibility Region Discovery",
-            "Background": "在极大规模MIMO（XL-MIMO）中，天线阵列的空间非平稳性导致每个用户只能被部分天线（Visibility Region, VR）有效覆盖。传统的全阵列处理会导致严重的噪声积累和计算浪费。",
-            "Hypothesis": "将XL-MIMO检测建模为动态图上的消息传递问题。利用图神经网络（GNN）自动发现用户与天线子集之间的‘强连接’（即VR），并仅在连接边上进行证据处理（Evidence Processing）。这种稀疏激活机制能将计算复杂度从天线总数的线性关系降低为VR大小的线性关系。",
-            "Methodology": "1. 建立用户-天线二部图，边权重由初始导频信号的能量分布确定。2. 开发基于GNN的稀疏检测算子，通过多层图卷积实现空间信息的融合。3. 引入近场波束分裂（Beam Splitting）的补偿机制，修正GNN的消息传递核。4. 在0.1THz频段、千级天线阵列的非平稳信道模型下进行端到端仿真。"
-        }

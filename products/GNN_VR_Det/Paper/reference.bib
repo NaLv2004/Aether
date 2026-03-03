@@ -1,0 +1,272 @@
+@article{albreem2019massive,
+  title={Massive MIMO Detection Techniques: A Survey},
+  author={Albreem, Mahmoud A. and Juntti, Markku and Shahabuddin, Shahriar},
+  journal={IEEE Communications Surveys \& Tutorials},
+  year={2019},
+  abstract={Massive multiple-input multiple-output (MIMO) is a key technology to meet the user demands in performance and quality of services (QoS) for next generation communication systems. Due to a large number of antennas and radio frequency (RF) chains, complexity of the symbol detectors increased rapidly in a massive MIMO uplink receiver. Thus, the research to find the perfect massive MIMO detection algorithm with optimal performance and low complexity has gained a lot of attention during the past decade. A plethora of massive MIMO detection algorithms has been proposed in the literature. The aim of this paper is to provide insights on such algorithms to a generalist of wireless communications. We garner the massive MIMO detection algorithms and classify them so that a reader can find a distinction between different algorithms from a wider range of solutions. We present optimal and near-optimal detection principles specifically designed for the massive MIMO system such as detectors based on a local search, belief propagation and box detection. In addition, we cover detectors based on approximate inversion, which has gained popularity among the VLSI signal processing community due to their deterministic dataflow and low complexity. We also briefly explore several nonlinear small-scale MIMO (2-4 antenna receivers) detectors and their applicability in the massive MIMO context. In addition, we present recent advances of detection algorithms which are mostly based on machine learning or sparsity based algorithms. In each section, we also mention the related implementations of the detectors. A discussion of the pros and cons of each detector is provided.}
+}
+
+@article{he2020model,
+  title={Model-Driven Deep Learning for MIMO Detection},
+  author={He, Hengtao and Wen, Chao-Kai and Jin, Shi and Li, Geoffrey Ye},
+  journal={IEEE Transactions on Signal Processing},
+  year={2020},
+  abstract={In this paper, we investigate the model-driven deep learning (DL) for MIMO detection. In particular, the MIMO detector is specially designed by unfolding an iterative algorithm and adding some trainable parameters. Since the number of trainable parameters is much fewer than the data-driven DL based signal detector, the model-driven DL based MIMO detector can be rapidly trained with a much smaller data set. The proposed MIMO detector can be extended to soft-input soft-output detection easily. Furthermore, we investigate joint MIMO channel estimation and signal detection (JCESD), where the detector takes channel estimation error and channel statistics into consideration while channel estimation is refined by detected data and considers the detection error. Based on numerical results, the model-driven DL based MIMO detector significantly improves the performance of corresponding traditional iterative detector, outperforms other DL-based MIMO detectors and exhibits superior robustness to various mismatches.}
+}
+
+@article{jeon2015optimality,
+  title={Optimality of large MIMO detection via approximate message passing},
+  author={Jeon, Charles and Ghods, Ramina and Maleki, Arian and Studer, Christoph},
+  journal={Unknown},
+  year={2015},
+  abstract={Optimal data detection in multiple-input multiple-output (MIMO) communication systems with a large number of antennas at both ends of the wireless link entails prohibitive computational complexity. In order to reduce the computational complexity, a variety of sub-optimal detection algorithms have been proposed in the literature. In this paper, we analyze the optimality of a novel data-detection method for large MIMO systems that relies on approximate message passing (AMP). We show that our algorithm, referred to as individually-optimal (IO) large-MIMO AMP (short IO-LAMA), is able to perform IO data detection given certain conditions on the MIMO system and the constellation set (e.g., QAM or PSK) are met.}
+}
+
+@article{som2010improved,
+  title={Improved large-MIMO detection based on damped belief propagation},
+  author={Som, Pritam and Datta, Tanumay and Chockalingam, A. and Rajan, B. Sundar},
+  journal={Unknown},
+  year={2010},
+  abstract={In this paper, we consider the application of belief propagation (BP) to achieve near-optimal signal detection in large multiple-input multiple-output (MIMO) systems at low complexities. Large-MIMO architectures based on spatial multiplexing (V-BLAST) as well as non-orthogonal space-time block codes(STBC) from cyclic division algebra (CDA) are considered. We adopt graphical models based on Markov random fields (MRF) and factor graphs (FG). In the MRF based approach, we use pairwise compatibility functions although the graphical models of MIMO systems are fully/densely connected. In the FG approach, we employ a Gaussian approximation (GA) of the multi-antenna interference, which significantly reduces the complexity while achieving very good performance for large dimensions. We show that i) both MRF and FG based BP approaches exhibit large-system behavior, where increasingly closer to optimal performance is achieved with increasing number of dimensions, and ii) damping of messages/beliefs significantly improves the bit error performance.}
+}
+
+@article{wei2020learned,
+  title={Learned Conjugate Gradient Descent Network for Massive MIMO Detection},
+  author={Wei, Yi and Hong, Mingyi and Zhao, Minjian and Lei, Ming and Lei, Ming},
+  journal={IEEE Transactions on Signal Processing},
+  year={2020},
+  abstract={In this work, we consider the use of model-driven deep learning techniques for massive multiple-input multiple-output (MIMO) detection. Compared with conventional MIMO systems, massive MIMO promises improved spectral efficiency, coverage and range. Unfortunately, these benefits are at the expense of significantly increased computational complexity. To reduce the complexity of signal detection and guarantee the performance, we present a learned conjugate gradient descent network (LcgNet), which is constructed by unfolding the iterative conjugate gradient descent (CG) detector. In the proposed network, instead of calculating the exact values of the scalar step-sizes, we explicitly learn their universal values. Also, we can enhance the proposed network by augmenting the dimensions of these step-sizes. Furthermore, in order to reduce the memory costs, a novel quantized LcgNet is proposed, where a low-resolution nonuniform quantizer is used to quantize the learned parameters. The quantizer is based on a specially designed soft staircase function with learnable parameters to adjust its shape. Meanwhile, due to fact that the number of learnable parameters is limited, the proposed networks are relatively easy to train. Numerical results demonstrate that the proposed network can achieve promising performance with much lower complexity.}
+}
+
+@article{liu2022deep,
+  title={Deep Learning Based Beam Training for Extremely Large-Scale Massive MIMO in Near-Field Domain},
+  author={Liu, Wang and Ren, Hong and Pan, Cunhua and Wang, Jiangzhou},
+  journal={IEEE Communications Letters},
+  year={2022},
+  abstract={Extremely large-scale massive multiple-input-multiple-output (XL-MIMO) is regarded as a promising technology for next-generation communication systems. In order to enhance the beamforming gains, codebook-based beam training is widely adopted in XL-MIMO systems. However, in XL-MIMO systems, the near-field domain expands, and near-field codebook should be adopted for beam training, which significantly increases the pilot overhead. To tackle this problem, we propose a deep learning-based beam training scheme where the near-field channel model and the near-field codebook are considered. To be specific, we first utilize the received signals corresponding to the far-field wide beams to estimate the optimal near-field beam. Two training schemes are proposed, namely the original and the improved schemes. The original scheme estimates the optimal near-field codeword directly based on the output of the neural networks. By contrast, the improved scheme performs additional beam testing, which can significantly improve the performance of beam training. Finally, the simulation results show that our proposed schemes can significantly reduce the training overhead in the near-field domain and achieve beamforming gains.}
+}
+
+@article{zhang2023near,
+  title={Near-Field Channel Estimation for Extremely Large-Scale Array Communications: A Model-Based Deep Learning Approach},
+  author={Zhang, Xiangyu and Wang, Zening and Zhang, Haiyang and Yang, L{\"u}xi},
+  journal={IEEE Communications Letters},
+  year={2023},
+  abstract={Extremely large-scale massive MIMO (XL-MIMO) has been reviewed as a promising technology for future wireless communications. The deployment of XL-MIMO, especially at high-frequency bands, leads to users being located in the near-field region instead of the conventional far-field. This letter proposes efficient model-based deep learning algorithms for estimating the near-field wireless channel of XL-MIMO communications. In particular, we first formulate the XL-MIMO near-field channel estimation task as a compressed sensing problem using the spatial gridding-based sparsifying dictionary and then solve the resulting problem by applying the Learning Iterative Shrinkage and Thresholding Algorithm (LISTA). Due to the near-field characteristic, the spatial gridding-based sparsifying dictionary may result in low channel estimation accuracy and a heavy computational burden. To address this issue, we propose a novel sparsifying dictionary learning-LISTA (SDL-LISTA) algorithm that formulates the sparsifying dictionary as a neural network layer and embeds it into LISTA neural network. The numerical results show that our proposed algorithms outperform non-learning benchmark schemes, and SDL-LISTA achieves better performance than LISTA with ten times atoms reduction.}
+}
+
+@article{jiang2023near,
+  title={Near-Field Beam Training Based on Deep Learning for Extremely Large-Scale MIMO},
+  author={Jiang, Guoli and Qi, Chenhao},
+  journal={IEEE Communications Letters},
+  year={2023},
+  abstract={Extremely large-scale multiple-input multiple-output (XL-MIMO) is considered as a key technology for future wireless communications. For near-field beam training in XL-MIMO, the distance information is another important factor aside of the angular information. The most recent work trains the deep neural network (DNN) by performing beam training based on far-field codebook that only contains angular information, where the optimal angle and distance are independently predicted. In this letter, the DNN is trained by performing beam training based on near-field codebook that contains both angular and distance information, where the optimal angle and distance are jointly predicted with improved performance. We first propose a deep learning-based near-field beam training (DNBT) scheme. To further improve the beam training performance, a DNBT with supplementary codewords (DNBT-SC) scheme is proposed, where the supplementary codewords are selected to perform beam training based on the probability vector acquired in the DNBT scheme. Simulation results show that under the same training overhead, the proposed schemes can achieve better performance than the existing schemes.}
+}
+
+@article{nie2024near,
+  title={Near-Field Beam Training for Extremely Large-Scale MIMO Based on Deep Learning},
+  author={Nie, Jiali and Cui, Yuanhao and Yang, Zhaohui and Yuan, Weijie and Jing, Xiaojun},
+  journal={IEEE Transactions on Mobile Computing},
+  year={2024},
+  abstract={Extremely Large-scale Array (ELAA) is considered a frontier technology for future communication systems, playing a crucial role in enhancing the rate and spectral efficiency of wireless networks. As ELAA employs a multitude of antennas operating at higher frequencies, users are typically situated in the near-field region where the spherical wavefront propagates. Near-field beam training requires information on both angle and distance, which inevitably leads to a significant increase in the beam training overhead. To address this challenge, we propose a near-field beam training method based on deep learning. Specifically, we employ a convolutional neural network (CNN) to efficiently extract channel characteristics from historical data by strategically selecting padding and kernel sizes. The negative value of the user average achievable rate is utilized as the loss function to optimize the beamformer, maximizing the achievable rate in multi-user networks without relying on predefined beam codebooks. Once deployed, the model requires only pre-estimated channel state information (CSI) to compute the optimal beamforming vector. Simulation results demonstrate that the proposed scheme achieves more stable beamforming gains and substantially outperforms traditional beam training approaches. Furthermore, owing to the inherent traits of deep learning methodologies, this approach substantially diminishes the near-field beam training overhead.}
+}
+
+@article{zhi2024performance,
+  title={Performance Analysis and Low-Complexity Design for XL-MIMO With Near-Field Spatial Non-Stationarities},
+  author={Zhi, Kangda and Pan, Cunhua and Ren, Hong and Chai, Kok Keong and Wang, Cheng-Xiang and Schober, Robert and You, Xiaohu},
+  journal={IEEE Journal on Selected Areas in Communications},
+  year={2024},
+  abstract={Extremely large-scale multiple-input multiple-output (XL-MIMO) is capable of supporting extremely high system capacities with large numbers of users. In this work, we build a framework for the analysis and low-complexity design of XL-MIMO in the near field with spatial non-stationarities. Specifically, we first analyze the theoretical performance of discrete-aperture XL-MIMO using an electromagnetic (EM) channel model based on the near-field spherical wavefront. We analytically reveal the impact of the discrete aperture and polarization mismatch on the received power. We also complement the classical Fraunhofer distance based on the considered EM channel model. Our analytical results indicate that a limited part of the XL-array receives the majority of the signal power in the near field, which leads to a notion of visibility region (VR) of a user. Thus, we propose a VR detection algorithm and leverage the acquired VR information to devise a low-complexity symbol detection scheme. Furthermore, we propose a graph theory-based user partition algorithm, relying on the VR overlap ratio between different users. Partial zero-forcing (PZF) is utilized to eliminate only the interference from users allocated to the same group, which further reduces computational complexity in matrix inversion. Numerical results confirm the correctness of the analytical results and the effectiveness of the proposed algorithms. It reveals that our algorithms approach the performance of conventional whole array (WA)-based designs but with much lower complexity.}
+}
+
+@article{lu2024tutorial,
+  title={A Tutorial on Near-Field XL-MIMO Communications Toward 6G},
+  author={Lu, Haiquan and Zeng, Yong and You, Changsheng and Han, Yu and Zhang, Jiayi and Wang, Zhe and Dong, Zhenjun and Jin, Shi and Wang, Cheng-Xiang and Jiang, Tao and You, Xiaohu and Zhang, Rui},
+  journal={IEEE Communications Surveys \& Tutorials},
+  year={2024},
+  abstract={Extremely large-scale multiple-input multiple-output (XL-MIMO) is a promising technology for the sixth-generation (6G) mobile communication networks. By significantly boosting the antenna number or size to at least an order of magnitude beyond current massive MIMO systems, XL-MIMO is expected to unprecedentedly enhance the spectral efficiency and spatial resolution for wireless communication. The evolution from massive MIMO to XL-MIMO is not simply an increase in the array size, but faces new design challenges, in terms of near-field channel modeling, performance analysis, channel estimation, and practical implementation. In this article, we give a comprehensive tutorial overview on near-field XL-MIMO communications, aiming to provide useful guidance for tackling the above challenges. First, the basic near-field modeling for XL-MIMO is established, by considering the new characteristics of non-uniform spherical wave (NUSW) and spatial non-stationarity. Next, based on the near-field modeling, the performance analysis of XL-MIMO is presented, including the near-field signal-to-noise ratio (SNR) scaling laws, beam focusing pattern, achievable rate, and degrees-of-freedom (DoF). Furthermore, various XL-MIMO design issues such as near-field beam codebook, beam training, channel estimation, and delay alignment modulation (DAM) transmission are elaborated. Finally, we point out promising directions to inspire future research on near-field XL-MIMO communications.}
+}
+
+@article{cui2022near,
+  title={Near-Field Rainbow: Wideband Beam Training for XL-MIMO},
+  author={Cui, Mingyao and Dai, Linglong and Wang, Zhaocheng and Zhou, Shidong and Ge, Ning},
+  journal={IEEE Transactions on Wireless Communications},
+  year={2022},
+  abstract={Wideband extremely large-scale multiple-input-multiple-output (XL-MIMO) plays an important role in boosting the data rate for 6G networks. Because of the huge bandwidth and the large number of antennas, wideband XL-MIMO introduces a significant near-field beam split effect, where beams at different frequencies are focused on different locations. This effect results in a severe array gain loss, and existing works mainly consider to compensate for this loss by utilizing time-delay (TD) beamforming. This paper demonstrates that despite degrading the array gain, the near-field beam split effect can also contribute to the fast near-field beam training. Specifically, we first reveal the controllable near-field beam split effect. This effect indicates that TD beamforming can control the degree of the near-field beam split effect, i.e., beams at different frequencies can flexibly occupy the desired location range. Due to the similarity with the dispersion of natural light caused by a prism, we also call this effect as “near-field rainbow”. Then, by taking advantage of the near-field rainbow, a fast wideband beam training scheme is proposed to generate beams focusing on multiple locations at multiple frequencies with the help of TD beamforming. Finally, simulation results demonstrate that the proposed scheme is able to realize efficient near-field beam training with low training overheads.}
+}
+
+@article{lu2024subarray,
+  title={Subarray-Aware Beam-Split Pattern Detection for Near-Field XL-MIMO Channel Estimation},
+  author={Lu, Jiayi and Zhang, Jiayi and Lei, Hao and Xiao, Huahua and Lu, Zhaohua and Ai, Bo},
+  journal={IEEE Transactions on Vehicular Technology},
+  year={2024},
+  abstract={In this correspondence, we investigate the uplink channel estimation for mmWave extremely large-scale multiple-input multiple-output (XL-MIMO) communication system. Our primary emphasis is on addressing the near-field effects that arise in wideband scenarios, including spherical wave propagation, spatial non-stationarity, and beam-split effect. As a solution, we propose an innovative subarray-aware channel estimation approach based on beam-split pattern detection. Our approach leverages a meticulously designed sensing matrix to extract subarray signals and perform individual wideband channel estimation for each subarray. Corroborated by the Cram\'er-Rao lower bound (CRLB), simulation results show that the proposed scheme outperforms benchmark techniques in terms of normalized mean square error (NMSE) performance while maintaining comparable computational complexity.}
+}
+
+@article{lu2024hybrid,
+  title={Hybrid-Field Beam-Split Pattern Detection-Based Channel Estimation for THz XL-MIMO Systems},
+  author={Lu, Jiayi and Zhang, Jiayi and Lei, Hao and Xiao, Huahua and Lu, Zhaohua and Ai, Bo},
+  journal={IEEE Transactions on Vehicular Technology},
+  year={2024},
+  abstract={In this letter, we delve into the uplink channel estimation for terahertz extremely large-scale multiple-input multiple-output (XL-MIMO) communication systems, focusing on both the polar and the angle domains. Specifically, we explore the pervasive implementation of hybrid-field communication in XL-MIMO scenarios, addressing challenges such as the beam-split and power interference effects caused by bandwidth expansion and dense scatterer environments. As a solution, we present a hybrid-field channel estimation approach that utilizes the beam-split pattern detection method. Furthermore, to enhance the estimation accuracy, we prioritize the near-field channel estimation and minimize its impact on the far-field path components as much as possible. Simulation results validate that the proposed hybrid-field scheme outperforms benchmark algorithms in normalized mean square error (NMSE) performance.}
+}
+
+@article{gao2024deep,
+  title={Deep unfolding based channel estimation for wideband terahertz near-field massive MIMO systems},
+  author={Gao, Jiabao and Chen, Xiaoming and Li, Geoffrey Ye},
+  journal={Frontiers of Information Technology \& Electronic Engineering},
+  year={2024},
+  abstract={The combination of terahertz and massive multiple-input multiple-output (MIMO) is promising for meeting the increasing data rate demand of future wireless communication systems thanks to the significant bandwidth and spatial degrees of freedom. However, unique channel features, such as the near-field beam split effect, make channel estimation particularly challenging in terahertz massive MIMO systems. On one hand, adopting the conventional angular domain transformation dictionary designed for low-frequency far-field channels will result in degraded channel sparsity and destroyed sparsity structure in the transformed domain. On the other hand, most existing compressive sensing based channel estimation algorithms cannot achieve high performance and low complexity simultaneously. To alleviate these issues, in this study, we first adopt frequency-dependent near-field dictionaries to maintain good channel sparsity and sparsity structure in the transformed domain under the near-field beam split effect. Then, a deep unfolding based wideband terahertz massive MIMO channel estimation algorithm is proposed. In each iteration of the approximate message passing-sparse Bayesian learning algorithm, the optimal update rule is learned by a deep neural network (DNN), whose architecture is customized to effectively exploit the inherent channel patterns. Furthermore, a mixed training method based on novel designs of the DNN architecture and the loss function is developed to effectively train data from different system configurations. Simulation results validate the superiority of the proposed algorithm in terms of performance, complexity, and robustness.}
+}
+
+@article{yang2025deep,
+  title={Deep Learning-Based Near-Field Wideband Channel Estimation: A Joint LISTA-CP Approach},
+  author={Yang, Jiapan and Ai, Bo and Chen, Wei and Yang, Songjie and Shi, Guowei and Wang, Ning and Yuen, Chau},
+  journal={IEEE Transactions on Vehicular Technology},
+  year={2025},
+  abstract={Extremely large-scale multiple-input-multipleoutput (XL-MIMO) is listed as one of the key 6G candidate technologies due to its ability to exponentially increase the communication spectrum efficiency. However, wideband XLMIMO channel estimation faces a new challenge known as near-field beam split effect. To cope with this challenge, we propose a deep learning based joint learned iterative shrinkage thresholding algorithm with partial weight-coupling (Joint LISTA-CP) to accurately recover the channel. Specifically, by studying the characteristics of the near-field wideband channel, we employ a frequency-dependent polar domain dictionary to ensure that the sparse polar domain channel vectors across different subcarriers share a common sparse support. Then, we transform the near-field wideband channel estimation problem into a multiple measurement vector recovery problem. Utilizing the common sparsity structure of different subcarriers, we design the Joint LISTA-CP network that integrates multiple subnetworks. The proposed network employs a multidimensional shrinkage thresholding operator to guarantee the common sparse property of different subcarrier channels. In addition, we rigorously demonstrate that the Joint LISTA-CP network achieves lower recovery error. Simulation results show that the Joint LISTA-CP method enhances the estimation accuracy of the near-field wideband channels.}
+}
+
+@article{ruan2024wideband,
+  title={Wideband Near-Field Channel Covariance Estimation for XL-MIMO Systems in the Face of Beam Split},
+  author={Ruan, Chengyao and Zhang, Zaichen and Jiang, Hao and Dang, Jian and Wu, Liang and Zhang, Hongming},
+  journal={IEEE Transactions on Vehicular Technology},
+  year={2024},
+  abstract={Extremely large-scale multiple-input-multiple-output (XL-MIMO) techniques are capable of boosting the throughput of next 6G networks. However, due to the large number of antennas in the wideband XL-MIMO systems, they suffer from the so-called near-field beam split effect, where beams at different frequencies are focused on different locations. This effect imposes a severe performance loss on near-field channel estimation. To address this issue, in this paper, we investigate the wideband near-field channel covariance estimation problem of XL-MIMO systems. Explicitly, we first propose a sophisticated polar-domain dictionary for the wideband near-field channel at different frequencies. Specifically, the proposed polar-domain dictionary consists of several sub-matrices. For each sub-matrix, the angle is sampled from a unique range while the distance is sampled from the same range. Meanwhile, considering the beam split effect, we construct the corresponding dictionaries for different frequencies that can beneficially adjust the grid of the sampled angles and distances. Then we propose an algorithm termed as the correlation coefficient sparsity adaptive matching pursuit relying on parameter refinement (CCSAMP-PR) to reconstruct the near-field channel without any prior knowledge of the channel sparsity. More explicitly, an iterative parameter refinement step is conceived for gradually refining the angles and distances per iteration. Furthermore, the proposed algorithm is capable of adaptively adjusting its step size for ensuring rapid convergence. Finally, numerical results are provided for demonstrating that both our proposed polar-domain dictionary and CCSAMP-PR algorithm outperform the family of existing schemes.}
+}
+
+@article{amiri2018extremely,
+  title={Extremely Large Aperture Massive MIMO: Low Complexity Receiver Architectures},
+  author={Amiri, Abolfazl and Angjelichinoski, Marko and de Carvalho, Elisabeth and Heath, Robert W.},
+  journal={VBN Forskningsportal (Aalborg Universitet)},
+  year={2018},
+  abstract={This paper focuses on new communication paradigms arising in massive multiple-input-multiple-output systems where the antenna array at the base station is of extremely large dimension (xMaMIMO). Due to the extreme dimension of the array, xMaMIMO is characterized by spatial non-stationary field properties along the array; this calls for a multi-antenna transceiver design that is adapted to the array dimension but also its non-stationary properties. We address implementation aspects of xMaMIMO, with computational efficiency as our primary objective. To reduce the computational burden of centralized schemes, we distribute the processing into smaller, disjoint sub-arrays. Then, we consider several low-complexity data detection algorithms as candidates for uplink communication in crowded xMaMIMO systems. Drawing inspiration from coded random access, one of the main contributions of the paper is the design of low complexity scheme that exploits the non-stationary nature of xMaMIMO systems and where the data processing is decentralized. We evaluate the bit-error-rate performance of the transceivers in crowded xMaMIMO scenarios. The results confirm their practical potential.}
+}
+
+@article{kumar2025eran,
+  title={An ERAN-Based Dynamic Graph Neural Network for CSI Prediction in Massive MIMO Systems},
+  author={Kumar, Ravi and Rathinam, Manivasakan},
+  journal={IEEE Wireless Communications Letters},
+  year={2025},
+  abstract={Accurate channel state information (CSI) prediction is critical for massive MIMO systems operating under high user mobility. In this letter, we adapt the evolving relational attention network (ERAN)—a generic spatio-temporal graph neural network (GNN)—for CSI prediction. ERAN dynamically learns evolving adjacency matrices using a gated recurrent unit (GRU)-driven evolving graph learning (EGL) module, enabling it to capture dependencies among multiple variables. Unlike static graph models such as the spectral-temporal (STEM) GNN, ERAN adapts to dynamic channel behavior. Experiments show that at high mobility ($\mu = 120$ km/h), ERAN achieves a 34.93\% reduction in root-mean-square error (RMSE) compared to STEM, while incurring only a 5.64\% drop in spectral efficiency (SE), in contrast to STEM’s 15.1\% degradation—demonstrating nearly three times higher temporal robustness under severe dynamic conditions. These findings highlight ERAN’s superior ability to generalize over time by effectively capturing fast-varying channel dynamics caused by high Doppler shifts and other environmental factors such as fading, scattering.}
+}
+
+@article{li2022edge,
+  title={Edge Graph Neural Networks for Massive MIMO Detection},
+  author={Li, Hongyi and Wang, Junxiang and Wang, Yongchao},
+  journal={arXiv preprint arXiv:2205.00000}, 
+  year={2022},
+  abstract={Massive Multiple-Input Multiple-Out (MIMO) detection is an important problem in modern wireless communication systems. While traditional Belief Propagation (BP) detectors perform poorly on loopy graphs, the recent Graph Neural Networks (GNNs)-based method can overcome the drawbacks of BP and achieve superior performance. Nevertheless, direct use of GNN ignores the importance of edge attributes and suffers from high computation overhead using a fully connected graph structure. In this paper, we propose an efficient GNN-inspired algorithm, called the Edge Graph Neural Network (EGNN), to detect MIMO signals. We first compute graph edge weights through channel correlation and then leverage the obtained weights as a metric to evaluate the importance of neighbors of each node. Moreover, we design an adaptive Edge Drop (ED) scheme to sparsify the graph such that computational cost can be significantly reduced. Experimental results demonstrate that our proposed EGNN achieves better or comparable performance to popular MIMO detection methods for different modulation schemes and costs the least detection time compared to GNN-based approaches.}
+}
+
+@article{he2023message,
+  title={Message Passing Meets Graph Neural Networks: A New Paradigm for Massive MIMO Systems},
+  author={He, Hengtao and Yu, Xianghao and Zhang, Jun and Song, Shenghui and Letaief, Khaled B.},
+  journal={IEEE Transactions on Wireless Communications},
+  year={2023},
+  abstract={As one of the core technologies for 5G systems, massive multiple-input multiple-output (MIMO) introduces dramatic capacity improvements along with very high beamforming and spatial multiplexing gains. When developing efficient physical layer algorithms for massive MIMO systems, message passing is one promising candidate owing to its superior performance. However, as their computational complexity increases dramatically with the problem size, the state-of-the-art message passing algorithms cannot be directly applied to future 6G systems, where an exceedingly large number of antennas are expected to be deployed. To address this issue, we propose a model-driven deep learning (DL) framework, namely the AMP-GNN for massive MIMO transceiver design, by considering the low complexity of the AMP algorithm and adaptability of GNNs. Specifically, the structure of the AMP-GNN network is customized by unfolding the approximate message passing (AMP) algorithm and introducing a graph neural network (GNN) module into it. The permutation equivariance property of AMP-GNN is proved, which enables the AMP-GNN to learn more efficiently and to adapt to different numbers of users. We also reveal the underlying reason why GNNs improve the AMP algorithm from the perspective of expectation propagation, which motivates us to amalgamate various GNNs with different message passing algorithms. In the simulation, we take the massive MIMO detection to exemplify that the proposed AMP-GNN significantly improves the performance of the AMP detector, achieves comparable performance as the state-of-the-art DL-based MIMO detectors, and presents strong robustness to various mismatches.}
+}
+
+@article{he2023gnn,
+  title={GNN-Enhanced Approximate Message Passing for Massive/Ultra-Massive MIMO Detection},
+  author={He, Hengtao and Kosasih, Alva and Yu, Xianghao and Zhang, Jun and Song, Shenghui and Hardjawana, Wibowo and Letaief, Khaled B.},
+  journal={Rare \& Special e-Zone (The Hong Kong University of Science and Technology)},
+  year={2023},
+  abstract={Efficient massive/ultra-massive multiple-input multiple-output (MIMO) detection algorithms with satisfactory performance and low complexity are critical to meet the high throughput and ultra-low latency requirements in 5G and beyond communications, given the extremely large number of antennas. In this paper, we propose a low complexity graph neural network (GNN) enhanced approximate message passing (AMP) algorithm, AMP-GNN, for massive/ultra-massive MIMO detection. The structure of the neural network is customized by unfolding the AMP algorithm and introducing the GNN module for multiuser interference cancellation. Numerical results will show that the proposed AMP-GNN significantly improves the performance of the AMP detector and achieves comparable performance as the state-of-the-art deep learning-based MIMO detectors but with reduced computational complexity. Furthermore, it presents strong robustness to the change of the number of users.}
+}
+
+@article{xu2023mimo,
+  title={MIMO Detection Based on Graph Neural Network with Belief Propagation},
+  author={Xu, Tianli and Tan, Xiaosi and Zhang, Zaichen and You, Xiaohu and Zhang, Chuan},
+  journal={Unknown},
+  year={2023},
+  abstract={Graph neural network (GNN) has been considered for massive multiple-inputmultiple-output (MIMO) detection recently due to its strong capability in solving graph-based classification problems. However, current GNN detectors still struggle between performance and complexity under high order modulations. In this paper, we propose a novel GNN-based MIMO detector named GNN-BP, which combines GNN and belief propagation (BP) messages. The GNN is constructed based on the Markov random field (MRF) MIMO model, while extra node features are introduced from BP as a supplement to effectively enhance the detection performance with acceptable extra cost. Simulation results show that the proposed GNN-BP detector can outperform state-of-the-art (SOA) GNN-based detectors, and achieves similar performance as GNN with expectation propagation (GEP) with much lower computational cost.}
+}
+
+@article{scotti2020graph,
+  title={Graph Neural Networks for Massive MIMO Detection},
+  author={Scotti, Andrea and Moghadam, Nima N. and Liu, Dong and Gafvert, Karl and Huang, Jinliang},
+  journal={arXiv preprint arXiv:2007.00000},
+  year={2020},
+  abstract={In this paper, we innovately use graph neural networks (GNNs) to learn a message-passing solution for the inference task of massive multiple multiple-input multiple-output (MIMO) detection in wireless communication. We adopt a graphical model based on the Markov random field (MRF) where belief propagation (BP) yields poor results when it assumes a uniform prior over the transmitted symbols. Numerical simulations show that, under the uniform prior assumption, our GNN-based MIMO detection solution outperforms the minimum mean-squared error (MMSE) baseline detector, in contrast to BP. Furthermore, experiments demonstrate that the performance of the algorithm slightly improves by incorporating MMSE information into the prior.}
+}
+
+@article{liu2024near,
+  title={Near-Field Multiuser Beam-Training for Extremely Large-Scale MIMO Systems},
+  author={Liu, Wang and Pan, Cunhua and Ren, Hong and Wang, Jiangzhou and Schober, Robert},
+  journal={IEEE Transactions on Communications},
+  year={2024},
+  abstract={Extremely large-scale multiple-input multiple-output (XL-MIMO) systems are capable of improving spectral efficiency by employing far more antennas than conventional massive MIMO at the base station (BS). However, beam training in multiuser XL-MIMO systems is challenging. Firstly, new near-field channel models and near-field XL-MIMO transmit beamforming (TBF) codebooks have to be adopted due to the dramatic increase in the number of antennas, which results in an excessive pilot overhead for beam training. Secondly, when the user density is high, the wireless propagation environments of the adjacent users are similar and hence the pilot signals received by the BS from different users appear to be interrelated, which is potentially beneficial but difficult to exploit. Thirdly, different users might share the same beam-direction, which causes excessive inter-user interference. To tackle these issues, we conceive a three-phase graph neural network (GNN)-based beam training scheme for multiuser XL-MIMO systems. In the first phase, only far-field wide beams have to be tested for each user and the GNN is utilized to map the beamforming gain information of the far-field wide beams to the best available near-field codeword for each user. In addition, the proposed GNN-based scheme can exploit the position-correlation between adjacent users for further improvement of the accuracy of beam training. In the second phase, a beam allocation scheme based on the probability vectors produced at the outputs of GNNs is proposed to address the above beam-direction conflicts between users. In the third phase, the hybrid TBF is designed for further reducing the inter-user interference. Our simulation results show that the proposed scheme significantly improves beam training accuracy and reduces pilot overhead compared to traditional neural network-based benchmarks. Hence it is more suitable for multiuser XL-MIMO systems. Moreover, the performance of the proposed beam training scheme approaches that of an exhaustive search, despite requiring only about 7% of the pilot overhead.}
+}
+
+@article{li2024graph,
+  title={Graph Neural Network Based Hybrid Beamforming Design in Wideband Terahertz MIMO-OFDM Systems},
+  author={Li, Beier and Vu, Mai},
+  journal={Unknown},
+  year={2024},
+  abstract={6G wireless technology is projected to adopt higher and wider frequency bands, enabled by highly directional beamforming. However, the vast bandwidths available also make the impact of beam squint in massive multiple input and multiple output (MIMO) systems non-negligible. Traditional approaches such as adding a true-time-delay line (TTD) on each antenna are costly due to the massive antenna arrays required. This paper puts forth a signal processing alternative, specifically adapted to the multicarrier structure of OFDM systems, through an innovative application of Graph Neural Networks (GNNs) to optimize hybrid beamforming. By integrating two types of graph nodes to represent the analog and the digital beamforming matrices efficiently, our approach not only reduces the computational and memory burdens but also achieves high spectral efficiency performance, approaching that of all digital beamforming. The GNN runtime and memory requirement are at a fraction of the processing time and resource consumption of traditional signal processing methods, hence enabling real-time adaptation of hybrid beamforming. Furthermore, the proposed GNN exhibits strong resiliency to beam squinting, achieving almost constant spectral efficiency even as the system bandwidth increases at higher carrier frequencies.}
+}
+
+@article{yu2023deep,
+  title={Deep Learning for Near-Field XL-MIMO Transceiver Design: Principles and Techniques},
+  author={Yu, Wentao and Ma, Yifan and He, Hengtao and Song, Shenghui and Zhang, Jun and Letaief, Khaled B.},
+  journal={arXiv preprint arXiv:2308.00000},
+  year={2023},
+  abstract={Massive multiple-input multiple-output (MIMO) has been a critical enabling technology in 5th generation (5G) wireless networks. With the advent of 6G, a natural evolution is to employ even more antennas, potentially an order of magnitude more, to meet the ever-increasing demand for spectral efficiency. This is beyond a mere quantitative scale-up. The enlarged array aperture brings a paradigm shift towards near-field communications, departing from traditional far-field approaches. However, designing advanced transceiver algorithms for near-field systems is extremely challenging because of the enormous system scale, the complicated channel characteristics, and the uncertainties in the propagation environments. Hence, it is important to develop scalable, low-complexity, and robust algorithms that can efficiently characterize and leverage the properties of the near-field channel. In this article, we discuss the principles and advocate two general frameworks to design deep learning-based near-field transceivers covering both iterative and non-iterative algorithms. Case studies on channel estimation and beam focusing are presented to provide a hands-on tutorial. Finally, we discuss open issues and shed light on future directions.}
+}
+
+@article{li2025graph,
+  title={Graph Neural Network Based Hybrid Beamforming Design in Wideband Terahertz MIMO-OFDM Systems},
+  author={Li, Beier and Vu, Mai},
+  journal={arXiv preprint arXiv:2501.00000},
+  year={2025},
+  abstract={6G wireless technology is projected to adopt higher and wider frequency bands, enabled by highly directional beamforming. However, the vast bandwidths available also make the impact of beam squint in massive multiple input and multiple output (MIMO) systems non-negligible. Traditional approaches such as adding a true-time-delay line (TTD) on each antenna are costly due to the massive antenna arrays required. This paper puts forth a signal processing alternative, specifically adapted to the multicarrier structure of OFDM systems, through an innovative application of Graph Neural Networks (GNNs) to optimize hybrid beamforming. By integrating two types of graph nodes to represent the analog and the digital beamforming matrices efficiently, our approach not only reduces the computational and memory burdens but also achieves high spectral efficiency performance, approaching that of all digital beamforming. The GNN runtime and memory requirement are at a fraction of the processing time and resource consumption of traditional signal processing methods, hence enabling real-time adaptation of hybrid beamforming. Furthermore, the proposed GNN exhibits strong resiliency to beam squinting, achieving almost constant spectral efficiency even as the system bandwidth increases at higher carrier frequencies.}
+}
+
+@article{iqbal2025machine,
+  title={Machine Learning in Near-Field Communication for 6G: A Survey},
+  author={Iqbal, Amjad and Al-Habashna, Ala'a and Wainer, Gabriel and Boudreau, Gary},
+  journal={Unknown},
+  year={2025},
+  abstract={6G wireless communication networks are expected to use extremely large-scale antenna arrays (ELAAs) to support higher throughput, massive connectivity, and improved system performance. ELAAs would fundamentally alter wave characteristics, transforming them from plane waves into spherical waves, thereby operating in the near field. Near-field communications (NFC) offer unique advantages to enhance system performance, but also present significant challenges in channel modeling, computational complexity, and beamforming design. The use of machine learning (ML) is emerging as a powerful approach to tackle such challenges and has the capabilities to enable intelligent, secure, and efficient 6G wireless communications. In this survey, we discuss ML-driven approaches for NFC. We first outline the fundamental concepts of NFC and ML. We then discuss ML applications in channel estimation, beamforming design, and security enhancement. We also highlight key challenges (e.g., data privacy and computational overhead). Finally, we discuss open issues and future directions to emphasize the role of advanced ML techniques in near-field system design.}
+}
+
+@article{li2025graph,
+  title={Graph Neural Network Based Hybrid Beamforming Design in Wideband Terahertz MIMO-OFDM Systems},
+  author={Li, Beier and Vu, Mai},
+  journal={arXiv preprint arXiv:2501.00000},
+  year={2025},
+  abstract={6G wireless technology is projected to adopt higher and wider frequency bands, enabled by highly directional beamforming. However, the vast bandwidths available also make the impact of beam squint in massive multiple input and multiple output (MIMO) systems non-negligible. Traditional approaches such as adding a true-time-delay line (TTD) on each antenna are costly due to the massive antenna arrays required. This paper puts forth a signal processing alternative, specifically adapted to the multicarrier structure of OFDM systems, through an innovative application of Graph Neural Networks (GNNs) to optimize hybrid beamforming. By integrating two types of graph nodes to represent the analog and the digital beamforming matrices efficiently, our approach not only reduces the computational and memory burdens but also achieves high spectral efficiency performance, approaching that of all digital beamforming. The GNN runtime and memory requirement are at a fraction of the processing time and resource consumption of traditional signal processing methods, hence enabling real-time adaptation of hybrid beamforming. Furthermore, the proposed GNN exhibits strong resiliency to beam squinting, achieving almost constant spectral efficiency even as the system bandwidth increases at higher carrier frequencies.}
+}
+
+@article{amiri2021distributed,
+  title={Distributed Receiver Processing for Extra-Large MIMO Arrays: A Message Passing Approach},
+  author={Amiri, Abolfazl and Rezaie, Sajad and Manch{\'o}n, Carles Navarro and de Carvalho, Elisabeth},
+  journal={IEEE Transactions on Wireless Communications},
+  year={2021},
+  abstract={We study the design of receivers in extra-large scale MIMO (XL-MIMO) systems, i.e. systems in which the base station is equipped with an antenna array of extremely large dimensions. While XL-MIMO can significantly increase the system’s spectral efficiency, they present two important challenges. One is the increased computational cost of multi-antenna processing. The second one is the presence of spatial non-stationarities in the channel response, which imply that the mean energy of a given user’s signal varies across the array. Such non-stationarities limit the performance of the system. In this paper, we propose a distributed receiver for such an XL-MIMO system that can address both challenges. Based on variational message passing (VMP), we propose a set of receiver options providing a range of complexity-performance characteristics to adapt to different requirements. Furthermore, we distribute the processing into local processing units (LPU), that can perform most of the complex processing in parallel, before sharing their outcome with a central processing unit (CPU). Our designs are specifically tailored to exploit the spatial non-stationarities and require lower computations than linear receivers. Our simulation study, performed with a channel model accounting for the special characteristics of XL-MIMO channels, confirms the superior performance of our proposals compared to the state of the art methods.}
+}
+
+@article{tang2024joint,
+  title={Joint Visibility Region and Channel Estimation for Extremely Large-Scale MIMO Systems},
+  author={Tang, Anzheng and Wang, Jun-Bo and Pan, Yijin and Zhang, Wence and Zhang, Xiaodan and Chen, Yijian and Yu, Hongkang and de Lamare, Rodrigo C.},
+  journal={IEEE Transactions on Communications},
+  year={2024},
+  abstract={In this work, we investigate the joint visibility region (VR) detection and channel estimation (CE) problem for extremely large-scale multiple-input-multiple-output (XL-MIMO) systems considering both the spherical wavefront effect and spatial non-stationary (SnS) property. Unlike existing SnS CE methods that rely on the statistical characteristics of channels in the spatial or delay domain, we propose an approach that simultaneously exploits the antenna-domain spatial correlation and the wavenumber-domain sparsity of SnS channels. To this end, we introduce a two-stage VR detection and CE scheme. In the first stage, the belief regarding the visibility of antennas is obtained through a VR detection-oriented message passing (VRDO-MP) scheme, which fully exploits the spatial correlation among adjacent antenna elements. In the second stage, leveraging the VR information and wavenumber-domain sparsity, we accurately estimate the SnS channel employing the belief-based orthogonal matching pursuit (BB-OMP) method. Simulations show that the proposed algorithms lead to a significant enhancement in VR detection and CE accuracy as compared to existing methods, especially in low signal-to-noise ratio (SNR) scenarios.}
+}
+
+@article{xu2024joint,
+  title={Joint Visibility Region Detection and Channel Estimation for XL-MIMO Systems via Alternating MAP},
+  author={Xu, Wenkang and Liu, An and Zhao, Minjian},
+  journal={arXiv preprint arXiv:2401.00000},
+  year={2024},
+  abstract={We investigate a joint visibility region (VR) detection and channel estimation problem in extremely large-scale multiple-input-multiple-output (XL-MIMO) systems, where near-field propagation and spatial non-stationary effects exist. In this case, each scatterer can only see a subset of antennas, i.e., it has a certain VR over the antennas. Because of the spatial correlation among adjacent sub-arrays, VR of scatterers exhibits a two-dimensional (2D) clustered sparsity. We design a 2D Markov prior model to capture such a structured sparsity. Based on this, a novel alternating maximum a posteriori (MAP) framework is developed for high-accuracy VR detection and channel estimation. The alternating MAP framework consists of three basic modules: a channel estimation module, a VR detection module, and a grid update module. Specifically, the first module is a low-complexity inverse-free variational Bayesian inference (IF-VBI) algorithm that avoids the matrix inverse via minimizing a relaxed Kullback-Leibler (KL) divergence. The second module is a structured expectation propagation (EP) algorithm which has the ability to deal with complicated prior information. And the third module refines polar-domain grid parameters via gradient ascent. Simulations demonstrate the superiority of the proposed algorithm in both VR detection and channel estimation.}
+}
+
+@inproceedings{iimori2022grant,
+  title={Grant-Free Access for Extra-Large MIMO Systems Subject to Spatial Non-Stationarity},
+  author={Iimori, Hiroki and Takahashi, Takumi and Rou, Hyeon Seok and Ishibashi, Koji and de Abreu, Giuseppe Thadeu Freitas and Gonz{\'a}lez G., David and Gonsa, Osvaldo},
+  booktitle={ICC 2022 - IEEE International Conference on Communications},
+  year={2022},
+  abstract={In this paper, we propose a novel joint activity and channel estimation (JACE) algorithm for grant-free extra large MIMO (XL-MIMO) systems subject to spatial non-stationarity phenomena by means of a Bayesian bilinear inference framework. In XL-MIMO systems, the signal from each user is visible only by a small portion of its antenna arrays, which are typically distributed over the surface of a certain structure. The sporadic user activity due to grant-free access, as well as the spatial non-stationarity, jointly imposes a challenging JACE problem involving a nested Bernoulli-Gaussian random variable. In order to address this issue, we decompose the latter into a bilinear inference problem of two independent random quantities, deriving novel message passing rules based on Gaussian approximation and bilinear inference. Performance evaluation via software simulations is offered to demonstrate the effectiveness of the proposed algorithm, which achieves the Genie-aided ideal estimation performance.}
+}
+

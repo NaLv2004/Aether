@@ -1,0 +1,35 @@
+\section{System Model}
+
+\subsection{Narrowband Near-Field XL-MIMO System}
+Consider an uplink extremely large-scale multiple-input multiple-output (XL-MIMO) communication system, where a base station (BS) equipped with an $N$-element uniform linear array (ULA) serves $K$ single-antenna users. The antennas at the BS are uniformly spaced with an inter-element distance $d = \lambda_c / 2$, where $\lambda_c$ denotes the carrier wavelength. The physical coordinates of the $n$-th BS antenna are given by $\mathbf{q}_n = [0, (n - 1 - N/2)d, 0]^T$ for $n = 1, 2, \dots, N$. The $K$ users are randomly distributed within the Fresnel near-field region of the BS array. The coordinates of the $k$-th user are denoted by $\mathbf{p}_k = [D_k \cos\theta_k, D_k \sin\theta_k, 0]^T$, where $D_k$ represents the radial distance from the center of the ULA to the $k$-th user, and $\theta_k \in [-\pi/2, \pi/2]$ is the corresponding azimuth angle. In the near-field regime, the traditional far-field planar wave assumption becomes invalid. Consequently, electromagnetic propagation must be characterized by an exact spherical wave model. The Euclidean distance between the $n$-th BS antenna and the $k$-th user is given by $r_{n,k} = \|\mathbf{p}_k - \mathbf{q}_n\|_2$. Accordingly, the narrowband near-field channel coefficient between the $k$-th user and the $n$-th antenna is modeled as
+\begin{equation}
+    \tilde{H}_{n,k} = \frac{\lambda_c}{4\pi r_{n,k}} e^{-j \frac{2\pi}{\lambda_c} r_{n,k}},
+\end{equation}
+where the amplitude term $\frac{\lambda_c}{4\pi r_{n,k}}$ captures the free-space path loss, and the exponential term $e^{-j \frac{2\pi}{\lambda_c} r_{n,k}}$ represents the phase shift induced by the spherical wave propagation delay.
+
+\subsection{Spatial Non-Stationarity and Visibility Region}
+Given the physically large aperture of the XL-MIMO array and the relative proximity of the users, the signal energy radiated by a specific user is not uniformly distributed across all BS antennas. Instead, the signal is predominantly captured by a localized, contiguous subset of antennas, a phenomenon referred to as spatial non-stationarity. To mathematically model this effect, a visibility region (VR) mask matrix $\mathbf{M} \in \mathbb{R}^{N \times K}$ is defined. For the $k$-th user, the signal is assumed to be visible only to a subset of antennas centered around an index $c_k \in \{1, 2, \dots, N\}$ with a visibility radius $R_v$. The elements of the VR mask matrix are thus given by
+\begin{equation}
+    M_{n,k} = 
+    \begin{cases} 
+        1, & \text{if } |n - c_k| \le R_v, \\
+        0, & \text{otherwise}.
+    \end{cases}
+\end{equation}
+Incorporating spatial non-stationarity, the effective narrowband channel matrix $\mathbf{H} \in \mathbb{C}^{N \times K}$ is expressed as the Hadamard product of the VR mask matrix and the spherical wave channel matrix, i.e., $\mathbf{H} = \mathbf{M} \odot \tilde{\mathbf{H}}$, where $[\tilde{\mathbf{H}}]_{n,k} = \tilde{H}_{n,k}$. The application of the VR mask naturally induces a sparse structure in the channel matrix $\mathbf{H}$, which can be exploited to mitigate the computational complexity of subsequent signal processing algorithms.
+
+\subsection{Wideband OFDM System and Near-Field Beam Splitting}
+To support ultra-high data rates, the system model is extended to a wideband orthogonal frequency-division multiplexing (OFDM) architecture operating in the terahertz (THz) band. Let $f_c$ denote the center frequency and $B$ denote the total system bandwidth, which is uniformly divided into $F$ orthogonal subcarriers. The frequency of the $m$-th subcarrier is given by $f_m = f_c + \frac{B}{F}(m - 1 - F/2)$ for $m = 1, 2, \dots, F$. In wideband THz XL-MIMO systems, propagation characteristics become highly frequency-dependent. The wideband near-field channel coefficient for the $m$-th subcarrier is formulated as
+\begin{equation}
+    H_{n,k,m} = M_{n,k} \frac{c}{4\pi f_m r_{n,k}} e^{-j \frac{2\pi f_m}{c} r_{n,k}},
+\end{equation}
+where $c$ is the speed of light. The frequency-dependent phase shift $e^{-j \frac{2\pi f_m}{c} r_{n,k}}$ induces the near-field beam splitting effect. Specifically, the spatial focusing point of the array shifts across different subcarriers, implying that the effective VR for a given user may vary with frequency. This frequency-dependent spatial non-stationarity poses a significant challenge for wideband channel estimation and signal detection, as static processing architectures fail to capture subcarrier-varying spatial features.
+
+\subsection{Signal Transmission and Problem Formulation}
+Let $\mathbf{x}_m = [x_{1,m}, x_{2,m}, \dots, x_{K,m}]^T \in \mathbb{C}^{K \times 1}$ denote the vector of transmitted symbols from the $K$ users on the $m$-th subcarrier. The symbols are drawn from a modulation constellation (e.g., quadrature phase-shift keying, QPSK) such that $\mathbb{E}[\mathbf{x}_m \mathbf{x}_m^H] = \mathbf{I}_K$. The received signal vector $\mathbf{y}_m \in \mathbb{C}^{N \times 1}$ at the BS on the $m$-th subcarrier is modeled as
+\begin{equation}
+    \mathbf{y}_m = \mathbf{H}_m \mathbf{x}_m + \mathbf{n}_m,
+\end{equation}
+where $\mathbf{H}_m \in \mathbb{C}^{N \times K}$ is the channel matrix for the $m$-th subcarrier with $[\mathbf{H}_m]_{n,k} = H_{n,k,m}$, and $\mathbf{n}_m \sim \mathcal{CN}(\mathbf{0}, \sigma^2 \mathbf{I}_N)$ is the additive white Gaussian noise (AWGN) vector with noise variance $\sigma^2$. 
+
+The primary objective of the detection process is to accurately and efficiently recover the transmitted symbols $\mathbf{x}_m$ from the received signal $\mathbf{y}_m$ across all subcarriers $m = 1, \dots, F$. Traditional linear detection algorithms, such as full-array zero-forcing (ZF) and minimum mean square error (MMSE) detectors, compute the estimated symbols as $\hat{\mathbf{x}}_{m}^{\text{ZF}} = (\mathbf{H}_m^H \mathbf{H}_m)^{-1} \mathbf{H}_m^H \mathbf{y}_m$ and $\hat{\mathbf{x}}_{m}^{\text{MMSE}} = (\mathbf{H}_m^H \mathbf{H}_m + \sigma^2 \mathbf{I}_K)^{-1} \mathbf{H}_m^H \mathbf{y}_m$, respectively. However, these methods necessitate large-scale matrix inversions of size $K \times K$ and involve dense matrix multiplications that scale linearly with the total number of antennas $N$, leading to prohibitive computational complexity in XL-MIMO systems. Furthermore, processing signals from antennas outside a user's VR introduces severe noise accumulation, which degrades detection performance. To establish theoretical performance upper bounds, genie-aided VR-ZF and VR-MMSE detectors are introduced, which assume perfect prior knowledge of the true VR mask $\mathbf{M}$. These genie-aided detectors perform linear detection exclusively on the non-zero elements of the sparse channel matrix $\mathbf{H}_m$, thereby eliminating noise contributions from non-visible antennas. The objective of the proposed methodology is to design a low-complexity, scalable detection algorithm that dynamically discovers the VR and approaches the performance of the genie-aided bounds while effectively compensating for the wideband beam splitting effect.
