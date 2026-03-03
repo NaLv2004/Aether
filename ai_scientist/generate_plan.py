@@ -247,19 +247,7 @@ def run_planner_pipeline(task_id, idea, config: PlannerConfig):
     return result
 
 
-def main():
-    parser = argparse.ArgumentParser(description="AI Scientist - Research Planner")
-    parser.add_argument("--input_file", type=str, default="all_generated_ideas.txt", help="包含Idea的JSON文件路径")
-    # 将输出文件修改为输出文件夹
-    parser.add_argument("--output_dir", type=str, default="final_research_plans", help="输出完整Plan的汇总文件夹路径")
-    parser.add_argument("--log_dir", type=str, default="planner_logs", help="存放Log文件的文件夹路径")
-    parser.add_argument("--max_iters", type=int, default=3, help="每个Idea的师生最大讨论轮数")
-    parser.add_argument("--model_student", type=str, default="gemini-3-pro-high", help="Student Planner使用的模型")
-    parser.add_argument("--model_teacher", type=str, default="gemini-3-pro-high", help="Teacher Planner使用的模型")
-    parser.add_argument("--max_workers", type=int, default=3, help="并发处理的总线程数")
-    # 新增参数：每个 idea 分配的 agent 数量
-    parser.add_argument("--k_agents", type=int, default=3, help="每个Idea分配几对并行的Student和Teacher")
-    
+def generate_plan(parser):
     args = parser.parse_args()
 
     # 初始化配置 (为保证兼容性，仍将 output_dir 赋给原配置类的 output_file 属性)
@@ -346,8 +334,11 @@ def main():
                 json.dump(plans, f, indent=4, ensure_ascii=False)
                 
         print(f"\n全部计划制定完成！各想法的并行汇总计划已成功保存至文件夹: {args.output_dir}")
+        return idea_file_path
     except Exception as e:
         print(f"保存最终结果失败: {e}")
 
 if __name__ == "__main__":
-    main()
+    generate_plan()
+    
+    

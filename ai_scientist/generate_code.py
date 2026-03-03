@@ -343,7 +343,7 @@ def load_plan(plan_file):
     return data.get("Detailed_Plan", []), data.get("Original_Idea", {})
 
 
-def run_experiment(plan_file, model_orchestrator="gemini-3.1-pro-preview", model_coder="gemini-3.1-pro-preview"):
+def run_experiment(plan_file, experiment_dir, log_dir, model_orchestrator="gemini-3.1-pro-preview", model_coder="gemini-3.1-pro-preview"):
     
     plan_steps, idea = load_plan(plan_file)
     if not plan_steps:
@@ -352,7 +352,8 @@ def run_experiment(plan_file, model_orchestrator="gemini-3.1-pro-preview", model
 
     # 1. 创建工作空间
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    workspace_dir = os.path.abspath(os.path.join("experiments", timestamp))
+    # workspace_dir = os.path.abspath(os.path.join("experiments", timestamp))
+    workspace_dir = os.path.abspath(experiment_dir)
     os.makedirs(workspace_dir, exist_ok=True)
     print(f"=== 实验启动 ===")
     print(f"工作空间: {workspace_dir}")
@@ -360,13 +361,13 @@ def run_experiment(plan_file, model_orchestrator="gemini-3.1-pro-preview", model
     print("================\n")
 
     # 2. 初始化 Agents
-    orch_log = os.path.join(workspace_dir, "orchestrator.log")
-    coder_log = os.path.join(workspace_dir, "coder.log")
+    orch_log = os.path.join(log_dir, "orchestrator.log")
+    coder_log = os.path.join(log_dir, "coder.log")
     summary_txt = os.path.join(workspace_dir, "experiment_summary.txt")
     
     orchestrator = LLMAgent(model=model_orchestrator, log_file=orch_log)
     coder = LLMAgent(model=model_coder, log_file=coder_log)
-
+    
     # 状态变量
     past_summaries = []
     base_readme = ""
@@ -581,12 +582,7 @@ def run_experiment(plan_file, model_orchestrator="gemini-3.1-pro-preview", model
     print(f"最终结果与代码保存在: {workspace_dir}")
 
 
-def main():
-    parser = argparse.ArgumentParser(description="AI Scientist - Experiment Performer")
-    parser.add_argument("--plan_file", type=str, default=r"final_research_plans\single_plan.json", help="之前生成的包含计划的JSON文件路径")
-    parser.add_argument("--orchestrator", type=str, default="gemini-3.1-pro-preview", help="Orchestrator 使用的模型")
-    parser.add_argument("--coder", type=str, default="gemini-3.1-pro-preview", help="Coder 使用的模型")
-    
+def generate_code(parser):
     args = parser.parse_args()
     
     if not os.path.exists(args.plan_file):
@@ -596,8 +592,10 @@ def main():
     run_experiment(
         plan_file=args.plan_file,
         model_orchestrator=args.orchestrator,
-        model_coder=args.coder
+        model_coder=args.coder,
+        experiment_dir=args.experiment_dir,
+        log_dir=args.experiment_log_dir
     )
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     generate_code()

@@ -130,77 +130,73 @@ def generate_file_readme(agent, filepath, filename, research_plan, overview):
     
     return response
 
-# def main():
-#     work_dir = r"experiments\\20260301_211831"
-#     parser = argparse.ArgumentParser(description="根据代码依赖关系流式生成全面的科研项目 README")
-#     parser.add_argument("--work_dir", type=str, default=work_dir, help="Python文件所在的工作目录")
-#     parser.add_argument("--plan_file", type=str, default=r"final_research_plans\\single_plan.json", help="科研计划文件(txt/md)的绝对或相对路径")
-#     parser.add_argument("--overview_file", type=str,default=os.path.join(work_dir, "experiment_summary.txt"), help="概述文件(txt/md)的绝对或相对路径")
-#     parser.add_argument("--model", type=str, default="gemini-3.1-pro-preview", help="要使用的LLM模型名称 (默认: gemini-3.1-pro-preview)")
-#     args = parser.parse_args()
+def generate_readme(parser):
+    # work_dir = r"experiments\\20260301_211831"
+    args = parser.parse_args()
 
-#     work_dir = args.work_dir
+    work_dir = args.work_dir
+    log_dir = args.log_dir
     
-#     # 1. 读取科研计划和概述文件
-#     try:
-#         with open(args.plan_file, 'r', encoding='utf-8') as f:
-#             research_plan = f.read()
-#         with open(args.overview_file, 'r', encoding='utf-8') as f:
-#             overview = f.read()
-#     except Exception as e:
-#         print(f"读取计划或概述文件失败: {e}")
-#         return
+    # 1. 读取科研计划和概述文件
+    try:
+        with open(args.plan_file, 'r', encoding='utf-8') as f:
+            research_plan = f.read()
+        with open(args.overview_file, 'r', encoding='utf-8') as f:
+            overview = f.read()
+    except Exception as e:
+        print(f"读取计划或概述文件失败: {e}")
+        return
 
-#     # 2. 解析目录下所有的 Python 文件及依赖树
-#     py_files = get_python_files(work_dir)
-#     if not py_files:
-#         print(f"在工作目录 {work_dir} 中未找到任何 .py 文件。")
-#         return
+    # 2. 解析目录下所有的 Python 文件及依赖树
+    py_files = get_python_files(work_dir)
+    if not py_files:
+        print(f"在工作目录 {work_dir} 中未找到任何 .py 文件。")
+        return
         
-#     dependencies, _ = parse_dependencies(work_dir, py_files)
-#     processing_order = get_processing_order(py_files, dependencies)
+    dependencies, _ = parse_dependencies(work_dir, py_files)
+    processing_order = get_processing_order(py_files, dependencies)
     
-#     print(f"依赖解析完成。文件处理顺序(从叶子到根):")
-#     for idx, f in enumerate(processing_order, 1):
-#         print(f"  {idx}. {f}")
+    print(f"依赖解析完成。文件处理顺序(从叶子到根):")
+    for idx, f in enumerate(processing_order, 1):
+        print(f"  {idx}. {f}")
 
-#     # 3. 初始化 LLMAgent
-#     agent = LLMAgent(model=args.model, temperature=0.3, log_file=os.path.join(work_dir, "readme_agent.log"))
+    # 3. 初始化 LLMAgent
+    agent = LLMAgent(model=args.model, temperature=0.3, log_file=os.path.join(log_dir, "readme_agent.log"))
 
-#     # 4. 遍历处理所有文件并收集汇总内容
-#     all_summaries = []
+    # 4. 遍历处理所有文件并收集汇总内容
+    all_summaries = []
     
-#     for filename in processing_order:
-#         filepath = os.path.join(work_dir, filename)
+    for filename in processing_order:
+        filepath = os.path.join(work_dir, filename)
         
-#         # 针对每个文件调用 LLM
-#         file_md = generate_file_readme(agent, filepath, filename, research_plan, overview)
+        # 针对每个文件调用 LLM
+        file_md = generate_file_readme(agent, filepath, filename, research_plan, overview)
         
-#         # 格式化汇总结果
-#         formatted_summary = f"## 文件: `{filename}`\n\n{file_md}\n\n" + "-"*80 + "\n"
-#         all_summaries.append(formatted_summary)
+        # 格式化汇总结果
+        formatted_summary = f"## 文件: `{filename}`\n\n{file_md}\n\n" + "-"*80 + "\n"
+        all_summaries.append(formatted_summary)
 
-#     # 5. 生成最终汇总文档并保存
-#     final_txt_path = os.path.join(work_dir, "Comprehensive_Project_README.txt")
+    # 5. 生成最终汇总文档并保存
+    final_txt_path = os.path.join(work_dir, "Comprehensive_Project_README.txt")
     
-#     with open(final_txt_path, 'w', encoding='utf-8') as f:
-#         f.write("# 通信科研项目综合总结与说明文档\n\n")
+    with open(final_txt_path, 'w', encoding='utf-8') as f:
+        f.write("# 通信科研项目综合总结与说明文档\n\n")
         
-#         f.write("## 1. 科研计划 (Research Plan)\n\n")
-#         f.write(research_plan + "\n\n")
-#         f.write("="*80 + "\n\n")
+        f.write("## 1. 科研计划 (Research Plan)\n\n")
+        f.write(research_plan + "\n\n")
+        f.write("="*80 + "\n\n")
         
-#         f.write("## 2. 执行概述 (Execution Overview)\n\n")
-#         f.write(overview + "\n\n")
-#         f.write("="*80 + "\n\n")
+        f.write("## 2. 执行概述 (Execution Overview)\n\n")
+        f.write(overview + "\n\n")
+        f.write("="*80 + "\n\n")
         
-#         f.write("## 3. 代码文件详细说明 (File Details)\n\n")
-#         f.write("以下文档基于代码依赖关系从底层向上递推生成：\n\n")
-#         for summary in all_summaries:
-#             f.write(summary)
-#             f.write("\n")
+        f.write("## 3. 代码文件详细说明 (File Details)\n\n")
+        f.write("以下文档基于代码依赖关系从底层向上递推生成：\n\n")
+        for summary in all_summaries:
+            f.write(summary)
+            f.write("\n")
             
-#     print(f"\n>>> 任务完成！完整的综合文档已保存至: {final_txt_path}")
+    print(f"\n>>> 任务完成！完整的综合文档已保存至: {final_txt_path}")
 
 # if __name__ == "__main__":
 #     main()
@@ -219,13 +215,7 @@ import subprocess
 from llm import LLMAgent
 
 # ================= 配置参数 =================
-WORKSPACE_DIR = r"D:\\ChannelCoding\\AI-Scientist\\AI-CommScientist\\experiments\\20260301_211831"     # 指定的工作目录（请根据需要修改）
-CONDA_ENV_NAME = "AutoGenOld"            # 运行代码所在的 Conda 环境名称
-MODEL_NAME = "gemini-3.1-pro-preview"              # Executor 主节点使用的模型
-MONITOR_MODEL_NAME = "gemini-3.1-pro-preview" # Orchestrator 监控节点使用的模型
 
-PREVIOUS_SUMMARY_FILE = os.path.join(WORKSPACE_DIR, "PreviousSummary.txt")
-EXECUTE_HISTORY_FILE = os.path.join(WORKSPACE_DIR, "execute_history.txt")
 
 # 监控系统的 System Prompt
 MONITOR_SYSTEM_PROMPT = """你是一个负责监控长期运行任务的 Orchestrator Agent。
@@ -257,7 +247,7 @@ def get_hardware_status():
         pass
     return status_info
 
-def run_command_with_monitoring(script_path, cwd, orchestrator_agent):
+def run_command_with_monitoring(script_path, cwd, orchestrator_agent, CONDA_ENV_NAME):
     """
     在指定工作目录下的 Conda 环境中执行 bat 脚本，并每隔 200 秒交由Orchestrator监控。
     支持Orchestrator中断死循环/错误进程。
@@ -376,13 +366,21 @@ def extract_python_files_from_bat(bat_content):
 
 # ================= 核心执行流程 =================
 
-def main():
+def plan_and_execute_experiments(parser):
+    args = parser.parse_args()
+    WORKSPACE_DIR = parser.workspace_dir    # 指定的工作目录（请根据需要修改）
+    CONDA_ENV_NAME = parser.conda_env_name            # 运行代码所在的 Conda 环境名称
+    MODEL_NAME = parser.model             # Executor 主节点使用的模型
+    MONITOR_MODEL_NAME = parser.model # Orchestrator 监控节点使用的模型
+    LOG_DIR = parser.log_dir
+    PREVIOUS_SUMMARY_FILE = os.path.join(WORKSPACE_DIR, "PreviousSummary.txt")
+    EXECUTE_HISTORY_FILE = os.path.join(WORKSPACE_DIR, "execute_history.txt")
     if not os.path.exists(WORKSPACE_DIR):
         os.makedirs(WORKSPACE_DIR)
 
     # 1. 实例化 Agent
-    executor_agent = LLMAgent(model=MODEL_NAME, log_file=os.path.join(WORKSPACE_DIR, "executor_agent.log"))
-    orchestrator_agent = LLMAgent(model=MONITOR_MODEL_NAME, log_file=os.path.join(WORKSPACE_DIR, "orchestrator_agent.log"))
+    executor_agent = LLMAgent(model=MODEL_NAME, log_file=os.path.join(LOG_DIR, "executor_agent.log"))
+    orchestrator_agent = LLMAgent(model=MONITOR_MODEL_NAME, log_file=os.path.join(LOG_DIR, "orchestrator_agent.log"))
     orchestrator_agent.set_context_len(5)
     # orchestrator_agent = LLMAgent(model=MONITOR_MODEL_NAME, log_file="orchestrator_agent.log")
 
@@ -512,7 +510,7 @@ python main_simulation.py --algo A --antennas 16x8
                 f.write(run_bat_content)
 
             # 运行命令
-            success, stdout, _, monitor_feedback = run_command_with_monitoring(bat_file_path, WORKSPACE_DIR, orchestrator_agent)
+            success, stdout, _, monitor_feedback = run_command_with_monitoring(bat_file_path, WORKSPACE_DIR, orchestrator_agent, CONDA_ENV_NAME)
 
             if not success:
                 # 运行报错或被终止，收集相关 Python 代码以供 Executor 修复
@@ -551,7 +549,7 @@ python main_simulation.py --algo A --antennas 16x8
                         f.write(run_bat_content)
 
                     print(f"[System]提取出修复的bat文件，正在重新运行")
-                    success, stdout, _, monitor_feedback = run_command_with_monitoring(bat_file_path, WORKSPACE_DIR, orchestrator_agent)
+                    success, stdout, _, monitor_feedback = run_command_with_monitoring(bat_file_path, WORKSPACE_DIR, orchestrator_agent, CONDA_ENV_NAME)
             if not success:      
                 continue # 进入下一次 Attempt 进行重跑
 
@@ -612,5 +610,5 @@ python main_simulation.py --algo A --antennas 16x8
     print("[System] =========================================")
 
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
