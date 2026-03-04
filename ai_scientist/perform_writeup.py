@@ -5,6 +5,9 @@ import time
 import datetime
 import requests
 import backoff
+from utils import setup_logger
+
+logger = setup_logger("experiment_run.log")
 
 # 从已有的 llm.py 导入 LLMAgent 及其静态方法
 from llm import LLMAgent
@@ -13,7 +16,7 @@ from llm import LLMAgent
 # 提供的 search_for_papers 函数 (添加了回退所需的回调函数)
 # =====================================================================
 def on_backoff(details):
-    print(f"Backing off {details['wait']:0.1f} seconds after {details['tries']} tries "
+    logger.info(f"Backing off {details['wait']:0.1f} seconds after {details['tries']} tries "
           f"calling function {details['target'].__name__} with args {details['args']} and kwargs "
           f"{details['kwargs']}")
 
@@ -73,7 +76,7 @@ def search_for_papers(query, result_limit=10, engine="openalex"):
             papers = [extract_info_from_work(work) for work in works]
             return papers
         except Exception as e:
-            print(f"[OpenAlex Search Error] {e}")
+            logger.info(f"[OpenAlex Search Error] {e}")
             return None
     else:
         raise NotImplementedError(f"{engine} not supported in this script!")
@@ -120,24 +123,24 @@ class PaperWriterSystem:
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         self.paper_dir = os.path.join("papers", timestamp)
         os.makedirs(self.paper_dir, exist_ok=True)
-        print(f"[*] Created paper directory: {self.paper_dir}")
+        logger.info(f"[*] Created paper directory: {self.paper_dir}")
         
         self.reference_path = os.path.join(self.paper_dir, "reference.bib")
         self.accumulated_latex = {} # 存储已生成的章节 latex
 
     def do_literature_search(self, rounds=10):
-        print("\n=== Starting Literature Search ===")
+        logger.info("\n=== Starting Literature Search ===")
         agent = LLMAgent(model=self.model, temperature=0.5, log_file=os.path.join(self.paper_dir, "lit_search.log"))
         
         # 初始关键词
         current_keywords = "MIMO detection" 
         
         for r in range(rounds):
-            print(f"[*] Literature Search Round {r+1}/{rounds}")
+            logger.info(f"[*] Literature Search Round {r+1}/{rounds}")
             # 获取检索结果
             raw_papers = search_for_papers(current_keywords, result_limit=25)
             if not raw_papers:
-                print("[-] No papers found or search error. Skipping round.")
+                logger.info("[-] No papers found or search error. Skipping round.")
                 continue
                 
             papers_json = json.dumps(raw_papers, indent=2)
@@ -163,14 +166,14 @@ class PaperWriterSystem:
                         bibtex = item.get("reference", "")
                         f.write(bibtex + "\n\n")
                         current_keywords = item.get("new_keywords", current_keywords) # 更新下一轮搜索词
-                print(f"[+] Added {len(json_res)} references.")
+                logger.info(f"[+] Added {len(json_res)} references.")
             else:
-                print("[-] Failed to parse BibTeX JSON in this round.")
+                logger.info("[-] Failed to parse BibTeX JSON in this round.")
         
-        print(f"[+] Literature search complete. References saved to {self.reference_path}")
+        logger.info(f"[+] Literature search complete. References saved to {self.reference_path}")
 
     def orchestrate_plan(self):
-        print("\n=== Starting Orchestrator ===")
+        logger.info("\n=== Starting Orchestrator ===")
         agent = LLMAgent(model=self.model, temperature=0.4, log_file=os.path.join(self.paper_dir, "orchestrator.log"))
         
         sys_prompt = (
@@ -190,7 +193,7 @@ class PaperWriterSystem:
         plan = LLMAgent.robust_extract_json_list(output)
         
         if not plan:
-            print("[-] Critical Error: Orchestrator failed to return valid JSON plan. Using fallback.")
+            logger.info("[-] Critical Error: Orchestrator failed to return valid JSON plan. Using fallback.")
             plan = [
                 {"name": "abstract", "plan": "Summarize the paper briefly.", "figure": ""},
                 {"name": "introduction", "plan": "Introduce the background and contribution.", "figure": ""},
@@ -204,11 +207,11 @@ class PaperWriterSystem:
         with open(os.path.join(self.paper_dir, "paper_plan.json"), "w", encoding="utf-8") as f:
             json.dump(plan, f, indent=4)
             
-        print(f"[+] Orchestrator generated {len(plan)} sections.")
+        logger.info(f"[+] Orchestrator generated {len(plan)} sections.")
         return plan
 
     def write_section(self, section_name, section_plan, figure_plan, refine_times=1):
-        print(f"\n=== Writing Section: {section_name} ===")
+        logger.info(f"\n=== Writing Section: {section_name} ===")
         agent = LLMAgent(model=self.model, temperature=0.3, log_file=os.path.join(self.paper_dir, f"{section_name.replace(' ', '_')}.log"))
         
         # 构建各个 Agent 专属的上下文
@@ -265,7 +268,7 @@ class PaperWriterSystem:
         
         # Refine 循环
         for i in range(refine_times):
-            print(f"[*] Refining {section_name} (Round {i+1}/{refine_times})...")
+            logger.info(f"[*] Refining {section_name} (Round {i+1}/{refine_times})...")
             refine_sys = (
                 "You are an expert editor reviewing the LaTeX code for this section. "
                 "Improve academic tone, ensure absolute objectivity, fix any LaTeX syntax errors (especially pgfplots), "
@@ -290,13 +293,13 @@ class PaperWriterSystem:
                 out_path = os.path.join(self.paper_dir, fname)
                 with open(out_path, "w", encoding="utf-8") as f:
                     f.write(content)
-                print(f"[+] Saved: {fname}")
+                logger.info(f"[+] Saved: {fname}")
                 
                 # 将主文本加入累积历史中（如果不是图片文件）
                 if "fig" not in fname.lower() and fname.endswith(".tex"):
                     main_tex_content += content
         else:
-            print(f"[-] Failed to parse JSON for {section_name}. Saving raw output.")
+            logger.info(f"[-] Failed to parse JSON for {section_name}. Saving raw output.")
             fname = f"{section_name.replace(' ', '_')}.tex"
             with open(os.path.join(self.paper_dir, fname), "w", encoding="utf-8") as f:
                 f.write(output)
@@ -306,7 +309,7 @@ class PaperWriterSystem:
         return main_tex_content
 
     def generate_main_tex(self, plan):
-        print("\n=== Generating main.tex ===")
+        logger.info("\n=== Generating main.tex ===")
         main_path = os.path.join(self.paper_dir, "main.tex")
         
         # 固定的 IEEE Trans 模板头
@@ -369,8 +372,8 @@ class PaperWriterSystem:
         with open(main_path, "w", encoding="utf-8") as f:
             f.write(latex_template)
             
-        print(f"[+] main.tex generated at {main_path}")
-        print("[*] Write-up process completed successfully!")
+        logger.info(f"[+] main.tex generated at {main_path}")
+        logger.info("[*] Write-up process completed successfully!")
 
 
 # =====================================================================
@@ -410,6 +413,6 @@ if __name__ == "__main__":
     test_dir = "experiments\\20260301_211831"
     if not os.path.exists(test_dir):
         os.makedirs(test_dir, exist_ok=True)
-        print(f"Created dummy directory {test_dir}. Please populate it with files (idea.txt, plan.txt, etc.) before full run.")
+        logger.info(f"Created dummy directory {test_dir}. Please populate it with files (idea.txt, plan.txt, etc.) before full run.")
     else:
         perform_writeup(test_dir)

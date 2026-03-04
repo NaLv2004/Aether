@@ -1,0 +1,112 @@
+[
+    {
+        "Task_ID": "idea_2_agent_1",
+        "Original_Idea_Title": "Holographic Near-Field CKM: 3D Focal-Zone Mapping for XL-MIMO",
+        "Original_Idea": {
+            "Name": "H-CKM",
+            "Title": "Holographic Near-Field CKM: 3D Focal-Zone Mapping for XL-MIMO",
+            "Background": "6G XL-MIMO 使通信进入近场区，波束从远场的‘方向’变为近场的‘焦点’。传统的 2D 角度 CKM 无法描述近场波前的球面特性，导致近场波束训练开销巨大（需扫描角度和距离）。",
+            "Hypothesis": "构建‘全息近场焦域地图’，在 3D 地理格点中存储‘最佳聚焦向量’和‘波束深度（Beam Depth）’先验。通过将 3D 空间划分为 Fresnel 区敏感的格点，可以实现位置到近场码本索引的直接映射。",
+            "Methodology": "1. 建立基于物理光学（PO）的近场信道地图模型，存储相位球面度特征。2. 提出一种‘位置-焦域’映射算法，利用深度学习学习硬件非理想对称性下的实际近场波束分布。3. 设计一种基于 CKM 的快速近场波束对准协议，将搜索空间从 3D 极坐标减少到 CKM 建议的候选焦点集合。"
+        },
+        "Final_Decision": "Max_Iters_Reached",
+        "Teacher_Final_Feedback": "请仔细检查你的输出格式，必须包含严谨的Plan列表，并且符合系统要求。",
+        "Detailed_Plan": [
+            {
+                "idx": 1,
+                "name": "XL-MIMO UPA 近场系统模型与 Fresnel 格点划分",
+                "content": "1. **硬件参数**：设置 BS 为 $16 \times 16$ 的均匀平面阵列 (UPA)，位于 x-y 平面。载频 $f_c=30\text{GHz}$，波长 $\\lambda=0.01\text{m}$，天线间隔 $d = \\lambda/2$。天线坐标 $\\mathbf{p}_{m,n} = [(m-7.5)d, (n-7.5)d, 0]^T, m,n \\in \\{0, \\dots, 15\\}$。总天线数 $N=256$。\n2. **近场信道**：用户 (UE) 位于 $\\mathbf{q} = [x, y, z]^T$，距离 $r = \\|\\mathbf{q}\\|_2$。计算瑞利距离 $d_R = 2D^2/\\lambda$ (此处 $D \\approx 0.106\text{m}$，$d_R \\approx 2.25\text{m}$)。信道 $\\mathbf{h} \\in \\mathbb{C}^{N \times 1}$，元素 $h_k = \frac{\\lambda}{4\\pi r_k} e^{-j\frac{2\\pi}{\\lambda}r_k}$，其中 $r_k = \\|\\mathbf{q} - \\mathbf{p}_k\\|_2$。\n3. **3D 空间格点划分**：\n   - 角度 $\theta, \\phi$：在 $[-\\pi/2, \\pi/2]$ 范围内均匀采样，步长根据 $2/N$ 确定。\n   - 距离 $r$：基于 Fresnel 区采样，定义 $r_i = \frac{2D^2}{i\\lambda}$，采样范围从 $0.5\text{m}$ 到 $d_R$。\n4. **波束深度定义**：对于聚焦波束 $\\mathbf{w}(\\mathbf{q}_0)$，定义其波束深度 $\\Delta r$ 为满足 $|\\mathbf{w}^H \\mathbf{h}(\\mathbf{q})|^2 \\ge 0.5 |\\mathbf{w}^H \\mathbf{h}(\\mathbf{q}_0)|^2$ 的径向距离区间长度。",
+                "expected_outcome": "成功编写 Python 代码生成 UPA 信道向量；输出符合 Fresnel 准则的 3D 格点坐标集；验证近场波束的聚焦特性（即在特定距离 $r$ 处功率最大，偏离则下降）。"
+            },
+            {
+                "idx": 2,
+                "name": "基线方法 1：传统 3D 极坐标码本穷举扫描",
+                "content": "1. **码本构建**：根据步骤 1 的格点划分，构建 3D 码本 $\\mathcal{C} = \\{\\mathbf{w}_1, \\dots, \\mathbf{w}_M\\}$，其中 $\\mathbf{w}_i = \\mathbf{h}(\\mathbf{q}_i)/\\|\\mathbf{h}(\\mathbf{q}_i)\\|$。\n2. **扫描逻辑**：对于测试集中的每个 UE 位置 $\\mathbf{q}_{test}$，计算其与码本中所有 $M$ 个波束的内积功率 $P = |\\mathbf{w}_i^H \\mathbf{h}(\\mathbf{q}_{test})|^2$。\n3. **性能记录**：记录最大接收功率对应的索引、可达速率 $R = \\log_2(1+SNR)$ 以及总扫描次数 $M$。",
+                "expected_outcome": "获得理想情况下的性能上限（Optimal Rate）。记录在保证覆盖精度的前提下，巨大的扫描开销（例如 $M > 2000$）。"
+            },
+            {
+                "idx": 3,
+                "name": "基线方法 2：层次化近场波束训练 (Hierarchical Search)",
+                "content": "1. **两阶段对准**：\n   - 阶段 1 (角度域)：在远场码本（仅含角度）中进行粗扫描，确定最佳 $(\theta, \\phi)$。\n   - 阶段 2 (距离域)：在锁定的 $(\theta, \\phi)$ 方向上，针对距离 $r$ 进行 1D 线性扫描或二分搜索。\n2. **性能评估**：记录该方法的接收功率和总扫描次数（$M_{angle} + M_{dist}$）。",
+                "expected_outcome": "相比穷举扫描，开销显著降低（如降至 100 次以内），但在近场区域会因“角度-距离”耦合而产生明显的性能损失（速率下降）。"
+            },
+            {
+                "idx": 4,
+                "name": "创新方案步骤 1：基于物理几何的 3D-CKM 构建与 KDTree 检索",
+                "content": "1. **存储结构**：将步骤 1 中生成的格点中心坐标 $(x, y, z)$ 作为 Key，对应的理想波束向量 $\\mathbf{w}$ 和波束深度 $\\Delta r$ 作为 Value。\n2. **检索优化**：使用 `scipy.spatial.KDTree` 对格点坐标建立索引。当 UE 定位信息输入时，调用 `tree.query()` 进行 $O(\\log M)$ 复杂度的最近邻搜索。\n3. **存储评估**：计算存储 $M$ 个复数向量所需的内存开销（单位：MB）。",
+                "expected_outcome": "实现基于物理位置的 CKM 快速查找。在理想几何信道下，其速率应与穷举基线持平，但对准时间缩短为常数级。"
+            },
+            {
+                "idx": 5,
+                "name": "创新方案步骤 2：非理想环境下的 AI 映射器训练",
+                "content": "1. **非理想性建模**：在仿真中引入硬件偏差：(a) 阵列位置扰动 $\\Delta p \\sim \\mathcal{N}(0, (0.05\\lambda)^2)$；(b) 天线相位偏差 $\\Delta \\phi \\sim \\mathcal{U}(-10^\\circ, 10^\\circ)$。\n2. **数据生成**：在含有偏差的环境中，对 $10,000$ 个随机 UE 坐标进行局部微调搜索，找到实际的最佳波束索引 $y_i$，生成数据集 $\\{(x, y, z)_i, y_i\\}$。\n3. **模型训练**：构建 MLP 神经网络，输入为 3D 坐标，输出为码本索引的概率分布。使用 CrossEntropy 损失函数，训练 50 个 epoch。将数据集按 8:2 划分为训练集和验证集。",
+                "expected_outcome": "训练出一个能补偿硬件非理想性的 AI 映射器。验证集 Top-1 准确率应显著高于直接使用几何公式计算的结果。"
+            },
+            {
+                "idx": 6,
+                "name": "创新方案步骤 3：CKM 引导的 Top-K 快速对准协议",
+                "content": "1. **协议流程**：\n   - 输入：含定位误差 $\\sigma_{pos}$ 的 UE 坐标。\n   - 检索：AI 映射器输出概率最高的前 $K$ 个候选波束索引。\n   - 验证：BS 顺序发送这 $K$ 个波束，UE 反馈最强的一个。\n2. **鲁棒性测试**：改变 $\\sigma_{pos}$（从 $0.1\text{m}$ 到 $1\text{m}$）和 $K$ 值（从 1 到 10），观察接收功率的恢复情况。",
+                "expected_outcome": "实现完整的对准协议逻辑代码。输出曲线显示：在存在定位误差时，Top-5 扫描即可恢复 99% 以上的理想性能，且开销远低于基线 2。"
+            },
+            {
+                "idx": 7,
+                "name": "综合评估与结果量化",
+                "content": "1. **对比图表绘制**：\n   - 图 1：可达速率 vs. 距离（对比 3D 穷举、层次化、几何 CKM、AI-CKM）。\n   - 图 2：扫描开销 vs. 天线规模（展示 CKM 的 $O(K)$ 优势）。\n   - 图 3：速率 vs. 定位误差 $\\sigma_{pos}$（展示 Top-K 协议的鲁棒性）。\n2. **指标汇总**：平均速率、对准成功率（Beam Alignment Probability）、存储空间占用、对准延迟。",
+                "expected_outcome": "生成一组量化对比数据，证明本方案在 XL-MIMO 近场场景下，能以极低的开销（$<1\\%$ 的穷举开销）和较小的存储代价，实现接近最优的聚焦增益。"
+            }
+        ],
+        "Agent_Task_ID": "idea_2_agent_1"
+    },
+    {
+        "Task_ID": "idea_2_agent_2",
+        "Original_Idea_Title": "Holographic Near-Field CKM: 3D Focal-Zone Mapping for XL-MIMO",
+        "Original_Idea": {
+            "Name": "H-CKM",
+            "Title": "Holographic Near-Field CKM: 3D Focal-Zone Mapping for XL-MIMO",
+            "Background": "6G XL-MIMO 使通信进入近场区，波束从远场的‘方向’变为近场的‘焦点’。传统的 2D 角度 CKM 无法描述近场波前的球面特性，导致近场波束训练开销巨大（需扫描角度和距离）。",
+            "Hypothesis": "构建‘全息近场焦域地图’，在 3D 地理格点中存储‘最佳聚焦向量’和‘波束深度（Beam Depth）’先验。通过将 3D 空间划分为 Fresnel 区敏感的格点，可以实现位置到近场码本索引的直接映射。",
+            "Methodology": "1. 建立基于物理光学（PO）的近场信道地图模型，存储相位球面度特征。2. 提出一种‘位置-焦域’映射算法，利用深度学习学习硬件非理想对称性下的实际近场波束分布。3. 设计一种基于 CKM 的快速近场波束对准协议，将搜索空间从 3D 极坐标减少到 CKM 建议的候选焦点集合。"
+        },
+        "Final_Decision": "Pass",
+        "Teacher_Final_Feedback": "Perfect plan.",
+        "Detailed_Plan": [
+            {
+                "idx": 1,
+                "name": "全息近场系统模型建模 (Holographic SWM)",
+                "content": "建立XL-MIMO近场信道模型。设置天线阵列为ULA，天线数 $N=512$，载频 $f_c=30\text{GHz}$，阵列总长度 $D$。定义用户位置为 $\\mathbf{p} = [x, y, z]^T$。信道向量 $\\mathbf{h}$ 的第 $n$ 个元件定义为 $h_n = \\alpha_n e^{-j \frac{2\\pi}{\\lambda} d_n}$。其中：1. 距离 $d_n = \\|\\mathbf{p} - \\mathbf{p}_n\\|_2$，$\\mathbf{p}_n$ 为第 $n$ 个振子的坐标；2. 幅度系数 $\\alpha_n = \frac{\\lambda}{4\\pi d_n} \\cdot \\sqrt{\\cos(\theta_n)}$，其中 $\theta_n$ 是用户方向与天线法线的夹角（体现有效孔径投影损失）。3. 模拟近场瑞利距离 $d_{Rayleigh} = 2D^2/\\lambda$。生成包含 $10^5$ 个样本的数据集，包含位置坐标与对应的复信道向量。",
+                "expected_outcome": "成功生成体现幅度衰减和球面波相位的信道矩阵。验证：靠近阵列边缘的天线增益应明显低于中心天线（幅度非均匀性效应）。"
+            },
+            {
+                "idx": 2,
+                "name": "基线方法实施：远场DFT码本与近场极坐标穷举",
+                "content": "1. 实施远场基线：生成标准DFT码本（$N$个波束），计算在近场区域内的波束成形增益损失。2. 实施近场基线：构建极坐标码本 $\\mathcal{W}_{polar}$，角度采样 $N_\theta=N$，距离采样 $N_r=20$。距离采样遵循 $1/r$ 线性分布。在全空间格点上执行穷举搜索，记录最佳波束索引 $i^*$ 和对应的最大增益 $G_{max}$。记录每个点的搜索复杂度为 $O(N \\cdot N_r)$。",
+                "expected_outcome": "量化远场码本在近场的‘去聚焦’损失（预期>5dB）；获得穷举方案的性能上界，作为后续CKM的对比基准。"
+            },
+            {
+                "idx": 3,
+                "name": "创新方案1：基于焦深（DoF）的非均匀3D格点划分与CKM初始化",
+                "content": "根据物理公式计算波束焦深：$\\Delta r = 2 \\lambda (r/D)^2$。1. 空间划分：在径向（距离方向），格点步长随距离平方增加，而非固定步长；在角度方向，随 $\\sin(\theta)$ 均匀划分。2. CKM存储内容：在每个3D格点中心 $\\mathbf{g}_k$ 处，计算并存储：(a) 最佳聚焦向量 $\\mathbf{w}_k$ 的相位索引；(b) 该波束的‘波束深度（Beam Depth）’先验，即在该波束指向下，增益下降不超过3dB的距离区间 $[r_{min}, r_{max}]$。",
+                "expected_outcome": "构建出一个非均匀采样的3D Focal-Zone CKM。验证：相同覆盖区域内，非均匀格点数应远少于均匀格点，且能覆盖所有近场波束焦点。"
+            },
+            {
+                "idx": 4,
+                "name": "创新方案2：基于残差学习的硬件非理想性AI校准",
+                "content": "考虑实际硬件中存在的相位偏差 $\\Delta \\phi_n$（由制造工艺或温度引起）。1. 构建校准网络：输入为用户粗略位置 $(x, y, z)$，输出为 $N$ 维相位校准向量 $\\Delta \\mathbf{\\Phi}$。2. 训练目标：最小化 CKM 预存波束与实际含噪声信道之间的相位残差。损失函数 $L = \\|\text{angle}(\\mathbf{h}_{real}) - (\text{angle}(\\mathbf{w}_{CKM}) + \\Delta \\mathbf{\\Phi})\\|^2$。3. 模型结构：采用轻量化残差网络（ResNet-MLP），学习从地理位置到硬件偏差的映射，而非直接学习码本索引，提高泛化性。",
+                "expected_outcome": "训练后的AI模型能输出针对特定位置的相位修正值。在存在50度相位噪声的情况下，校准后的波束成形增益恢复到理想值的90%以上。"
+            },
+            {
+                "idx": 5,
+                "name": "创新方案3：基于‘位置-深度’双约束的快速对准协议",
+                "content": "设计基于CKM的低开销对准协议：1. 坐标映射：UE上报GPS坐标 $\\mathbf{p}_{UE}$。2. 深度过滤：从CKM中检索 $\\mathbf{p}_{UE}$ 所在的格点，获取候选波束集合。利用存储的‘波束深度’先验，剔除所有覆盖深度不包含当前距离 $r_{UE}$ 的波束。3. 候选缩减：仅在余下的 $K$（$K \\ll N_r$）个焦域波束内进行快速RSRP扫描。4. 最终对准：结合AI校准向量 $\\Delta \\mathbf{\\Phi}$ 进行相位微调。",
+                "expected_outcome": "实现3D空间的快速波束定位。搜索空间应从 $N \times N_r$ 降至 $K$（通常 $K < 5$），且对准精度不低于穷举搜索。"
+            },
+            {
+                "idx": 6,
+                "name": "性能评估与‘全息’特性分析",
+                "content": "1. 绘制速率-距离曲线：对比远场码本、近场极坐标码本、理想CKM、以及AI校准后的CKM。2. 评估开销：统计不同方案达到相同速率所需的Pilot overhead。3. 鲁棒性分析：在不同定位误差（0.1m到2m）下，测试CKM查询的命中率。4. 可视化：绘制‘全息焦域’热图，展示波束在3D空间中的聚焦形状及深度覆盖范围。",
+                "expected_outcome": "输出对比图表，证明本方案在降低90%以上开销的同时，保持了近场通信的高增益特性，且AI校准有效解决了硬件非理想性问题。"
+            }
+        ],
+        "Agent_Task_ID": "idea_2_agent_2"
+    }
+]

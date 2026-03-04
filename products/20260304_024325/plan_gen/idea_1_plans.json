@@ -1,0 +1,47 @@
+[
+    {
+        "Task_ID": "idea_1_agent_2",
+        "Original_Idea_Title": "Continual Learning-based Incremental CKM for Non-Stationary Environments",
+        "Original_Idea": {
+            "Name": "Inc-CKM",
+            "Title": "Continual Learning-based Incremental CKM for Non-Stationary Environments",
+            "Background": "虽然‘CKMDiff’等生成式模型能构建高质量地图，但在动态环境下，环境特征会发生漂移（Concept Drift）。简单的重新训练会导致对历史静态环境知识的‘灾难性遗忘’。",
+            "Hypothesis": "通过引入持续学习中的‘弹性权重整合（EWC）’或‘知识蒸馏’机制，CKM可以仅利用当前动态遮挡产生的数据进行增量更新，同时通过约束重要权重的变化来保留静态背景层的知识。",
+            "Methodology": "1. 将CKM表示为参数化的神经场（Neural Radiance Fields的变体）；2. 当检测到PDP异常（遮挡发生）时，启动增量学习任务；3. 设计一个正则化损失函数，平衡对新遮挡物特征的拟合与对全局路径损耗梯度的保持；4. 在城市十字路口等高动态场景下验证其对移动‘阴影特征’的追踪能力。"
+        },
+        "Final_Decision": "Timeout",
+        "Teacher_Final_Feedback": "上一轮你的输出不符合JSON规范或缺少Plan字段，请严格按格式重新生成。",
+        "Detailed_Plan": null,
+        "Agent_Task_ID": "idea_1_agent_2"
+    },
+    {
+        "Task_ID": "idea_1_agent_3",
+        "Original_Idea_Title": "Continual Learning-based Incremental CKM for Non-Stationary Environments",
+        "Original_Idea": {
+            "Name": "Inc-CKM",
+            "Title": "Continual Learning-based Incremental CKM for Non-Stationary Environments",
+            "Background": "虽然‘CKMDiff’等生成式模型能构建高质量地图，但在动态环境下，环境特征会发生漂移（Concept Drift）。简单的重新训练会导致对历史静态环境知识的‘灾难性遗忘’。",
+            "Hypothesis": "通过引入持续学习中的‘弹性权重整合（EWC）’或‘知识蒸馏’机制，CKM可以仅利用当前动态遮挡产生的数据进行增量更新，同时通过约束重要权重的变化来保留静态背景层的知识。",
+            "Methodology": "1. 将CKM表示为参数化的神经场（Neural Radiance Fields的变体）；2. 当检测到PDP异常（遮挡发生）时，启动增量学习任务；3. 设计一个正则化损失函数，平衡对新遮挡物特征的拟合与对全局路径损耗梯度的保持；4. 在城市十字路口等高动态场景下验证其对移动‘阴影特征’的追踪能力。"
+        },
+        "Final_Decision": "Timeout",
+        "Teacher_Final_Feedback": "上一轮你的输出不符合JSON规范或缺少Plan字段，请严格按格式重新生成。",
+        "Detailed_Plan": null,
+        "Agent_Task_ID": "idea_1_agent_3"
+    },
+    {
+        "Task_ID": "idea_1_agent_1",
+        "Original_Idea_Title": "Continual Learning-based Incremental CKM for Non-Stationary Environments",
+        "Original_Idea": {
+            "Name": "Inc-CKM",
+            "Title": "Continual Learning-based Incremental CKM for Non-Stationary Environments",
+            "Background": "虽然‘CKMDiff’等生成式模型能构建高质量地图，但在动态环境下，环境特征会发生漂移（Concept Drift）。简单的重新训练会导致对历史静态环境知识的‘灾难性遗忘’。",
+            "Hypothesis": "通过引入持续学习中的‘弹性权重整合（EWC）’或‘知识蒸馏’机制，CKM可以仅利用当前动态遮挡产生的数据进行增量更新，同时通过约束重要权重的变化来保留静态背景层的知识。",
+            "Methodology": "1. 将CKM表示为参数化的神经场（Neural Radiance Fields的变体）；2. 当检测到PDP异常（遮挡发生）时，启动增量学习任务；3. 设计一个正则化损失函数，平衡对新遮挡物特征的拟合与对全局路径损耗梯度的保持；4. 在城市十字路口等高动态场景下验证其对移动‘阴影特征’的追踪能力。"
+        },
+        "Final_Decision": "Timeout",
+        "Teacher_Final_Feedback": "上一轮你的输出不符合JSON规范或缺少Plan字段，请严格按格式重新生成。",
+        "Detailed_Plan": null,
+        "Agent_Task_ID": "idea_1_agent_1"
+    }
+]

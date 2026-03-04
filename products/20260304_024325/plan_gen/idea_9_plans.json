@@ -1,0 +1,90 @@
+[
+    {
+        "Task_ID": "idea_9_agent_2",
+        "Original_Idea_Title": "空间极化特征地图：城市环境下的 site-specific 极化矩阵建模",
+        "Original_Idea": {
+            "Name": "Pol-Signature-Map",
+            "Title": "空间极化特征地图：城市环境下的 site-specific 极化矩阵建模",
+            "Background": "极化多路复用是提升频谱效率的关键，但城市中复杂的反射面会导致极化状态发生非线性旋转，且具有强烈的空间相关性。",
+            "Hypothesis": "特定地理位置的反射/散射体组合形成了一个稳定的“极化签名（Polarization Signature）”。通过构建极化 CKM，存储每个空间采样点的交叉极化鉴别率（XPD）和极化旋转矩阵，可以实现开环的极化状态匹配。",
+            "Methodology": "1. 极化特征提取：利用双极化天线测量城市街道的极化散射矩阵。2. 地图构建：利用张量补全技术（Tensor Completion）将稀疏的测量值扩展为连续的空间极化地图。3. 应用场景：在 PDMA（极化分割多址）中，利用 CKM 预判不同用户间的极化正交度，进行更高效的用户配对。4. 实验验证：在复杂的非视距（NLoS）区域，验证 P-CKM 对双流 MIMO 隔离度的提升效果。"
+        },
+        "Final_Decision": "Timeout",
+        "Teacher_Final_Feedback": "上一轮你的输出不符合JSON规范或缺少Plan字段，请严格按格式重新生成。",
+        "Detailed_Plan": null,
+        "Agent_Task_ID": "idea_9_agent_2"
+    },
+    {
+        "Task_ID": "idea_9_agent_1",
+        "Original_Idea_Title": "空间极化特征地图：城市环境下的 site-specific 极化矩阵建模",
+        "Original_Idea": {
+            "Name": "Pol-Signature-Map",
+            "Title": "空间极化特征地图：城市环境下的 site-specific 极化矩阵建模",
+            "Background": "极化多路复用是提升频谱效率的关键，但城市中复杂的反射面会导致极化状态发生非线性旋转，且具有强烈的空间相关性。",
+            "Hypothesis": "特定地理位置的反射/散射体组合形成了一个稳定的“极化签名（Polarization Signature）”。通过构建极化 CKM，存储每个空间采样点的交叉极化鉴别率（XPD）和极化旋转矩阵，可以实现开环的极化状态匹配。",
+            "Methodology": "1. 极化特征提取：利用双极化天线测量城市街道的极化散射矩阵。2. 地图构建：利用张量补全技术（Tensor Completion）将稀疏的测量值扩展为连续的空间极化地图。3. 应用场景：在 PDMA（极化分割多址）中，利用 CKM 预判不同用户间的极化正交度，进行更高效的用户配对。4. 实验验证：在复杂的非视距（NLoS）区域，验证 P-CKM 对双流 MIMO 隔离度的提升效果。"
+        },
+        "Final_Decision": "Max_Iters_Reached",
+        "Teacher_Final_Feedback": "作为导师，我仔细审查了这份关于‘空间极化特征地图’的仿真计划。虽然整体结构清晰，遵循了从传统基线到创新方案的递进原则，但在通信物理本质和算法执行细节上存在一个致命缺陷，会导致后续AI在执行时产生物理意义上的错误。以下是具体的修改建议：\n\n1. **系统模型的物理逻辑缺陷（高优先级）**：\n   在步骤1中，你定义的 $\\mathbf{H}(x, y)$ 包含了 $\\mathbf{H}_0$（复高斯随机矩阵）。在移动通信中，$\\mathbf{H}_0$ 代表快衰落，其相位在空间波长量级剧烈变化，是不可能通过 10% 甚至更低采样率进行插值或张量补全的。如果你尝试对包含 $\\mathbf{H}_0$ 的张量进行 HaLRTC 补全，结果必然是误差极大。极化地图（CKM）建模的应该是**site-specific 的慢衰落/几何分量**，即 $\\mathbf{H}_{map}(x, y) = \\sqrt{\\beta(x, y)} \\mathbf{R}(\\theta(x, y)) \\mathbf{A}$。你需要明确：地图存储的是这个确定的‘极化签名’，而快衰落 $\\mathbf{H}_0$ 仅在测试通信性能（步骤6）时作为即时信道抖动叠加上去。\n\n2. **创新方案的递进性审查**：\n   创新方案分为了张量化、HaLRTC补全、PDMA配对优化三步，逻辑完整。但步骤5（HaLRTC）对AI来说代码实现难度较高。建议在步骤5中明确张量展开（unfold）的具体维度定义，防止AI在写代码时出现维度对不齐的问题。\n\n3. **基线对比的严谨性**：\n   步骤6中，你只对比了随机配对。作为资深研究，你应该增加一个‘完美CSI配对’作为性能上限（Upper Bound），以及一个‘仅基于距离/路径损耗的配对’作为更强的基线，这样才能突出‘极化特征’的额外增益。\n\n4. **衡量指标的细化**：\n   步骤7中，RMSE 的计算应针对极化参数（如旋转角 $\\theta$ 的估计误差）而非直接针对复数信道矩阵，因为相位随机性会掩盖地图的真实精度。",
+        "Detailed_Plan": [
+            {
+                "idx": 1,
+                "name": "系统模型：空间 site-specific 极化信道数学建模",
+                "content": "1. 设定仿真区域：定义一个 $50 \times 50$ 的二维坐标网格 $(x, y)$，表示城市中的一段街道。2. 定义极化信道矩阵 $\\mathbf{H}(x, y) = \\sqrt{\\beta(x, y)} \\mathbf{R}(\\theta(x, y)) \\mathbf{A} \\mathbf{H}_{0}$，其中：\n   - $\\beta(x, y) = d(x, y)^{-\\alpha}$ 为路径损耗，基站位于 $(0,0)$，$d$ 为距离，$\\alpha=3$。\n   - $\\mathbf{R}(\\theta) = \\begin{pmatrix} \\cos\\theta & -\\sin\\theta \\\\ \\sin\\theta & \\cos\\theta \\end{pmatrix}$ 为极化旋转矩阵。$\\theta(x, y)$ 模拟 site-specific 特性，设定为 $\\theta(x, y) = \\frac{\\pi}{2} \\cdot \\text{interp2}(\\text{rand}(5,5))$（即由少量随机种子生成的双线性插值连续场）。\n   - $\\mathbf{A} = \\text{diag}(1, \\sqrt{\\chi})$，其中 $\\chi = 0.1$ 为交叉极化鉴别率(XPD)。\n   - $\\mathbf{H}_{0}$ 为 $2 \\times 2$ 的复高斯随机矩阵，均值为0，方差为1。3. 遍历网格，生成全区域 Ground Truth 张量 $\\mathcal{G} \\in \\mathbb{C}^{50 \\times 50 \\times 2 \\times 2}$。",
+                "expected_outcome": "生成一个 $50 \\times 50 \\times 2 \\times 2$ 的复数张量数据文件，并绘制出 $\\theta(x, y)$ 的空间分布热力图，显示出平滑的空间变化。"
+            },
+            {
+                "idx": 2,
+                "name": "基线方法 1：传统迫零 (ZF) 均衡（无地图辅助）",
+                "content": "1. 随机在网格中选取 100 个位置作为用户点。2. 模拟双流极化多路复用：发射信号 $\\mathbf{s} = [s_1, s_2]^T$，接收信号 $\\mathbf{y} = \\mathbf{H}_{gt}\\mathbf{s} + \\mathbf{n}$。3. 接收端仅根据瞬时信道估计（假设完美估计）执行 ZF 均衡：$\\hat{\\mathbf{s}} = (\\mathbf{H}_{gt}^H \\mathbf{H}_{gt})^{-1} \\mathbf{H}_{gt}^H \\mathbf{y}$。4. 计算全区域的平均交叉极化隔离度 (XPI) 和误码率 (BER)。",
+                "expected_outcome": "得到在不同 SNR 条件下的 BER 曲线，作为性能评估的最底层基准。"
+            },
+            {
+                "idx": 3,
+                "name": "基线方法 2：基于 KNN 的简单空间极化预测 (AI-Baseline)",
+                "content": "1. 从 $50 \\times 50$ 的网格中随机抽取 10% 的点作为“已知测量点”。2. 实施 KNN 算法：对于其余 90% 的位置，利用最近的 $K=3$ 个测量点的均值来预测其极化矩阵 $\\hat{\\mathbf{H}}_{knn}$。3. 计算预测矩阵与 Ground Truth 的均方误差 $MSE = \\text{mean}(\\|\\mathcal{G} - \\hat{\\mathcal{H}}_{knn}\\|^2)$。4. 模拟开环传输：利用预测的 $\\hat{\\mathbf{H}}_{knn}$ 指导发射端预编码。",
+                "expected_outcome": "实现基于 KNN 的空间插值代码，并输出预测误差 MSE。由于 KNN 忽略了极化矩阵的张量低秩特性，预期误差较大。"
+            },
+            {
+                "idx": 4,
+                "name": "创新方案步骤 1：极化特征张量化与稀疏采样建模",
+                "content": "1. 数据转换：将 $50 \\times 50 \\times 2 \\times 2$ 的复数张量转换成实数张量 $\\mathcal{T} \\in \\mathbb{R}^{50 \\times 50 \\times 8}$，其中第 3 维包含了极化矩阵 4 个复数元素的实部和虚部。2. 生成采样算子 $\\Omega$：随机选择 5% 的点（模拟极稀疏的街道测量），其余设为 0，得到观测张量 $\\mathcal{Y} = \\Omega \\circ \\mathcal{T}$。3. 明确输入输出：输入为稀疏张量 $\\mathcal{Y}$，输出将是补全后的完整张量。",
+                "expected_outcome": "成功构建稀疏实数张量 $\\mathcal{Y}$，其 95% 的元素为 0，且数据结构符合后续张量补全算法的输入要求。"
+            },
+            {
+                "idx": 5,
+                "name": "创新方案步骤 2：基于 HaLRTC 算法的 P-CKM 补全构建",
+                "content": "1. 实施高阶张量正则化补全（HaLRTC）算法。2. 设定目标函数：$\\min_{\\mathcal{X}} \\sum \\alpha_j \\|\\mathbf{X}_{(j)}\\|_*$，其中 $\\|\\cdot\\|_*$ 是迹范数，$\\mathbf{X}_{(j)}$ 是张量在第 $j$ 维的展开矩阵。3. 迭代更新：\n   - $\\mathcal{W}_j = \\text{fold}_j(\\text{SVT}_{1/\\rho}(\\text{unfold}_j(\\mathcal{X})))$\n   - $\\mathcal{X} = \\sum \\alpha_j \\mathcal{W}_j$\n   - 在采样位置 $\\Omega$ 强制 $\\mathcal{X} = \\mathcal{Y}$。4. 迭代 100 次或直到收敛，得到补全后的 P-CKM 张量 $\\hat{\\mathcal{T}}_{map}$。",
+                "expected_outcome": "得到补全后的全区域极化地图，其预测 MSE 应显著低于基线 2 (KNN)，证明了张量低秩特性能更有效地还原 site-specific 极化签名。"
+            },
+            {
+                "idx": 6,
+                "name": "创新方案步骤 3：基于 P-CKM 的 PDMA 用户正交配对优化",
+                "content": "1. 在网格内随机生成 50 名用户。2. 根据用户位置，从 P-CKM 中检索每个用户的预测极化矩阵 $\\hat{\\mathbf{H}}_i$。3. 计算用户间的极化相关度矩阵 $\\mathbf{C}_{ij} = \\frac{|\\text{vec}(\\hat{\\mathbf{H}}_i)^H \\text{vec}(\\hat{\\mathbf{H}}_j)|}{\\|\\hat{\\mathbf{H}}_i\\| \\|\\hat{\\mathbf{H}}_j\\|}$。4. 执行配对策略：搜索 $\\mathbf{C}_{ij}$ 最小的用户对（即极化特征最正交），将其分配到同一 PDMA 资源块。5. 计算系统总吞吐量 $R = \\sum \\log(1 + SINR)$，其中干扰项基于真实信道 $\\mathbf{G}$ 计算。",
+                "expected_outcome": "相比于传统随机配对，基于 P-CKM 配对的用户组在极化域的隔离度更高，系统总吞吐量预期提升 15%-25%。"
+            },
+            {
+                "idx": 7,
+                "name": "评估指标与总结对比",
+                "content": "1. 性能曲线：绘制 RMSE 随采样率（2% 到 20%）的变化曲线。2. 通信性能：绘制 Sum Rate 随 SNR 变化的曲线，对比 ZF-Baseline, KNN-Baseline 和 P-CKM 方案。3. 结果分析：量化说明 P-CKM 在 NLoS 区域（旋转剧烈处）对双流隔离度的具体提升数值。",
+                "expected_outcome": "输出一套完整的仿真对比图表和数据，证明 P-CKM 能够以极低的测量开销构建高精度的城市极化地图，并显著提升 PDMA 系统的频谱效率。"
+            }
+        ],
+        "Agent_Task_ID": "idea_9_agent_1"
+    },
+    {
+        "Task_ID": "idea_9_agent_3",
+        "Original_Idea_Title": "空间极化特征地图：城市环境下的 site-specific 极化矩阵建模",
+        "Original_Idea": {
+            "Name": "Pol-Signature-Map",
+            "Title": "空间极化特征地图：城市环境下的 site-specific 极化矩阵建模",
+            "Background": "极化多路复用是提升频谱效率的关键，但城市中复杂的反射面会导致极化状态发生非线性旋转，且具有强烈的空间相关性。",
+            "Hypothesis": "特定地理位置的反射/散射体组合形成了一个稳定的“极化签名（Polarization Signature）”。通过构建极化 CKM，存储每个空间采样点的交叉极化鉴别率（XPD）和极化旋转矩阵，可以实现开环的极化状态匹配。",
+            "Methodology": "1. 极化特征提取：利用双极化天线测量城市街道的极化散射矩阵。2. 地图构建：利用张量补全技术（Tensor Completion）将稀疏的测量值扩展为连续的空间极化地图。3. 应用场景：在 PDMA（极化分割多址）中，利用 CKM 预判不同用户间的极化正交度，进行更高效的用户配对。4. 实验验证：在复杂的非视距（NLoS）区域，验证 P-CKM 对双流 MIMO 隔离度的提升效果。"
+        },
+        "Final_Decision": "Timeout",
+        "Teacher_Final_Feedback": "上一轮你的输出不符合JSON规范或缺少Plan字段，请严格按格式重新生成。",
+        "Detailed_Plan": null,
+        "Agent_Task_ID": "idea_9_agent_3"
+    }
+]

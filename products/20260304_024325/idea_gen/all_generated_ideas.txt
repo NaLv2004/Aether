@@ -1,0 +1,72 @@
+[
+    {
+        "Name": "Inc-CKM",
+        "Title": "Continual Learning-based Incremental CKM for Non-Stationary Environments",
+        "Background": "虽然‘CKMDiff’等生成式模型能构建高质量地图，但在动态环境下，环境特征会发生漂移（Concept Drift）。简单的重新训练会导致对历史静态环境知识的‘灾难性遗忘’。",
+        "Hypothesis": "通过引入持续学习中的‘弹性权重整合（EWC）’或‘知识蒸馏’机制，CKM可以仅利用当前动态遮挡产生的数据进行增量更新，同时通过约束重要权重的变化来保留静态背景层的知识。",
+        "Methodology": "1. 将CKM表示为参数化的神经场（Neural Radiance Fields的变体）；2. 当检测到PDP异常（遮挡发生）时，启动增量学习任务；3. 设计一个正则化损失函数，平衡对新遮挡物特征的拟合与对全局路径损耗梯度的保持；4. 在城市十字路口等高动态场景下验证其对移动‘阴影特征’的追踪能力。"
+    },
+    {
+        "Name": "Calib-CKM",
+        "Title": "Electromagnetic-Coupled CKM for In-situ Antenna Pattern Calibration",
+        "Background": "现有CKM将天线与环境视为解耦的实体，但在XL-MIMO中，基站支架、金属外壳等近场环境会与大尺寸阵列产生强烈的电磁耦合，改变阵列的有效流形。",
+        "Hypothesis": "CKM可以存储一种‘环境感知的校准矩阵’。该矩阵不是静态的，而是位置相关的，描述了在特定站址下，波束赋形矢量与实际远场/近场辐射场之间的非线性映射关系。",
+        "Methodology": "1. 利用电磁仿真（Ray-Tracing与FDTD混合）生成特定安装场景的初始指纹；2. 通过用户反馈的CSI相位偏差，利用核方法（Kernel Methods）在线修正校准矩阵；3. 将该‘校准层’嵌入CKM，使基站能根据用户位置自动补偿由于安装环境导致的波束指向偏移。"
+    },
+    {
+        "Name": "NF-CKM",
+        "Title": "Depth-Aware CKM for Near-Field Beam Focusing and Handover",
+        "Background": "近场通信的特征是波束不仅有方向（Direction），还有焦距（Focal Length）。现有的CKM大多是二维或简单的三维场强图，缺乏对‘聚焦深度’这一维度的刻画。",
+        "Hypothesis": "近场CKM应存储‘最优焦距图（Optimal Focal Map）’。在用户移动过程中，基于CKM预判的焦距切换可以避免复杂的二维码本搜索（距离+角度），实现‘零开销’的近场波束追踪。",
+        "Methodology": "1. 定义极坐标系下的空间相关性函数，并将其作为CKM的存储基元；2. 建立‘焦深’与多径扩展之间的解析关联模型；3. 设计一种基于位置触发的焦距切换协议，并在存在室内反射墙（增加有效近场范围）的复杂场景下，验证其相比于传统远场CKM的吞吐量提升。"
+    },
+    {
+        "Name": "Wideband-Focus-CKM",
+        "Title": "CKM-Aided Squint Compensation for Wideband Near-Field XL-MIMO",
+        "Background": "在宽带 XL-MIMO 系统中，由于相移器（Phase Shifter）的频率无关性，不同频率成分的波束会聚焦在空间的不同点，即‘近场波束分裂’。传统的延迟线补偿需要复杂的实时估计。",
+        "Hypothesis": "CKM 可以存储特定地理位置对应的‘空间-频率流形’先验。通过查询 CKM，基站可以直接获取该位置在全带宽下的相位偏离规律，并据此预分配真延迟线（TTD）或设计频率选择性预编码，无需进行全频段的信道扫描。",
+        "Methodology": "1. 建模近场球面波下的频率相关性及波束分裂轨迹。2. 在 CKM 中引入‘时延-相位特征层’。3. 设计一种基于 CKM 先验的低开销宽带聚焦算法，通过位置索引直接匹配最优 TTD 补偿矢量。"
+    },
+    {
+        "Name": "Graph-Spectral-CKM",
+        "Title": "Graph Spectral Anomaly Detection for Autonomous CKM Maintenance",
+        "Background": "当城市环境发生永久性变化（如新增建筑物）时，CKM 的部分区域会失效。目前的维护依赖于昂贵的定期重测，缺乏自动识别‘地图过期’的能力。",
+        "Hypothesis": "CKM 上的信道特征在空间图域上应满足图平滑性（Graph Smoothness）。环境突变会导致图信号在频域产生异常的高频分量。利用图谱分析（Graph Spectral Analysis），可以用极少数活跃用户的反馈作为采样点，检测出 CKM 与实际环境的不一致性区域。",
+        "Methodology": "1. 将 CKM 区域抽象为地理关联图，以信道相关性为边权重。2. 定义图平滑度指标，实时监测用户上报 CSI 与 CKM 预测值的残差。3. 提出一种基于图采样理论的‘探测用户’调度方案，优先在异常概率高的区域激活感知任务，实现 CKM 的精准局部更新。"
+    },
+    {
+        "Name": "ISAC-Proactive-CKM",
+        "Title": "ISAC-Driven Proactive Shadowing Prediction in Dynamic CKM",
+        "Background": "高频通信极易受动态遮挡（如行驶的卡车）影响，导致链路突然中断。目前的 CKM 主要是静态的，无法应对瞬时的遮挡风险。",
+        "Hypothesis": "通过 ISAC（通感一体化）实时感知的动态物体轨迹，可以与 CKM 中的‘环境几何层’进行实时合成，预测未来数百毫秒内的‘阴影事件’。这种‘前瞻性 CKM’可以指导用户在遮挡发生前完成无缝切换或波束重指向。",
+        "Methodology": "1. 建立动态物体点云与 CKM 遮挡概率的映射模型。2. 提出一种时空演进的概率 CKM 框架，存储位置相关的动态遮挡脆弱性指数。3. 开发前瞻性资源分配算法，在感知到潜在遮挡轨迹时，提前触发备用链路的激活。"
+    },
+    {
+        "Name": "Diff-Kernel-CKM",
+        "Title": "基于物理衍射启发式“扰动核”的动态 CKM 实时修正理论",
+        "Background": "动态障碍物（如大型车辆）对高频信号的遮挡并非简单的“有/无”，而是遵循物理衍射规律。现有的 CKM 无法实时反映这种动态阴影衰落，而全量重绘地图开销巨大。",
+        "Hypothesis": "假设动态物体引起的信道损耗可以解构为“静态环境基底”与“动态移动扰动核”的乘积。该扰动核的解析形式由开路衍射（Knife-edge Diffraction）公式导出，仅需物体的位置、尺寸和频率作为输入，即可在静态 CKM 上实时叠加出高精度的瞬时阴影区。",
+        "Methodology": "1. 理论推导：基于 Fresnel 衍射参数定义 site-specific 的扰动核函数。2. 实时映射：结合 ISAC 感知到的物体包围盒（Bounding Box），计算其相对于当前链路的 Fresnel 区侵占率。3. 差分补偿：仅对静态 CKM 中受影响的网格点进行核函数卷积运算。4. 验证：在典型十字路口场景下，对比基于扰动核的预测与 3D 射线追踪生成的真值，评估其在毫秒级时延下的预测精度。"
+    },
+    {
+        "Name": "NF-Curvature-CKM",
+        "Title": "面向近场 XL-MIMO 的球面波前曲率索引地图 (Curvature-Indexed CKM)",
+        "Background": "在 6G 超大规模阵列（XL-MIMO）中，用户常处于近场区。传统的基于 AoA/AoD 的 CKM 忽略了波前的曲率信息，导致波束聚焦（Beam Focusing）失败。",
+        "Hypothesis": "在近场环境下，信道的空间非平稳性可以用“相位梯度场”和“等效曲率半径”来刻画。通过构建存储位置相关曲率参数的 CKM，基站可以直接跳过冗长的近场深度扫描（Depth Sweep），实现一阶波束聚焦对准。",
+        "Methodology": "1. 定义 CKM 新维度：在每个地理网格中存储主径的球面波曲率半径（Radius of Curvature）。2. 建立曲率演化模型：分析多径反射如何改变波前的聚焦中心。3. 算法设计：提出“曲率辅助波束赋形”，利用 CKM 提供的先验曲率作为相位补偿的初值。4. 鲁棒性分析：研究阵列位置微偏（Hardware Misalignment）对曲率地图失效的影响及在线校准方法。"
+    },
+    {
+        "Name": "Pol-Signature-Map",
+        "Title": "空间极化特征地图：城市环境下的 site-specific 极化矩阵建模",
+        "Background": "极化多路复用是提升频谱效率的关键，但城市中复杂的反射面会导致极化状态发生非线性旋转，且具有强烈的空间相关性。",
+        "Hypothesis": "特定地理位置的反射/散射体组合形成了一个稳定的“极化签名（Polarization Signature）”。通过构建极化 CKM，存储每个空间采样点的交叉极化鉴别率（XPD）和极化旋转矩阵，可以实现开环的极化状态匹配。",
+        "Methodology": "1. 极化特征提取：利用双极化天线测量城市街道的极化散射矩阵。2. 地图构建：利用张量补全技术（Tensor Completion）将稀疏的测量值扩展为连续的空间极化地图。3. 应用场景：在 PDMA（极化分割多址）中，利用 CKM 预判不同用户间的极化正交度，进行更高效的用户配对。4. 实验验证：在复杂的非视距（NLoS）区域，验证 P-CKM 对双流 MIMO 隔离度的提升效果。"
+    },
+    {
+        "Name": "X-Band-Transfer-CKM",
+        "Title": "跨频段空间一致性驱动的 Sub-6GHz 到 mmWave CKM 知识迁移框架",
+        "Background": "构建高分辨率的毫米波（mmWave）CKM 需要密集的测量，而 Sub-6GHz 的覆盖更广且易于获取数据。利用两者在同一物理环境下的空间一致性是降低开销的关键。",
+        "Hypothesis": "虽然不同频段的路径损耗不同，但决定信道主径方向（AoA/AoD）和时延扩展的几何拓扑是相同的。通过在 Sub-6GHz CKM 中提取“主干径拓扑结构”，可以零成本地生成毫米波 CKM 的“骨架”，仅需少量高频导频即可补全细节。",
+        "Methodology": "1. 建立空间一致性模型：利用射线追踪分析低频与高频信道在同一场景下的路径映射关系。2. 跨频段映射器：设计一个物理启发式的神经网络，输入低频 CKM 的 RSRP 分布，预测高频 CKM 的主径存在概率。3. 稀疏采样优化：在预测的高频骨架基础上，设计最优的探测点选择策略，以最少的开销完成 mmWave CKM 的精化。4. 性能评估：比较该方法与独立构建 mmWave CKM 的资源消耗和精度差异。"
+    }
+]

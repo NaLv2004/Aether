@@ -1,0 +1,118 @@
+[
+    {
+        "Task_ID": "idea_3_agent_1",
+        "Original_Idea_Title": "Interference-Aware CKM for Spatial Nulling in Dense Networks",
+        "Original_Idea": {
+            "Name": "I-CKM",
+            "Title": "Interference-Aware CKM for Spatial Nulling in Dense Networks",
+            "Background": "现有的 CKM 主要关注有用信号的增强。在超密集组网（UDN）中，干扰是性能瓶颈。如果能预知特定地点的强干扰源分布，基站可以提前进行空间零陷（Nulling）。",
+            "Hypothesis": "CKM 不仅应存储‘信号增益’，还应存储‘干扰特征图’（包括主要干扰源的 AoA/AoD 指纹）。通过多基站共享 CKM，可以实现基于地理位置的分布式干扰对齐和协调调度。",
+            "Methodology": "1. 构建多小区协作的 I-CKM 架构，记录不同位置受到的邻区干扰功率谱和空间签名。2. 提出一种基于 I-CKM 的主动干扰零陷波束成形方案，在用户接入前即根据其位置预计算零陷矢量。3. 考虑非地面网络（NTN）干扰，在地图中引入动态时间维度以匹配卫星过境引发的干扰演变。"
+        },
+        "Final_Decision": "Pass",
+        "Teacher_Final_Feedback": "Perfect plan.",
+        "Detailed_Plan": [
+            {
+                "idx": 1,
+                "name": "多小区正六边形组网与物理信道建模",
+                "content": "1. 建立正六边形布局：设置7个基站（$BS_0$至$BS_6$），$BS_0$位于原点，站间距（ISD）设为200m。2. 路径损耗模型：采用3GPP UMi模型，$PL(d)[dB] = 32.4 + 21\\log_{10}(d[m]) + 20\\log_{10}(f_c[GHz])$，其中载频 $f_c=3.5GHz$。3. 天线模型：每个BS配置 $M=16$ 根天线的ULA，UE为单天线。4. 信道向量：$\\mathbf{h}_i = \\sqrt{10^{-PL(d_i)/10}} \\cdot \\sum_{l=1}^{L_p} \beta_l \\mathbf{a}(\theta_{i,l})$，其中 $\beta_l$ 为复高斯衰落，$\\mathbf{a}(\theta)$ 为导向矢量 $[\\exp(j2\\pi \frac{d}{\\lambda} \\sin\theta \\cdot m)]_{m=0}^{M-1}$。5. 生成数据集：在中心小区内随机采样 $10^4$ 个坐标 $(x, y)$，记录每个点对应的 $\\mathbf{h}_0$（主信号信道）和 $\\mathbf{h}_1 \\dots \\mathbf{h}_6$（干扰信道）。",
+                "expected_outcome": "成功生成包含坐标、主信道向量、干扰信道向量的数据集文件。绘制出中心小区的接收功率热力图，且功率随距离增加符合物理衰减规律。"
+            },
+            {
+                "idx": 2,
+                "name": "基线方法实施：MRT 与 全CSI已知 Zero-Forcing (ZF)",
+                "content": "实施两种传统方法。1. MRT方案：$BS_0$ 仅已知 $\\mathbf{h}_0$，波束矢量 $\\mathbf{w}_{MRT} = \\mathbf{h}_0/\\|\\mathbf{h}_0\\|$。2. 理想ZF方案（性能上限）：假设 $BS_0$ 完美获知所有干扰信道 $\\mathbf{H}_{int} = [\\mathbf{h}_1, \\dots, \\mathbf{h}_6]$，通过迫零算法使干扰为零。3. 干扰定义：邻区基站 $BS_i$ 发射波束 $\\mathbf{w}_i$ 设为单位范数的随机矢量，即 $\\mathbf{w}_i \\sim \\mathcal{CN}(0, \\mathbf{I})$ 且归一化。4. 计算 $UE_0$ 处的 SINR：$\\gamma = \frac{P|\\mathbf{h}_0^H \\mathbf{w}|^2}{\\sum_{i=1}^6 P|\\mathbf{h}_i^H \\mathbf{w}_i|^2 + \\sigma^2}$。",
+                "expected_outcome": "得到 MRT 和 ZF 的 SINR 累积分布函数（CDF）曲线。ZF 曲线应明显位于 MRT 右侧，作为后续 AI 改进的参考上限。"
+            },
+            {
+                "idx": 3,
+                "name": "基线方法实施：传统信号增益 CKM (AI-Baseline)",
+                "content": "构建一个基础 MLP 神经网络。输入：用户坐标 $(x, y)$。输出：预测的信道增益值 $G = \\|\\mathbf{h}_0\\|^2$。训练损失函数为 MSE。在测试阶段，基站根据坐标查询 CKM 获得增益预测，并采用 MRT 波束成形。此步骤用于验证位置信息对信号强度预测的准确性，但尚未涉及干扰抑制。",
+                "expected_outcome": "神经网络训练收敛，预测增益与真实增益的相关性系数 $>0.9$。SINR 性能应与步骤2中的 MRT 基本持平。"
+            },
+            {
+                "idx": 4,
+                "name": "创新方案步1：I-CKM 角干扰功率谱 (AIPS) 地图构建",
+                "content": "为解决干扰源数量变动问题，设计 I-CKM 预测‘角干扰功率谱’热力图。1. 定义：将 $180^\\circ$ 空间划分为 $N_{bin}=180$ 个等分区间。2. 标签生成：对每个坐标点，计算干扰总功率在各角度上的投影 $\\mathbf{p}(\theta) = \\sum_{i=1}^6 |\\mathbf{h}_i^H \\mathbf{a}(\theta)|^2$。3. 神经网络设计：多任务 CNN 或 MLP，输入 $(x, y)$，输出 1) 预测的 $\\mathbf{h}_0$；2) 长度为 180 的向量，代表每个角度区间的干扰强度。4. 训练：使用步骤1的数据集进行有监督学习。",
+                "expected_outcome": "I-CKM 输出的干扰功率谱与真实谱形状高度一致。在强干扰方向（邻区基站方向）应出现明显的峰值。"
+            },
+            {
+                "idx": 5,
+                "name": "创新方案步2：基于 I-CKM 预测谱的空间零陷设计",
+                "content": "利用 I-CKM 预测的 AIPS 进行波束成形。1. 峰值检测：从预测的 180 维干扰谱中提取前 $K_{max}=3$ 个能量最高的角度 $\\{\\hat{\theta}_1, \\hat{\theta}_2, \\hat{\theta}_3\\}$。2. 构造干扰特征矩阵 $\\hat{\\mathbf{A}}_{int} = [\\mathbf{a}(\\hat{\theta}_1), \\mathbf{a}(\\hat{\theta}_2), \\mathbf{a}(\\hat{\theta}_3)]$。3. 计算正交投影矩阵 $\\mathbf{P}_{null} = \\mathbf{I} - \\hat{\\mathbf{A}}_{int}(\\hat{\\mathbf{A}}_{int}^H \\hat{\\mathbf{A}}_{int})^{-1}\\hat{\\mathbf{A}}_{int}^H$。4. 最终波束：$\\mathbf{w}_{I-CKM} = \frac{\\mathbf{P}_{null} \\hat{\\mathbf{h}}_0}{\\|\\mathbf{P}_{null} \\hat{\\mathbf{h}}_0\\|}$，其中 $\\hat{\\mathbf{h}}_0$ 为地图预测的主信道。5. 评估：对比 I-CKM 与 ZF 的性能差距。",
+                "expected_outcome": "在无需实时测量干扰信道的情况下，I-CKM 的 SINR 显著优于传统 CKM（提升 3dB 以上），且接近理想 ZF 的性能。"
+            },
+            {
+                "idx": 6,
+                "name": "创新方案步3：引入动态轨迹预测与时空 I-CKM",
+                "content": "1. 动态场景设置：模拟 UE 沿直线匀速移动，坐标变为时间函数 $(x(t), y(t))$。2. 数据扩展：在数据集中加入时间戳 $t$。3. 时空 I-CKM：将神经网络输入扩充为 $(x, y, v_x, v_y)$ 或使用 LSTM 处理序列。4. 预测与提前量：利用地图预测未来 $T$ 时刻的干扰分布，基站提前计算并加载零陷波束矢量。5. 实现预测性切换：当预测到未来时刻干扰过强时，提前调整波束方向或切换基站。",
+                "expected_outcome": "在动态移动过程中，时空 I-CKM 能够由于具备“预判”能力，其 SINR 波动比静态 I-CKM 更小，且能有效规避移动过程中的瞬时强干扰区。"
+            },
+            {
+                "idx": 7,
+                "name": "综合评估与开销分析",
+                "content": "1. 绘制所有方案（MRT, ZF, 传统CKM, I-CKM, 时空I-CKM）在不同用户密度下的 SINR CDF 图。2. 计算开销对比：ZF 需要反馈 $M \times 6$ 个复数，而 I-CKM 仅需要坐标 $(x, y)$。3. 评估指标：小区边缘吞吐量（5th percentile SINR）提升百分比、平均中断概率。4. 总结：验证 I-CKM 是否在保持低开销的同时达到了接近全 CSI 反馈的性能。",
+                "expected_outcome": "生成完整的实验图表。结果应证明 I-CKM 是超密集组网中抑制干扰的有效低开销方案，特别是在小区边缘提升明显（如边缘 SINR 提升 5dB 以上）。"
+            }
+        ],
+        "Agent_Task_ID": "idea_3_agent_1"
+    },
+    {
+        "Task_ID": "idea_3_agent_2",
+        "Original_Idea_Title": "Interference-Aware CKM for Spatial Nulling in Dense Networks",
+        "Original_Idea": {
+            "Name": "I-CKM",
+            "Title": "Interference-Aware CKM for Spatial Nulling in Dense Networks",
+            "Background": "现有的 CKM 主要关注有用信号的增强。在超密集组网（UDN）中，干扰是性能瓶颈。如果能预知特定地点的强干扰源分布，基站可以提前进行空间零陷（Nulling）。",
+            "Hypothesis": "CKM 不仅应存储‘信号增益’，还应存储‘干扰特征图’（包括主要干扰源的 AoA/AoD 指纹）。通过多基站共享 CKM，可以实现基于地理位置的分布式干扰对齐和协调调度。",
+            "Methodology": "1. 构建多小区协作的 I-CKM 架构，记录不同位置受到的邻区干扰功率谱和空间签名。2. 提出一种基于 I-CKM 的主动干扰零陷波束成形方案，在用户接入前即根据其位置预计算零陷矢量。3. 考虑非地面网络（NTN）干扰，在地图中引入动态时间维度以匹配卫星过境引发的干扰演变。"
+        },
+        "Final_Decision": "Max_Iters_Reached",
+        "Teacher_Final_Feedback": "请仔细检查你的输出格式，必须包含严谨的Plan列表，并且符合系统要求。",
+        "Detailed_Plan": [
+            {
+                "idx": 1,
+                "name": "系统模型：几何信道建模与多小区环境初始化",
+                "content": "1. 设定仿真区域：$500m \times 500m$ 的2D平面，划分为 $50 \times 50$ 个栅格，每个栅格大小 $10m \times 10m$。2. 基站（BS）设置：在平面中心和周围放置 $L=7$ 个六边形分布的基站，每个基站配备 $N_t=16$ 根天线的均匀线性阵列（ULA）。3. 用户（UE）设置：随机生成 $K$ 个单天线用户，记录其精确坐标 $(x_u, y_u)$。4. 路损模型：$\\beta(d) = 32.4 + 20\\log_{10}(f_c) + 30\\log_{10}(d)$，其中 $f_c=3.5GHz$，$d$ 为距离。5. 信道向量生成：$\\mathbf{h} = \\sqrt{\\beta} \\cdot \\exp(j\\phi) \\cdot \\mathbf{a}(\\theta)$，其中 $\\phi \\sim U(0, 2\\pi)$ 为随机相位，$\\mathbf{a}(\\theta) = [1, e^{j\\pi\\sin(\theta)}, ..., e^{j(N_t-1)\\pi\\sin(\theta)}]^T$，$\\theta$ 是根据BS和UE坐标计算的离去角。6. 噪声功率 $\\sigma^2$ 设置为 -110dBm。",
+                "expected_outcome": "成功编写仿真场景初始化脚本，能够输出包含基站位置、用户位置以及任意点到基站的信道向量 $\\mathbf{h}$，验证路损随距离变化的正确性。"
+            },
+            {
+                "idx": 2,
+                "name": "基线方法一：基于理想即时CSI的迫零（ZF）波束成形",
+                "content": "1. 假设当前服务基站（BS0）已知其覆盖范围内所有 $K$ 个用户的精确信道向量。2. 构建信道矩阵 $\\mathbf{H} = [\\mathbf{h}_1, \\mathbf{h}_2, ..., \\mathbf{h}_K] \\in \\mathbb{C}^{N_t \times K}$。3. 计算未归一化的预编码矩阵 $\\mathbf{W}_{raw} = \\mathbf{H}(\\mathbf{H}^H \\mathbf{H})^{-1}$。4. 功率归一化：第 $k$ 个用户的波束向量为 $\\mathbf{w}_k = \\mathbf{w}_{raw,k} / \\|\\mathbf{w}_{raw,k}\\|$。5. 计算 $SINR_k = \\frac{P_t |\\mathbf{h}_k^H \\mathbf{w}_k|^2}{\\sum_{j \neq k} P_t |\\mathbf{h}_k^H \\mathbf{w}_j|^2 + \\sigma^2}$，其中 $P_t$ 为发射功率。该方法作为无地图、全反馈情况下的性能上限。",
+                "expected_outcome": "实现ZF预编码逻辑，在不同SNR（10dB到30dB）下绘制系统平均和速率曲线，验证其在多用户干扰下的抑制效果。"
+            },
+            {
+                "idx": 3,
+                "name": "基线方法二：传统信号增强型CKM方案 (Baseline AI)",
+                "content": "1. 构建传统CKM数据库：预先计算每个栅格中心 $(x_g, y_g)$ 到 BS0 的信道向量并存储为 $M_{sig}(g) = \\mathbf{h}_g$。2. 模拟在线阶段：当用户位于 $(x,y)$ 时，根据欧氏距离匹配最近的栅格 $g$。3. 从地图中读取 $\\mathbf{h}_{map} = M_{sig}(g)$。4. 执行最大比发射（MRT）：$\\mathbf{w}_k = \\mathbf{h}_{map} / \\|\\mathbf{h}_{map}\\|$。5. 注意：此方案中 BS0 不考虑其他小区带来的干扰，也不考虑本小区内的多用户正交。计算其在密集组网下的和速率，作为改进对象。",
+                "expected_outcome": "实现基于位置检索的波束成形，观察到在密集干扰环境下，由于波束仅指向信号最强方向而未避开干扰，导致SINR受限。"
+            },
+            {
+                "idx": 4,
+                "name": "创新方案步骤一：构建干扰感知地图 I-CKM 数据结构",
+                "content": "1. 定义 I-CKM 存储项：在每个栅格 $g$ 处，除了存储信号信道 $\\mathbf{h}_g$，新增存储干扰协方差矩阵 $\\mathbf{R}_{int}(g)$。2. 干扰来源定义：设定相邻的 $L-1$ 个基站为干扰源，$\\mathbf{R}_{int}(g) = \\sum_{i=1}^{L-1} E[\\mathbf{h}_{i,g} \\mathbf{h}_{i,g}^H]$，其中 $\\mathbf{h}_{i,g}$ 是第 $i$ 个相邻基站到该栅格的信道。3. 数据离线生成：遍历所有栅格，计算每个格点的 $\\mathbf{h}_g$ 和 $\\mathbf{R}_{int}(g)$ 并保存为 `.mat` 或 `.npy` 文件。$\\mathbf{R}_{int}$ 的维度应为 $N_t \times N_t$。",
+                "expected_outcome": "生成完整的 I-CKM 数据库，能够通过坐标 $(x,y)$ 快速索引出该位置对应的干扰空域签名（协方差矩阵）。"
+            },
+            {
+                "idx": 5,
+                "name": "创新方案步骤二：基于I-CKM的主动空间零陷（GEVD）算法",
+                "content": "1. 在线预编码设计：当用户接入时，根据其位置从 I-CKM 中提取 $\\mathbf{h}_g$ 和 $\\mathbf{R}_{int}(g)$。2. 构造优化目标：最大化广义瑞利商 $J(\\mathbf{w}) = \\frac{\\mathbf{w}^H (\\mathbf{h}_g \\mathbf{h}_g^H) \\mathbf{w}}{\\mathbf{w}^H (\\mathbf{R}_{int}(g) + \\sigma^2 \\mathbf{I}) \\mathbf{w}}$。3. 数学求解：利用 `scipy.linalg.eigh` (或类似库) 求解广义特征值问题 $(\\mathbf{h}_g \\mathbf{h}_g^H) \\mathbf{w} = \\lambda (\\mathbf{R}_{int}(g) + \\sigma^2 \\mathbf{I}) \\mathbf{w}$。4. 选取最大特征值对应的特征向量作为波束成形矢量 $\\mathbf{w}_{null}$。该矢量会自动在 $\\mathbf{R}_{int}$ 能量集中的方向（强干扰方向）形成空域凹陷。",
+                "expected_outcome": "实现基于 I-CKM 的 GEVD 预编码器，通过波束方向图（Beam Pattern）可视化验证：在干扰基站方向确实产生了 $-20dB$ 以下的零陷。"
+            },
+            {
+                "idx": 6,
+                "name": "创新方案步骤三：引入NTN动态卫星干扰的时间维度演变",
+                "content": "1. 模拟动态干扰源：增加一个低轨卫星（LEO），其高度 $H=500km$，沿 $x$ 轴以 $7.5km/s$ 移动。2. 定义时间步长 $\\Delta t = 1s$，计算卫星在不同时刻 $t$ 的坐标 $(x_s(t), y_s(t), z_s(t))$ 及其对地面格点的干扰向量 $\\mathbf{h}_{sat}(g, t)$。3. 更新 I-CKM 为 $M(g, t)$：其干扰项变为 $\\mathbf{R}_{total}(g, t) = \\mathbf{R}_{static}(g) + \\mathbf{h}_{sat}(g, t) \\mathbf{h}_{sat}(g, t)^H$。4. 算法应用：基站根据当前时间 $t$ 预测卫星位置，并从地图中提取对应的时变干扰矩阵进行波束重算。",
+                "expected_outcome": "成功演示在卫星过境期间，系统能够通过 I-CKM 预判干扰方向并动态调整波束，保持 SINR 的平稳，避免通信中断。"
+            },
+            {
+                "idx": 7,
+                "name": "对比方式与预期结果量化评估",
+                "content": "1. 实验对比组：(1) 理想ZF, (2) 传统信号型CKM, (3) 静态I-CKM-GEVD, (4) 动态NTN-I-CKM。2. 评估指标：(a) 平均系统和速率 (bps/Hz)；(b) 用户SINR的累积分布函数（CDF），关注 5%-tile 边缘用户性能；(c) 切换/更新开销。3. 预期结论：在密集组网中，I-CKM 应比传统CKM提升约 20% 的平均速率；在NTN场景下，动态I-CKM应比不感知卫星干扰的方案降低 50% 以上的中断概率。",
+                "expected_outcome": "输出对比曲线图表，证明干扰感知地图在复杂密集环境和动态NTN场景下的卓越鲁棒性和增益。"
+            }
+        ],
+        "Agent_Task_ID": "idea_3_agent_2"
+    }
+]

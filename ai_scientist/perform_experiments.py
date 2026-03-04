@@ -5,6 +5,9 @@ from collections import defaultdict, deque
 
 # 从 llm.py 中导入 LLMAgent
 from llm import LLMAgent
+from utils import setup_logger
+
+logger = setup_logger("experiment_run.log")
 
 def get_python_files(directory):
     """获取指定目录下所有的 .py 文件（忽略隐藏文件和子目录）"""
@@ -35,7 +38,7 @@ def parse_dependencies(directory, py_files):
             with open(filepath, 'r', encoding='utf-8') as f:
                 tree = ast.parse(f.read(), filename=file)
         except Exception as e:
-            print(f"Warning: 无法解析 {file} 的语法结构, 错误: {e}")
+            logger.info(f"Warning: 无法解析 {file} 的语法结构, 错误: {e}")
             continue
             
         for node in ast.walk(tree):
@@ -86,7 +89,7 @@ def get_processing_order(py_files, dependencies):
                 
     # 处理循环依赖的情况
     if len(order) != len(py_files):
-        print("警告：检测到循环依赖！剩余文件将按照字母顺序强行处理。")
+        logger.info("警告：检测到循环依赖！剩余文件将按照字母顺序强行处理。")
         remaining = sorted(list(set(py_files) - set(order)))
         order.extend(remaining)
         
@@ -123,16 +126,16 @@ def generate_file_readme(agent, filepath, filename, research_plan, overview):
     # 关键：每次清空上下文，确保 Agent 上下文中只有当前文件、计划和概述
     agent.clear_history()
     
-    print(f"\n========== 开始生成 {filename} 的说明 ==========")
+    logger.info(f"\n========== 开始生成 {filename} 的说明 ==========")
     # 使用带流式输出的接口
     response, _ = agent.get_response_stream(user_message, system_message, print_debug=False)
-    print(f"========== {filename} 生成完毕 ==========\n")
+    logger.info(f"========== {filename} 生成完毕 ==========\n")
     
     return response
 
-def generate_readme(parser):
+def generate_readme(args):
     # work_dir = r"experiments\\20260301_211831"
-    args = parser.parse_args()
+    # args = parser.parse_args()
 
     work_dir = args.work_dir
     log_dir = args.log_dir
@@ -144,21 +147,21 @@ def generate_readme(parser):
         with open(args.overview_file, 'r', encoding='utf-8') as f:
             overview = f.read()
     except Exception as e:
-        print(f"读取计划或概述文件失败: {e}")
+        logger.info(f"读取计划或概述文件失败: {e}")
         return
 
     # 2. 解析目录下所有的 Python 文件及依赖树
     py_files = get_python_files(work_dir)
     if not py_files:
-        print(f"在工作目录 {work_dir} 中未找到任何 .py 文件。")
+        logger.info(f"在工作目录 {work_dir} 中未找到任何 .py 文件。")
         return
         
     dependencies, _ = parse_dependencies(work_dir, py_files)
     processing_order = get_processing_order(py_files, dependencies)
     
-    print(f"依赖解析完成。文件处理顺序(从叶子到根):")
+    logger.info(f"依赖解析完成。文件处理顺序(从叶子到根):")
     for idx, f in enumerate(processing_order, 1):
-        print(f"  {idx}. {f}")
+        logger.info(f"  {idx}. {f}")
 
     # 3. 初始化 LLMAgent
     agent = LLMAgent(model=args.model, temperature=0.3, log_file=os.path.join(log_dir, "readme_agent.log"))
@@ -196,7 +199,7 @@ def generate_readme(parser):
             f.write(summary)
             f.write("\n")
             
-    print(f"\n>>> 任务完成！完整的综合文档已保存至: {final_txt_path}")
+    logger.info(f"\n>>> 任务完成！完整的综合文档已保存至: {final_txt_path}")
 
 # if __name__ == "__main__":
 #     main()
@@ -254,7 +257,7 @@ def run_command_with_monitoring(script_path, cwd, orchestrator_agent, CONDA_ENV_
     返回: success(bool), stdout(str), stderr(str), monitor_feedback(str)
     """
     cmd = f'conda run -n {CONDA_ENV_NAME} --no-capture-output cmd.exe /c "{script_path} & exit"'
-    print(f"\n[System] 执行脚本: {script_path} ...")
+    logger.info(f"\n[System] 执行脚本: {script_path} ...")
     
     env = os.environ.copy()
     env["PYTHONUNBUFFERED"] = "1"
@@ -310,22 +313,22 @@ def run_command_with_monitoring(script_path, cwd, orchestrator_agent, CONDA_ENV_
             recent_output = "".join(output_lines[-150:])
             status_info = get_hardware_status()
             if recent_output.strip():
-                print(f"\n[System] 代码执行已历时 {int(current_time - start_time)} 秒。正在截取最新输出交由 Orchestrator 实时监控...")
+                logger.info(f"\n[System] 代码执行已历时 {int(current_time - start_time)} 秒。正在截取最新输出交由 Orchestrator 实时监控...")
                 monitor_prompt = f"【实时监控最新控制台输出片段】代码运行已经历时{int(current_time - start_time)} 秒，当前输出：\n{recent_output}\n\n宿主机硬件状态：\n{status_info}\n\n请判定程序是否正常运行，是否需要提前终止(KILL)？另外，如果根据当前的执行时间和进度，你预计该程序执行时间将超过2小时，你也必须给出杀死进程（KILL）的指示，并且在FeedBack字段中说明“我们希望程序在2小时以内执行完，当前预估时间为xxx，同时总结当前代码占用的显存资源情况（当前占用量/总量），以指导其他agent修改执行脚本（绝对不能让agent减小epoch数量）”"
                 
                 resp, _ = orchestrator_agent.get_response_stream(monitor_prompt, MONITOR_SYSTEM_PROMPT)
                 monitor_json = LLMAgent.robust_extract_json(resp)
                 
                 if monitor_json and monitor_json.get("Action") == "KILL":
-                    print("\n[Orchestrator Monitor] 判定程序运行异常，下达指令：终止进程！")
+                    logger.info("\n[Orchestrator Monitor] 判定程序运行异常，下达指令：终止进程！")
                     killed_by_monitor = True
                     monitor_feedback = monitor_json.get("Feedback", "Orchestrator 根据实时输出强制终止了运行。")
                     subprocess.run(f"taskkill /F /T /PID {process.pid}", shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                     break
                 else:
-                    print("[Orchestrator Monitor] 判定程序正常，允许继续运行。")
+                    logger.info("[Orchestrator Monitor] 判定程序正常，允许继续运行。")
             else:
-                print(f"[System] 代码执行历时 {int(current_time - start_time)} 秒。暂无新输出。")
+                logger.info(f"[System] 代码执行历时 {int(current_time - start_time)} 秒。暂无新输出。")
 
         time.sleep(1)
 
@@ -366,13 +369,13 @@ def extract_python_files_from_bat(bat_content):
 
 # ================= 核心执行流程 =================
 
-def plan_and_execute_experiments(parser):
-    args = parser.parse_args()
-    WORKSPACE_DIR = parser.workspace_dir    # 指定的工作目录（请根据需要修改）
-    CONDA_ENV_NAME = parser.conda_env_name            # 运行代码所在的 Conda 环境名称
-    MODEL_NAME = parser.model             # Executor 主节点使用的模型
-    MONITOR_MODEL_NAME = parser.model # Orchestrator 监控节点使用的模型
-    LOG_DIR = parser.log_dir
+def plan_and_execute_experiments(args):
+    # args = parser.parse_args()
+    WORKSPACE_DIR = args.workspace_dir    # 指定的工作目录（请根据需要修改）
+    CONDA_ENV_NAME = args.conda_env_name            # 运行代码所在的 Conda 环境名称
+    MODEL_NAME = args.model             # Executor 主节点使用的模型
+    MONITOR_MODEL_NAME = args.model # Orchestrator 监控节点使用的模型
+    LOG_DIR = args.log_dir
     PREVIOUS_SUMMARY_FILE = os.path.join(WORKSPACE_DIR, "PreviousSummary.txt")
     EXECUTE_HISTORY_FILE = os.path.join(WORKSPACE_DIR, "execute_history.txt")
     if not os.path.exists(WORKSPACE_DIR):
@@ -384,14 +387,14 @@ def plan_and_execute_experiments(parser):
     orchestrator_agent.set_context_len(5)
     # orchestrator_agent = LLMAgent(model=MONITOR_MODEL_NAME, log_file="orchestrator_agent.log")
 
-    print(f"[System] 初始化完成。工作目录: {WORKSPACE_DIR}")
+    logger.info(f"[System] 初始化完成。工作目录: {WORKSPACE_DIR}")
 
     # 2. 读取文件结构和 PreviousSummary
     dir_structure = get_directory_structure(WORKSPACE_DIR)
     previous_summary = read_file_content(PREVIOUS_SUMMARY_FILE)
 
     if not previous_summary:
-        print(f"[警告] 未在工作目录找到 {PREVIOUS_SUMMARY_FILE}，或者文件为空。请确认。")
+        logger.info(f"[警告] 未在工作目录找到 {PREVIOUS_SUMMARY_FILE}，或者文件为空。请确认。")
 
     # 3 & 4. 制定仿真计划
     system_prompt_plan = "你是一个通信科研团队的高级AI实验执行员(Executor Agent)。"
@@ -430,16 +433,16 @@ def plan_and_execute_experiments(parser):
 ]
 """
 
-    print("\n[System] 正在请求 Executor Agent 生成实验计划...")
+    logger.info("\n[System] 正在请求 Executor Agent 生成实验计划...")
     plan_response, _ = executor_agent.get_response_stream(plan_prompt, system_prompt_plan)
     
     plan = LLMAgent.robust_extract_json_list(plan_response)
-    print(plan)
+    logger.info(plan)
     if not plan or not isinstance(plan, list):
-        print("\n[错误] Executor 未能返回合法的 JSON 计划，系统退出。")
+        logger.info("\n[错误] Executor 未能返回合法的 JSON 计划，系统退出。")
         return
 
-    print(f"\n[System] 成功解析实验计划，共 {len(plan)} 步。")
+    logger.info(f"\n[System] 成功解析实验计划，共 {len(plan)} 步。")
     
     # 清空之前的执行历史文件
     with open(EXECUTE_HISTORY_FILE, "a", encoding="utf-8") as f:
@@ -451,9 +454,9 @@ def plan_and_execute_experiments(parser):
         if (step_idx == 1 or step_idx == 2 or step_idx == 3) :
             continue
         step_content = step_item.get("content")
-        print(f"\n=============================================")
-        print(f" 开始执行计划步骤 {step_idx}: {step_content}")
-        print(f"=============================================")
+        logger.info(f"\n=============================================")
+        logger.info(f" 开始执行计划步骤 {step_idx}: {step_content}")
+        logger.info(f"=============================================")
 
         step_passed = False
         attempt_count = 0
@@ -495,13 +498,13 @@ python main_simulation.py --algo A --antennas 16x8
 5. 涉及AI模型时，除了训练集大小，epoch数量等可调，如果模型规模被暴露为命令行参数，那也是可以调整的。
 6. 每步可以包含多点仿真（不仅仅是SNR变化，还可以是SNR变化的同时其他参数变化）。要保证实验数据尽可能充足。
 """
-            print(f"\n[System] 步骤 {step_idx} (尝试 {attempt_count}): 正在生成 run.bat 脚本...")
+            logger.info(f"\n[System] 步骤 {step_idx} (尝试 {attempt_count}): 正在生成 run.bat 脚本...")
             bat_response, _ = executor_agent.get_response_stream(action_prompt, "你是一个严谨的命令行仿真执行脚本编写专家。")
             
             # 提取 bat 内容
             bat_match = re.search(r"```bat(.*?)```", bat_response, re.DOTALL | re.IGNORECASE)
             if not bat_match:
-                print("[警告] 未匹配到 bat 脚本内容，退回重试。")
+                logger.info("[警告] 未匹配到 bat 脚本内容，退回重试。")
                 continue
             
             run_bat_content = bat_match.group(1).strip()
@@ -514,7 +517,7 @@ python main_simulation.py --algo A --antennas 16x8
 
             if not success:
                 # 运行报错或被终止，收集相关 Python 代码以供 Executor 修复
-                print(f"\n[System] 步骤 {step_idx} 执行失败。正在让 Executor 修复...")
+                logger.info(f"\n[System] 步骤 {step_idx} 执行失败。正在让 Executor 修复...")
                 error_msg = stdout if not monitor_feedback else (stdout + "\n[监控器干预]: " + monitor_feedback)
                 
                 # 提取它刚刚运行了哪些 python 文件
@@ -548,14 +551,14 @@ python main_simulation.py --algo A --antennas 16x8
                     with open(bat_file_path, "w", encoding="utf-8") as f:
                         f.write(run_bat_content)
 
-                    print(f"[System]提取出修复的bat文件，正在重新运行")
+                    logger.info(f"[System]提取出修复的bat文件，正在重新运行")
                     success, stdout, _, monitor_feedback = run_command_with_monitoring(bat_file_path, WORKSPACE_DIR, orchestrator_agent, CONDA_ENV_NAME)
             if not success:      
                 continue # 进入下一次 Attempt 进行重跑
 
             else:
                 # 运行成功，提取数据并判断是否通过
-                print(f"\n[System] 步骤 {step_idx} 执行成功。正在请求 Executor 提取数据并评估结果...")
+                logger.info(f"\n[System] 步骤 {step_idx} 执行成功。正在请求 Executor 提取数据并评估结果...")
                 eval_prompt = f"""
 你刚才生成的 run.bat 成功执行了。
 【你的脚本】:
@@ -584,11 +587,11 @@ python main_simulation.py --algo A --antennas 16x8
                 eval_json = LLMAgent.robust_extract_json(eval_resp)
                 
                 if not eval_json:
-                    print("[警告] 解析结果评估 JSON 失败，默认通过并保存。")
+                    logger.info("[警告] 解析结果评估 JSON 失败，默认通过并保存。")
                     eval_json = {"status": "PASS", "extracted_data": "未能成功结构化提取，请检查日志", "reason": "解析异常"}
 
                 if eval_json.get("status", "").upper() == "PASS":
-                    print(f"\n[System] Executor 评估满意 (PASS)。提取数据并记录历史...")
+                    logger.info(f"\n[System] Executor 评估满意 (PASS)。提取数据并记录历史...")
                     # 写入执行历史
                     with open(EXECUTE_HISTORY_FILE, "a", encoding="utf-8") as f:
                         f.write(f"\n=== Plan Step {step_idx}: {step_content} ===\n")
@@ -596,18 +599,18 @@ python main_simulation.py --algo A --antennas 16x8
                         f.write(f"【提取的结果与结论】:\n{eval_json.get('extracted_data', '')}\n")
                     step_passed = True # 退出当前步骤的循环，进入下个计划点
                 else:
-                    print(f"\n[System] Executor 评估不满意 (RETRY)。理由: {eval_json.get('reason')}")
+                    logger.info(f"\n[System] Executor 评估不满意 (RETRY)。理由: {eval_json.get('reason')}")
                     # 不改变 step_passed，继续循环，让其重试
                     
         if not step_passed:
-            print(f"\n[警告] 步骤 {step_idx} 达到最大重试次数仍未能成功，系统强行记录并跳过。")
+            logger.info(f"\n[警告] 步骤 {step_idx} 达到最大重试次数仍未能成功，系统强行记录并跳过。")
             with open(EXECUTE_HISTORY_FILE, "a", encoding="utf-8") as f:
                  f.write(f"\n=== Plan Step {step_idx} (FAILED/SKIPPED) ===\n内容: {step_content}\n")
 
-    print("\n[System] =========================================")
-    print("[System] 所有实验计划已执行完毕，完整总结已存入:")
-    print(f"[System] {EXECUTE_HISTORY_FILE}")
-    print("[System] =========================================")
+    logger.info("\n[System] =========================================")
+    logger.info("[System] 所有实验计划已执行完毕，完整总结已存入:")
+    logger.info(f"[System] {EXECUTE_HISTORY_FILE}")
+    logger.info("[System] =========================================")
 
 
 # if __name__ == "__main__":

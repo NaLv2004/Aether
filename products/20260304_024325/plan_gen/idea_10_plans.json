@@ -1,0 +1,90 @@
+[
+    {
+        "Task_ID": "idea_10_agent_2",
+        "Original_Idea_Title": "跨频段空间一致性驱动的 Sub-6GHz 到 mmWave CKM 知识迁移框架",
+        "Original_Idea": {
+            "Name": "X-Band-Transfer-CKM",
+            "Title": "跨频段空间一致性驱动的 Sub-6GHz 到 mmWave CKM 知识迁移框架",
+            "Background": "构建高分辨率的毫米波（mmWave）CKM 需要密集的测量，而 Sub-6GHz 的覆盖更广且易于获取数据。利用两者在同一物理环境下的空间一致性是降低开销的关键。",
+            "Hypothesis": "虽然不同频段的路径损耗不同，但决定信道主径方向（AoA/AoD）和时延扩展的几何拓扑是相同的。通过在 Sub-6GHz CKM 中提取“主干径拓扑结构”，可以零成本地生成毫米波 CKM 的“骨架”，仅需少量高频导频即可补全细节。",
+            "Methodology": "1. 建立空间一致性模型：利用射线追踪分析低频与高频信道在同一场景下的路径映射关系。2. 跨频段映射器：设计一个物理启发式的神经网络，输入低频 CKM 的 RSRP 分布，预测高频 CKM 的主径存在概率。3. 稀疏采样优化：在预测的高频骨架基础上，设计最优的探测点选择策略，以最少的开销完成 mmWave CKM 的精化。4. 性能评估：比较该方法与独立构建 mmWave CKM 的资源消耗和精度差异。"
+        },
+        "Final_Decision": "Timeout",
+        "Teacher_Final_Feedback": "上一轮你的输出不符合JSON规范或缺少Plan字段，请严格按格式重新生成。",
+        "Detailed_Plan": null,
+        "Agent_Task_ID": "idea_10_agent_2"
+    },
+    {
+        "Task_ID": "idea_10_agent_1",
+        "Original_Idea_Title": "跨频段空间一致性驱动的 Sub-6GHz 到 mmWave CKM 知识迁移框架",
+        "Original_Idea": {
+            "Name": "X-Band-Transfer-CKM",
+            "Title": "跨频段空间一致性驱动的 Sub-6GHz 到 mmWave CKM 知识迁移框架",
+            "Background": "构建高分辨率的毫米波（mmWave）CKM 需要密集的测量，而 Sub-6GHz 的覆盖更广且易于获取数据。利用两者在同一物理环境下的空间一致性是降低开销的关键。",
+            "Hypothesis": "虽然不同频段的路径损耗不同，但决定信道主径方向（AoA/AoD）和时延扩展的几何拓扑是相同的。通过在 Sub-6GHz CKM 中提取“主干径拓扑结构”，可以零成本地生成毫米波 CKM 的“骨架”，仅需少量高频导频即可补全细节。",
+            "Methodology": "1. 建立空间一致性模型：利用射线追踪分析低频与高频信道在同一场景下的路径映射关系。2. 跨频段映射器：设计一个物理启发式的神经网络，输入低频 CKM 的 RSRP 分布，预测高频 CKM 的主径存在概率。3. 稀疏采样优化：在预测的高频骨架基础上，设计最优的探测点选择策略，以最少的开销完成 mmWave CKM 的精化。4. 性能评估：比较该方法与独立构建 mmWave CKM 的资源消耗和精度差异。"
+        },
+        "Final_Decision": "Max_Iters_Reached",
+        "Teacher_Final_Feedback": "上一轮你的输出不符合JSON规范或缺少Plan字段，请严格按格式重新生成。",
+        "Detailed_Plan": [
+            {
+                "idx": 1,
+                "name": "系统模型：多障碍物环境下的跨频段信道建模与数据生成",
+                "content": "1. 场景设定：定义一个100m x 100m的2D区域，网格精度为1m。在其中随机放置10个矩形障碍物，模拟城市微小区。基站(BS)固定在(0,0)。\n2. 信道模型：定义两个频段 $f_L=3.5\\text{GHz}$ 和 $f_H=28\\text{GHz}$。对任意点 $(x,y)$，计算其到BS的距离 $d$。 \n3. 路径损耗模型：\n   - 视距(LoS)区域：$L(f, d) = 20\\log_{10}(d) + 20\\log_{10}(f) - 147.55 + X_{\\sigma}$，其中 $X_{\\sigma} \\sim \\mathcal{N}(0, 2)$。\n   - 非视距(NLoS)区域：在LoS模型基础上额外增加穿透/绕射损耗。Sub-6GHz损耗设为 $L_{extra, L} = 15\\text{dB}$，mmWave损耗设为 $L_{extra, H} = 35\\text{dB}$（体现高频易被遮挡特性）。\n4. 数据输出：生成全区域的RSRP地图 $M_L$ (Sub-6) 和 $M_H$ (mmWave)，保存为 100x100 的矩阵。",
+                "expected_outcome": "生成包含10000个采样点的配对数据集。可视化结果应显示：Sub-6GHz在障碍物后方有较弱信号，而mmWave在障碍物后方接近信号真空（深度阴影）。"
+            },
+            {
+                "idx": 2,
+                "name": "基线方法 I：传统克里金(Kriging)空间插值",
+                "content": "1. 采样：从 $M_H$ 中随机抽取5%的点作为已知观测值（模拟稀疏测量）。\n2. 建模：计算观测点之间的经验变异函数 $\\gamma(h) = \\frac{1}{2|N(h)|} \\sum (M_H(i) - M_H(j))^2$。\n3. 预测：利用普通克里金方程对剩余95%的未知点进行插值。公式：$\\hat{Z}(s_0) = \\sum \\lambda_i Z(s_i)$，其中 $\\lambda$ 由半变异函数矩阵求逆获得。\n4. 评估：计算全图重建的NMSE（归一化均方误差）。",
+                "expected_outcome": "得到一个平滑的mmWave CKM预测图。预期在障碍物边缘处误差较大，因为传统插值无法感知几何遮挡。"
+            },
+            {
+                "idx": 3,
+                "name": "基线方法 II：基础AI跨频段直接回归映射",
+                "content": "1. 模型架构：设计一个简单的3层卷积神经网络(CNN)。输入层接收 100x100 的 $M_L$ 地图，输出层预测 100x100 的 $M_H$ 地图。\n2. 训练：使用均方误差(MSE)作为损失函数，$L = ||M_H - \\text{CNN}(M_L)||^2$。\n3. 逻辑：该模型通过黑盒方式学习 $M_L$ 到 $M_H$ 的非线性映射，不显示利用几何信息。",
+                "expected_outcome": "训练完成。模型在测试集上的NMSE应优于Kriging，但在跨频段损耗剧变区域仍存在预测模糊。"
+            },
+            {
+                "idx": 4,
+                "name": "创新方案步骤 1：物理启发式的“骨架”特征提取",
+                "content": "1. 梯度特征：计算 Sub-6GHz 地图的梯度幅值 $G_L = \\sqrt{(\\frac{\\partial M_L}{\\partial x})^2 + (\\frac{\\partial M_L}{\\partial y})^2}$，用以识别障碍物边界。\n2. 距离变换：计算每个点到BS的欧几里得距离矩阵 $D$。\n3. 特征融合：将 $M_L$、$G_L$ 和 $D$ 堆叠成一个 100x100x3 的特征张量 $\\mathbf{F}$。这代表了决定mmWave传播环境的“物理骨架”初稿。",
+                "expected_outcome": "成功提取多维特征张量，其中梯度图应清晰勾勒出障碍物的轮廓。"
+            },
+            {
+                "idx": 5,
+                "name": "创新方案步骤 2：基于空间一致性的 mmWave 概率骨架预测",
+                "content": "1. 模型设计：设计一个带有注意力机制的U-Net网络。输入为步骤4生成的特征张量 $\\mathbf{F}$。\n2. 任务目标：预测 mmWave 的“主干路径存在概率图” $P_{skeleton}$。由于mmWave受限于LoS，我们将 $M_H > \\text{Threshold}$ 的区域定义为骨架区域。\n3. 损失函数：结合二元交叉熵(BCE)和MSE。$L_{total} = \\alpha \\text{BCE}(P_{skeleton}, \text{Mask}_{LoS}) + (1-\\alpha) \\text{MSE}(\\hat{M}_H, M_H)$。\n4. 核心逻辑：利用Sub-6的绕射边界信息来“准确定位”mmWave的阴影区边缘。",
+                "expected_outcome": "输出一张mmWave概率图，能够比基线II更精确地捕捉到信号的突变点和阴影边界。"
+            },
+            {
+                "idx": 6,
+                "name": "创新方案步骤 3：骨架驱动的稀疏采样与细节精化",
+                "content": "1. 采样策略：根据步骤5输出的概率图 $P_{skeleton}$，在不确定性最高（即 $P \\approx 0.5$ 的过渡带）和预测RSRP较高的区域布置极少量（如总数2%）的真实的mmWave测量点。\n2. 细化网络：设计一个残差学习网络，输入步骤5的预测图和这2%的真实测量点（以稀疏矩阵形式输入），学习残差 $\\Delta M_H = M_{H, true} - \\hat{M}_{H, skeleton}$。\n3. 最终输出：$M_{final} = \\hat{M}_{H, skeleton} + \\Delta M_H$。",
+                "expected_outcome": "在极低采样开销下，通过少量真实采样纠正了跨频段迁移中的模型偏差，实现高精度CKM重建。"
+            },
+            {
+                "idx": 7,
+                "name": "性能评估与对比验证",
+                "content": "1. 对比指标：计算 NMSE、结构相似性(SSIM)以及在给定RSRP阈值下的覆盖预测准确率(Accuracy)。\n2. 实验对比：对比 Kriging (5%采样)、直接CNN (0%采样)、本方案骨架预测 (0%采样) 以及 本方案完整流程 (2%采样)。\n3. 预期结论：本方案在不添加采样时已优于基线II；在添加极少量采样后，性能将逼近全量测量的理论上限。",
+                "expected_outcome": "输出NMSE对比柱状图和不同方法重建的CKM热力图，证明“空间一致性”驱动的骨架迁移能显著降低毫米波构建成本。"
+            }
+        ],
+        "Agent_Task_ID": "idea_10_agent_1"
+    },
+    {
+        "Task_ID": "idea_10_agent_3",
+        "Original_Idea_Title": "跨频段空间一致性驱动的 Sub-6GHz 到 mmWave CKM 知识迁移框架",
+        "Original_Idea": {
+            "Name": "X-Band-Transfer-CKM",
+            "Title": "跨频段空间一致性驱动的 Sub-6GHz 到 mmWave CKM 知识迁移框架",
+            "Background": "构建高分辨率的毫米波（mmWave）CKM 需要密集的测量，而 Sub-6GHz 的覆盖更广且易于获取数据。利用两者在同一物理环境下的空间一致性是降低开销的关键。",
+            "Hypothesis": "虽然不同频段的路径损耗不同，但决定信道主径方向（AoA/AoD）和时延扩展的几何拓扑是相同的。通过在 Sub-6GHz CKM 中提取“主干径拓扑结构”，可以零成本地生成毫米波 CKM 的“骨架”，仅需少量高频导频即可补全细节。",
+            "Methodology": "1. 建立空间一致性模型：利用射线追踪分析低频与高频信道在同一场景下的路径映射关系。2. 跨频段映射器：设计一个物理启发式的神经网络，输入低频 CKM 的 RSRP 分布，预测高频 CKM 的主径存在概率。3. 稀疏采样优化：在预测的高频骨架基础上，设计最优的探测点选择策略，以最少的开销完成 mmWave CKM 的精化。4. 性能评估：比较该方法与独立构建 mmWave CKM 的资源消耗和精度差异。"
+        },
+        "Final_Decision": "Timeout",
+        "Teacher_Final_Feedback": "上一轮你的输出不符合JSON规范或缺少Plan字段，请严格按格式重新生成。",
+        "Detailed_Plan": null,
+        "Agent_Task_ID": "idea_10_agent_3"
+    }
+]

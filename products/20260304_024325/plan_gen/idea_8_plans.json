@@ -1,0 +1,47 @@
+[
+    {
+        "Task_ID": "idea_8_agent_1",
+        "Original_Idea_Title": "面向近场 XL-MIMO 的球面波前曲率索引地图 (Curvature-Indexed CKM)",
+        "Original_Idea": {
+            "Name": "NF-Curvature-CKM",
+            "Title": "面向近场 XL-MIMO 的球面波前曲率索引地图 (Curvature-Indexed CKM)",
+            "Background": "在 6G 超大规模阵列（XL-MIMO）中，用户常处于近场区。传统的基于 AoA/AoD 的 CKM 忽略了波前的曲率信息，导致波束聚焦（Beam Focusing）失败。",
+            "Hypothesis": "在近场环境下，信道的空间非平稳性可以用“相位梯度场”和“等效曲率半径”来刻画。通过构建存储位置相关曲率参数的 CKM，基站可以直接跳过冗长的近场深度扫描（Depth Sweep），实现一阶波束聚焦对准。",
+            "Methodology": "1. 定义 CKM 新维度：在每个地理网格中存储主径的球面波曲率半径（Radius of Curvature）。2. 建立曲率演化模型：分析多径反射如何改变波前的聚焦中心。3. 算法设计：提出“曲率辅助波束赋形”，利用 CKM 提供的先验曲率作为相位补偿的初值。4. 鲁棒性分析：研究阵列位置微偏（Hardware Misalignment）对曲率地图失效的影响及在线校准方法。"
+        },
+        "Final_Decision": "Timeout",
+        "Teacher_Final_Feedback": "上一轮你的输出不符合JSON规范或缺少Plan字段，请严格按格式重新生成。",
+        "Detailed_Plan": null,
+        "Agent_Task_ID": "idea_8_agent_1"
+    },
+    {
+        "Task_ID": "idea_8_agent_2",
+        "Original_Idea_Title": "面向近场 XL-MIMO 的球面波前曲率索引地图 (Curvature-Indexed CKM)",
+        "Original_Idea": {
+            "Name": "NF-Curvature-CKM",
+            "Title": "面向近场 XL-MIMO 的球面波前曲率索引地图 (Curvature-Indexed CKM)",
+            "Background": "在 6G 超大规模阵列（XL-MIMO）中，用户常处于近场区。传统的基于 AoA/AoD 的 CKM 忽略了波前的曲率信息，导致波束聚焦（Beam Focusing）失败。",
+            "Hypothesis": "在近场环境下，信道的空间非平稳性可以用“相位梯度场”和“等效曲率半径”来刻画。通过构建存储位置相关曲率参数的 CKM，基站可以直接跳过冗长的近场深度扫描（Depth Sweep），实现一阶波束聚焦对准。",
+            "Methodology": "1. 定义 CKM 新维度：在每个地理网格中存储主径的球面波曲率半径（Radius of Curvature）。2. 建立曲率演化模型：分析多径反射如何改变波前的聚焦中心。3. 算法设计：提出“曲率辅助波束赋形”，利用 CKM 提供的先验曲率作为相位补偿的初值。4. 鲁棒性分析：研究阵列位置微偏（Hardware Misalignment）对曲率地图失效的影响及在线校准方法。"
+        },
+        "Final_Decision": "Timeout",
+        "Teacher_Final_Feedback": "上一轮你的输出不符合JSON规范或缺少Plan字段，请严格按格式重新生成。",
+        "Detailed_Plan": null,
+        "Agent_Task_ID": "idea_8_agent_2"
+    },
+    {
+        "Task_ID": "idea_8_agent_3",
+        "Original_Idea_Title": "面向近场 XL-MIMO 的球面波前曲率索引地图 (Curvature-Indexed CKM)",
+        "Original_Idea": {
+            "Name": "NF-Curvature-CKM",
+            "Title": "面向近场 XL-MIMO 的球面波前曲率索引地图 (Curvature-Indexed CKM)",
+            "Background": "在 6G 超大规模阵列（XL-MIMO）中，用户常处于近场区。传统的基于 AoA/AoD 的 CKM 忽略了波前的曲率信息，导致波束聚焦（Beam Focusing）失败。",
+            "Hypothesis": "在近场环境下，信道的空间非平稳性可以用“相位梯度场”和“等效曲率半径”来刻画。通过构建存储位置相关曲率参数的 CKM，基站可以直接跳过冗长的近场深度扫描（Depth Sweep），实现一阶波束聚焦对准。",
+            "Methodology": "1. 定义 CKM 新维度：在每个地理网格中存储主径的球面波曲率半径（Radius of Curvature）。2. 建立曲率演化模型：分析多径反射如何改变波前的聚焦中心。3. 算法设计：提出“曲率辅助波束赋形”，利用 CKM 提供的先验曲率作为相位补偿的初值。4. 鲁棒性分析：研究阵列位置微偏（Hardware Misalignment）对曲率地图失效的影响及在线校准方法。"
+        },
+        "Final_Decision": "Timeout",
+        "Teacher_Final_Feedback": "上一轮你的输出不符合JSON规范或缺少Plan字段，请严格按格式重新生成。",
+        "Detailed_Plan": null,
+        "Agent_Task_ID": "idea_8_agent_3"
+    }
+]

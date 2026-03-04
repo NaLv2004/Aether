@@ -1,0 +1,90 @@
+[
+    {
+        "Task_ID": "idea_3_agent_1",
+        "Original_Idea_Title": "Depth-Aware CKM for Near-Field Beam Focusing and Handover",
+        "Original_Idea": {
+            "Name": "NF-CKM",
+            "Title": "Depth-Aware CKM for Near-Field Beam Focusing and Handover",
+            "Background": "近场通信的特征是波束不仅有方向（Direction），还有焦距（Focal Length）。现有的CKM大多是二维或简单的三维场强图，缺乏对‘聚焦深度’这一维度的刻画。",
+            "Hypothesis": "近场CKM应存储‘最优焦距图（Optimal Focal Map）’。在用户移动过程中，基于CKM预判的焦距切换可以避免复杂的二维码本搜索（距离+角度），实现‘零开销’的近场波束追踪。",
+            "Methodology": "1. 定义极坐标系下的空间相关性函数，并将其作为CKM的存储基元；2. 建立‘焦深’与多径扩展之间的解析关联模型；3. 设计一种基于位置触发的焦距切换协议，并在存在室内反射墙（增加有效近场范围）的复杂场景下，验证其相比于传统远场CKM的吞吐量提升。"
+        },
+        "Final_Decision": "Timeout",
+        "Teacher_Final_Feedback": "上一轮你的输出不符合JSON规范或缺少Plan字段，请严格按格式重新生成。",
+        "Detailed_Plan": null,
+        "Agent_Task_ID": "idea_3_agent_1"
+    },
+    {
+        "Task_ID": "idea_3_agent_2",
+        "Original_Idea_Title": "Depth-Aware CKM for Near-Field Beam Focusing and Handover",
+        "Original_Idea": {
+            "Name": "NF-CKM",
+            "Title": "Depth-Aware CKM for Near-Field Beam Focusing and Handover",
+            "Background": "近场通信的特征是波束不仅有方向（Direction），还有焦距（Focal Length）。现有的CKM大多是二维或简单的三维场强图，缺乏对‘聚焦深度’这一维度的刻画。",
+            "Hypothesis": "近场CKM应存储‘最优焦距图（Optimal Focal Map）’。在用户移动过程中，基于CKM预判的焦距切换可以避免复杂的二维码本搜索（距离+角度），实现‘零开销’的近场波束追踪。",
+            "Methodology": "1. 定义极坐标系下的空间相关性函数，并将其作为CKM的存储基元；2. 建立‘焦深’与多径扩展之间的解析关联模型；3. 设计一种基于位置触发的焦距切换协议，并在存在室内反射墙（增加有效近场范围）的复杂场景下，验证其相比于传统远场CKM的吞吐量提升。"
+        },
+        "Final_Decision": "Timeout",
+        "Teacher_Final_Feedback": "上一轮你的输出不符合JSON规范或缺少Plan字段，请严格按格式重新生成。",
+        "Detailed_Plan": null,
+        "Agent_Task_ID": "idea_3_agent_2"
+    },
+    {
+        "Task_ID": "idea_3_agent_3",
+        "Original_Idea_Title": "Depth-Aware CKM for Near-Field Beam Focusing and Handover",
+        "Original_Idea": {
+            "Name": "NF-CKM",
+            "Title": "Depth-Aware CKM for Near-Field Beam Focusing and Handover",
+            "Background": "近场通信的特征是波束不仅有方向（Direction），还有焦距（Focal Length）。现有的CKM大多是二维或简单的三维场强图，缺乏对‘聚焦深度’这一维度的刻画。",
+            "Hypothesis": "近场CKM应存储‘最优焦距图（Optimal Focal Map）’。在用户移动过程中，基于CKM预判的焦距切换可以避免复杂的二维码本搜索（距离+角度），实现‘零开销’的近场波束追踪。",
+            "Methodology": "1. 定义极坐标系下的空间相关性函数，并将其作为CKM的存储基元；2. 建立‘焦深’与多径扩展之间的解析关联模型；3. 设计一种基于位置触发的焦距切换协议，并在存在室内反射墙（增加有效近场范围）的复杂场景下，验证其相比于传统远场CKM的吞吐量提升。"
+        },
+        "Final_Decision": "Pass",
+        "Teacher_Final_Feedback": "Perfect plan.",
+        "Detailed_Plan": [
+            {
+                "idx": 1,
+                "name": "系统模型：近场球面波信道建模与环境初始化",
+                "content": "1. 坐标系设定：基站（BS）位于(0,0)，采用均匀线性阵列（ULA）沿y轴分布，阵元数为N=64，阵元间距d=λ/2，工作频率fc=30GHz（λ=0.01m）。2. 阵元坐标：第n个阵元坐标为 (0, (n-(N-1)/2)*d)。3. 空间点定义：用户位置为 (r, θ)，对应直角坐标 (x, y) = (r*cosθ, r*sinθ)。4. 信道向量生成：定义函数 h(r, θ)，其第n个元素为 h_n = (1/sqrt(N)) * (1/d_n) * exp(-j*2*pi*d_n/λ)，其中 d_n = sqrt(x^2 + (y - y_n)^2) 是阵元n到用户的距离。5. 环境复杂度：在x=10m处设置一平行于y轴的理想反射墙，反射系数Γ=0.7。总信道 H = h_los + Γ * h_nlos，其中 h_nlos 通过镜像源点计算。6. 仿真范围：r从1m到20m，θ从-60度到60度。",
+                "expected_outcome": "成功编写信道生成函数。通过绘图验证：当用户靠近BS时，阵元间接收信号的幅度不再相等（近场特征），且相位差呈现非线性变化。"
+            },
+            {
+                "idx": 2,
+                "name": "基线方法1：穷举式近场波束码本搜索",
+                "content": "1. 预定义码本 W：包含角度维和距离维。角度维在[-60, 60]度均匀采样M_ang=64个点；距离维在[1, 20]m范围内按1/r均匀采样M_dist=32个点。总码本大小 M = 64 * 32 = 2048。2. 搜索过程：对于每个测试位置(x, y)，遍历码本中所有波束成形向量 w_i，计算接收功率 P_i = |H^H * w_i|^2。3. 性能记录：记录最大接收功率 P_max 和对应的波束索引。4. 开销定义：每次搜索需要 2048 次导频测量。",
+                "expected_outcome": "得到全场最优功率图（Performance Upper Bound）。记录平均每个位置的搜索开销为2048次测量。"
+            },
+            {
+                "idx": 3,
+                "name": "基线方法2：传统远场CKM (Angle-only)",
+                "content": "1. 离线阶段：将区域划分为0.5m x 0.5m的网格。在每个网格中心点，存储其几何角度 θ = arctan(y/x)。2. 在线阶段：当用户位于位置(x, y)时，BS直接从CKM读取角度θ，并应用远场波束成形向量 w_ff(θ)，其第n个元素为 (1/sqrt(N)) * exp(j*(2*pi/λ)*y_n*sinθ)。3. 性能计算：计算接收功率 P_ff = |H^H * w_ff|^2。4. 开销定义：波束训练开销为0（直接基于位置查表）。",
+                "expected_outcome": "在近场区域（r < 5m），远场波束增益 P_ff 相比 P_max 出现显著下降（通常 > 3dB），证明传统远场CKM在近场失效。"
+            },
+            {
+                "idx": 4,
+                "name": "创新方案1：构建最优焦距图 (OFM - Optimal Focal Map)",
+                "content": "1. 离线构建：针对每个网格中心(x, y)，在考虑多径（反射墙）的情况下，通过一维搜索找到使接收功率最大化的最优焦距 r_foc。注意：由于反射径存在，r_foc 可能不等于几何距离 r。2. 存储结构：构造数据库 Map(grid_id) -> (r_foc, θ)。3. 在线应用：用户在位置(x, y)时，BS查询 CKM 获取 (r_foc, θ)，并构造近场聚焦波束 w(r_foc, θ)，其第n个元素相位补偿项为 exp(j*(2*pi/λ)*dist_n_foc)，其中 dist_n_foc 是阵元n到焦点 (r_foc, θ) 的距离。",
+                "expected_outcome": "在多径环境下，OFM 提供的波束增益应逼近穷举搜索（基线1），且在近场区域远优于传统远场CKM（基线2）。"
+            },
+            {
+                "idx": 5,
+                "name": "创新方案2：焦深 (DoF) 特征提取与空间相关性建模",
+                "content": "1. 焦深定义：对于每个网格及其对应的最优波束 w(r_foc, θ)，定义其焦深 Δr。Δr 满足：当用户在径向移动距离不超过 Δr 时，接收功率下降不超过 3dB。2. 计算逻辑：在离线阶段，针对每个网格，计算功率下降到 50% 时的距离跨度。3. 更新 CKM：将 Δr 存入 CKM 数据库，现在每个网格存储四元组 (r_foc, θ, Δr_min, Δr_max)。",
+                "expected_outcome": "生成焦深分布热图。预期结果显示：距离BS越近，焦深越窄（波束越尖锐）；距离BS越远，焦深越宽（逐渐退化为远场波束）。"
+            },
+            {
+                "idx": 6,
+                "name": "创新方案3：基于位置触发的‘零开销’切换协议实现",
+                "content": "1. 轨迹模拟：生成一条用户移动轨迹，例如从 (2, 2) 移动到 (15, 8)。2. 协议执行：(a) 初始位置：BS 获取 CKM 中的 (r_foc, θ) 并记录当前参考位置 P_ref。(b) 用户移动：BS实时获取用户当前位置 (x_t, y_t)。(c) 切换判定：计算当前位置与 P_ref 的径向距离。如果超出当前网格定义的焦深范围 Δr，则触发‘切换’：BS 根据当前位置重新查表获取新的 (r_foc, θ) 并更新参考点 P_ref。3. 统计：记录整条轨迹的平均吞吐量（和SNR相关）以及总切换次数。",
+                "expected_outcome": "实现自适应切换。在保持高接收增益的同时，切换频率由于焦深信息的引入而大幅降低。相比于每一步都重新训练（基线1），导频开销降低 95% 以上。"
+            },
+            {
+                "idx": 7,
+                "name": "性能对比与评估总结",
+                "content": "1. 绘制曲线：对比四种方案（1. 穷举搜索；2. 远场CKM；3. 理想几何近场；4. 本方案OFM+DoF）在用户移动轨迹上的实时接收功率。2. 绘制开销-性能折衷图：横轴为波束训练开销，纵轴为平均可达速率。3. 指标计算：计算平均频谱效率 (bit/s/Hz) 和切换成功率。分析在反射墙强度变化时，OFM 的鲁棒性。",
+                "expected_outcome": "输出至少 3 张关键对比图表。预期结论：Depth-Aware CKM 能够以极低的在线开销（零搜索）提供接近物理上限的近场聚焦性能，且焦深机制能有效减少不必要的切换。"
+            }
+        ],
+        "Agent_Task_ID": "idea_3_agent_3"
+    }
+]

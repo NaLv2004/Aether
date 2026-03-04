@@ -7,6 +7,9 @@ import argparse
 import requests
 import backoff
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from utils import setup_logger
+
+logger = setup_logger("experiment_run.log")
 
 # 导入你刚刚重构的 LLMAgent
 from llm import LLMAgent
@@ -15,7 +18,7 @@ from llm import LLMAgent
 # 1. 辅助函数：OpenAlex 文献检索
 # ==========================================
 def on_backoff(details):
-    print(
+    logger.info(
         f"Backing off {details['wait']:0.1f} seconds after {details['tries']} tries "
         f"calling function {details['target'].__name__} at {time.strftime('%X')}"
     )
@@ -75,7 +78,7 @@ def search_for_papers(query, result_limit=10, engine="openalex"):
             papers = [extract_info_from_work(work) for work in works]
             return papers
         except Exception as e:
-            print(f"[OpenAlex Search Error] {e}")
+            logger.info(f"[OpenAlex Search Error] {e}")
             return None
     else:
         raise NotImplementedError(f"{engine} not supported in this script!")
@@ -189,27 +192,27 @@ def format_search_results(queries, engine="openalex"):
         if not papers:
             results_str += "未找到相关文献。\n"
         else:
-            # print(f"p['abstract'] ")
+            # logger.info(f"p['abstract'] ")
             for i, p in enumerate(papers):
                 results_str += f"{i+1}. {p['title']} ({p['year']}) - {p['venue']}\n   Authors: {p['authors']}\n   Abstract: {p['abstract'][:300]}...\n"
     return results_str
 
 
-def run_student_agent(student_id, theme, max_iters, model):
+def run_student_agent(student_id, theme, max_iters, model, log_dir):
     """Idea Generator Agent 的运行逻辑"""
-    agent = LLMAgent(model=model, log_file=f"log_student_{student_id}.log")
-    print(f"[Student {student_id}] Started working on theme...")
+    agent = LLMAgent(model=model, log_file=os.path.join(log_dir, f"log_student_{student_id}.log"))
+    logger.info(f"[Student {student_id}] Started working on theme...")
 
     current_prompt = IDEA_GENERATOR_FIRST_PROMPT.format(theme=theme)
     current_ideas = []
 
     for i in range(max_iters):
-        print(f"[Student {student_id}] Iteration {i+1}/{max_iters}")
+        logger.info(f"[Student {student_id}] Iteration {i+1}/{max_iters}")
         response, _ = agent.get_response(current_prompt, IDEA_GENERATOR_SYSTEM_PROMPT)
         
         parsed_json = LLMAgent.extract_json_between_markers(response)
         if not parsed_json:
-            print(f"[Student {student_id}] Failed to parse JSON. Retrying...")
+            logger.info(f"[Student {student_id}] Failed to parse JSON. Retrying...")
             current_prompt = "你的输出不符合JSON格式要求，请修正并重新输出。"
             continue
             
@@ -221,7 +224,7 @@ def run_student_agent(student_id, theme, max_iters, model):
             current_ideas = ideas # 更新为最新的 Ideas
             
         if "i'm done" in thoughts.lower():
-            print(f"[Student {student_id}] Finished early: {thoughts[:50]}...")
+            logger.info(f"[Student {student_id}] Finished early: {thoughts[:50]}...")
             break
             
         if i < max_iters - 1:
@@ -231,14 +234,14 @@ def run_student_agent(student_id, theme, max_iters, model):
                 previous_ideas=json.dumps(current_ideas, indent=2, ensure_ascii=False)
             )
             
-    print(f"[Student {student_id}] Completed. Generated {len(current_ideas)} ideas.")
+    logger.info(f"[Student {student_id}] Completed. Generated {len(current_ideas)} ideas.")
     return current_ideas
 
 
-def run_teacher_agent(teacher_id, idea, max_iters, model):
+def run_teacher_agent(teacher_id, idea, max_iters, model, log_dir):
     """Novelty Check Agent 的运行逻辑"""
-    agent = LLMAgent(model=model, log_file=f"log_teacher_{teacher_id}.log")
-    print(f"[Teacher {teacher_id}] Start reviewing idea: {idea.get('Title', 'Unknown')}")
+    agent = LLMAgent(model=model, log_file=os.path.join(log_dir, f"log_teacher_{teacher_id}.log"))
+    logger.info(f"[Teacher {teacher_id}] Start reviewing idea: {idea.get('Title', 'Unknown')}")
 
     search_feedback = "目前尚未进行任何搜索。"
     final_score = None
@@ -264,7 +267,7 @@ def run_teacher_agent(teacher_id, idea, max_iters, model):
         if decision == "Finished":
             final_score = parsed_json.get("Score")
             review_comments = parsed_json.get("Thoughts", "")
-            print(f"[Teacher {teacher_id}] Review finished. Score: {final_score}")
+            logger.info(f"[Teacher {teacher_id}] Review finished. Score: {final_score}")
             break
         else:
             final_score = parsed_json.get("Score")
@@ -284,41 +287,27 @@ def run_teacher_agent(teacher_id, idea, max_iters, model):
 # ==========================================
 
 # 4. 主控流程
-
-# ==========================================
-
-def main():
-    parser = argparse.ArgumentParser(description="通信领域 AI Scientist - Idea 生成与审查")
-    parser.add_argument("--theme_file", type=str, default="theme_idea_gen.txt", help="存放研究主题的txt文件")
-    parser.add_argument("--n_students", type=int, default=9, help="并发运行的Idea Generator Agent数量")
-    parser.add_argument("--n_teachers", type=int, default=5, help="并发运行的Novelty Check Agent数量")
-    parser.add_argument("--max_student_iters", type=int, default=3, help="Student最大迭代次数")
-    parser.add_argument("--max_teacher_iters", type=int, default=10, help="Teacher最大检索评估次数")
-    parser.add_argument("--model", type=str, default="gemini-3-pro-high", help="使用的LLM模型名称")
-    parser.add_argument("--output_file", type=str, default="all_generated_ideas.txt", help="所有生成的Idea保存位置")
-    parser.add_argument("--review_log", type=str, default="novelty_scores.log", help="审查结果的输出位置")
-
-
-    args = parser.parse_args()
+def generate_ideas(args):
+    # args = parser.parse_args()
 
     # 1. 读取主题文件 
     if not os.path.exists(args.theme_file):
-        print(f"找不到主题文件: {args.theme_file}。请先创建该文件并写入研究主题。")
+        logger.info(f"找不到主题文件: {args.theme_file}。请先创建该文件并写入研究主题。")
         return
     with open(args.theme_file, "r", encoding="utf-8") as f:
         theme = f.read().strip()
 
-    print(f"=== 启动 AI Scientist ===")
-    print(f"Theme: {theme}")
-    print(f"Students: {args.n_students}, Teachers: {args.n_teachers}, Model: {args.model}")
-    print("=========================\n")
+    logger.info(f"=== 启动 AI Scientist ===")
+    logger.info(f"Theme: {theme}")
+    logger.info(f"Students: {args.n_students}, Teachers: {args.n_teachers}, Model: {args.model}")
+    logger.info("=========================\n")
 
     # 2. 阶段一：并行启动 Idea Generators
     all_ideas = []
-    print(">>> 阶段一：Idea Generation (并发多 Agent) <<<")
+    logger.info(">>> 阶段一：Idea Generation (并发多 Agent) <<<")
     with ThreadPoolExecutor(max_workers=args.n_students) as executor:
         future_to_student = {
-            executor.submit(run_student_agent, i+1, theme, args.max_student_iters, args.model): i+1 
+            executor.submit(run_student_agent, i+1, theme, args.max_student_iters, args.model, args.log_dir): i+1 
             for i in range(args.n_students)
         }
         for future in as_completed(future_to_student):
@@ -328,10 +317,10 @@ def main():
     # 将所有的idea记录到单独的txt文件中
     with open(args.output_file, "w", encoding="utf-8") as f:
         json.dump(all_ideas, f, indent=4, ensure_ascii=False)
-    print(f"阶段一结束。共生成 {len(all_ideas)} 个Ideas，已保存至 {args.output_file}。\n")
+    logger.info(f"阶段一结束。共生成 {len(all_ideas)} 个Ideas，已保存至 {args.output_file}。\n")
 
     if not all_ideas:
-        print("未生成任何Idea，程序退出。")
+        logger.info("未生成任何Idea，程序退出。")
         return
 
     # 3. 打乱 Idea 顺序
@@ -339,13 +328,13 @@ def main():
 
     # 4. 阶段二：并行启动 Novelty Checkers (Teachers) 进行评估
     # 为了简化，我们将所有打乱后的idea分配给 N 个 teacher 组成的线程池进行评估。
-    print(">>> 阶段二：Novelty Check (并发严苛审稿) <<<")
+    logger.info(">>> 阶段二：Novelty Check (并发严苛审稿) <<<")
     evaluated_results = []
 
     # 控制并发量为 n_teachers，处理所有的 ideas
     with ThreadPoolExecutor(max_workers=args.n_teachers) as executor:
         future_to_idea = {
-            executor.submit(run_teacher_agent, idx % args.n_teachers + 1, idea, args.max_teacher_iters, args.model): idea
+            executor.submit(run_teacher_agent, idx % args.n_teachers + 1, idea, args.max_teacher_iters, args.model, args.log_dir): idea
             for idx, idea in enumerate(all_ideas)
         }
         for future in as_completed(future_to_idea):
@@ -353,7 +342,7 @@ def main():
             evaluated_results.append(result)
 
     # 5. 输出审查结果到控制台和独立的Log文件
-    print("\n>>> 最终审查结果汇总 <<<")
+    logger.info("\n>>> 最终审查结果汇总 <<<")
     with open(args.review_log, "w", encoding="utf-8") as f:
         for idx, res in enumerate(evaluated_results):
             idea_title = res["Idea"].get("Title", "Unknown Title")
@@ -366,85 +355,9 @@ def main():
             output_str += f"Review Comments:\n{comments}\n"
             output_str += "="*40 + "\n"
             
-            print(output_str)
+            logger.info(output_str)
             f.write(output_str)
             
-    print(f"\n所有评估结束，详细评分已保存至 {args.review_log}。")
-
-main()
-
-
-def generate_ideas(parser):
-    args = parser.parse_args()
-
-    # 1. 读取主题文件 
-    if not os.path.exists(args.theme_file):
-        print(f"找不到主题文件: {args.theme_file}。请先创建该文件并写入研究主题。")
-        return
-    with open(args.theme_file, "r", encoding="utf-8") as f:
-        theme = f.read().strip()
-
-    print(f"=== 启动 AI Scientist ===")
-    print(f"Theme: {theme}")
-    print(f"Students: {args.n_students}, Teachers: {args.n_teachers}, Model: {args.model}")
-    print("=========================\n")
-
-    # 2. 阶段一：并行启动 Idea Generators
-    all_ideas = []
-    print(">>> 阶段一：Idea Generation (并发多 Agent) <<<")
-    with ThreadPoolExecutor(max_workers=args.n_students) as executor:
-        future_to_student = {
-            executor.submit(run_student_agent, i+1, theme, args.max_student_iters, args.model): i+1 
-            for i in range(args.n_students)
-        }
-        for future in as_completed(future_to_student):
-            student_ideas = future.result()
-            all_ideas.extend(student_ideas)
-            
-    # 将所有的idea记录到单独的txt文件中
-    with open(args.output_file, "w", encoding="utf-8") as f:
-        json.dump(all_ideas, f, indent=4, ensure_ascii=False)
-    print(f"阶段一结束。共生成 {len(all_ideas)} 个Ideas，已保存至 {args.output_file}。\n")
-
-    if not all_ideas:
-        print("未生成任何Idea，程序退出。")
-        return
-
-    # 3. 打乱 Idea 顺序
-    random.shuffle(all_ideas)
-
-    # 4. 阶段二：并行启动 Novelty Checkers (Teachers) 进行评估
-    # 为了简化，我们将所有打乱后的idea分配给 N 个 teacher 组成的线程池进行评估。
-    print(">>> 阶段二：Novelty Check (并发严苛审稿) <<<")
-    evaluated_results = []
-
-    # 控制并发量为 n_teachers，处理所有的 ideas
-    with ThreadPoolExecutor(max_workers=args.n_teachers) as executor:
-        future_to_idea = {
-            executor.submit(run_teacher_agent, idx % args.n_teachers + 1, idea, args.max_teacher_iters, args.model): idea
-            for idx, idea in enumerate(all_ideas)
-        }
-        for future in as_completed(future_to_idea):
-            result = future.result()
-            evaluated_results.append(result)
-
-    # 5. 输出审查结果到控制台和独立的Log文件
-    print("\n>>> 最终审查结果汇总 <<<")
-    with open(args.review_log, "w", encoding="utf-8") as f:
-        for idx, res in enumerate(evaluated_results):
-            idea_title = res["Idea"].get("Title", "Unknown Title")
-            score = res["Score"]
-            comments = res["Review_Comments"]
-            
-            output_str = f"--- Idea {idx+1} ---\n"
-            output_str += f"Title: {idea_title}\n"
-            output_str += f"Score: {score}/10\n"
-            output_str += f"Review Comments:\n{comments}\n"
-            output_str += "="*40 + "\n"
-            
-            print(output_str)
-            f.write(output_str)
-            
-    print(f"\n所有评估结束，详细评分已保存至 {args.review_log}。")
+    logger.info(f"\n所有评估结束，详细评分已保存至 {args.review_log}。")
     return args.output_file # 返回生成的idea文件路径
     pass

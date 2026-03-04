@@ -1,0 +1,118 @@
+[
+    {
+        "Task_ID": "idea_1_agent_1",
+        "Original_Idea_Title": "Visibility-Region Aware CKM for Near-Field XL-MIMO Systems",
+        "Original_Idea": {
+            "Name": "VR-CKM",
+            "Title": "Visibility-Region Aware CKM for Near-Field XL-MIMO Systems",
+            "Background": "在 6G 极大规模天线阵列（XL-MIMO）场景下，用户通常处于辐射近场区。此时，天线阵列表现出明显的空间非平稳性（Spatial Non-stationarity），即阵列的不同部分可能观测到完全不同的散射路径。现有的 CKM 仅提供位置到信道系数或波束索引的映射，忽略了阵列内部的可见性差异。",
+            "Hypothesis": "通过在 CKM 中引入“可见性矩阵（Visibility Matrix）”维度，可以精确刻画每个地理位置对应的阵列可见区域（VR），从而在无需全阵列信道估计的情况下，实现子阵列选择与精准近场波束聚焦。",
+            "Methodology": "1. 建立基于坐标的 VR 映射模型，存储位置坐标与阵列子块可见性的对应关系；2. 考虑硬件损伤（如阵列互耦、相位噪声）对 VR 边界判定的影响；3. 提出一种基于压缩感知和少量采样点的 VR-CKM 动态更新算法，利用空间相关性补全未知区域的可见性特征。"
+        },
+        "Final_Decision": "Pass",
+        "Teacher_Final_Feedback": "Perfect plan.",
+        "Detailed_Plan": [
+            {
+                "idx": 1,
+                "name": "近场XL-MIMO空间非平稳系统建模与VR几何定义",
+                "content": "1. 阵列参数：$N=256$ 个天线，ULA排列，间距 $d=\\lambda/2$，工作频率 $f_c=30$GHz。2. 坐标定义：阵列中心 $(0,0,0)$，天线 $n$ 坐标为 $(0, (n - (N-1)/2)d, 0)$。3. VR生成逻辑：在阵列与用户之间设置一个矩形遮挡物，中心坐标为 $(x_b, y_b, z_b)$，宽度 $W$，高度 $H$。4. 判定规则：对于用户位置 $U(x,y,z)$，连接 $U$ 与天线 $n$ 的线段若穿过遮挡物矩形，则 $v_n=0$，否则 $v_n=1$。5. 信道公式：$h_n = v_n \\cdot \\frac{\\lambda}{4\\pi r_n} \\exp(-j \\frac{2\\pi}{\\lambda} r_n)$，其中 $r_n$ 是天线 $n$ 到 $U$ 的距离。",
+                "expected_outcome": "成功构建信道生成函数，输入用户坐标和遮挡物参数，能输出一个256维的复数信道向量，且能可视化看到信道幅度的“断裂”现象（即VR区域）。"
+            },
+            {
+                "idx": 2,
+                "name": "数据集构建与特征降维处理",
+                "content": "1. 采样：在服务区域内随机生成10000个用户坐标 $(x, y, z)$ 及其对应的信道 $\\mathbf{h}$。2. 标签处理：从 $\\mathbf{h}$ 中提取理想的极坐标参数 $(r, \\theta)$ 作为回归目标；将256维的 $v_n$ 进行下采样（Pooling），划分为16个子块（每块16个天线），生成一个16维的粗粒度掩码 $\\mathbf{V}_{coarse} \\in \\{0, 1\\}^{16}$（若子块内超过半数天线可见则为1）。3. 数据划分：80%训练，20%测试。",
+                "expected_outcome": "生成包含 (Input: x,y,z; Output: r, theta, V_coarse) 的数据集文件，数据维度从256维复数降至18维实数，极大降低AI学习压力。"
+            },
+            {
+                "idx": 3,
+                "name": "基线方法实施：全阵列对准与子阵列启发式搜索",
+                "content": "1. Baseline 1 (全阵列对准)：假设已知用户位置，使用全阵列导向矢量 $\\mathbf{w}_{full}(r, \\theta)$ 进行波束赋形，计算增益。2. Baseline 2 (子阵列启发式搜索)：将阵列平分为4个子块，分别用导频探测每个子块的接收功率，选择功率最大的子块进行通信。3. 指标计算：计算两种基线在存在遮挡场景下的平均频谱效率 $SE = \\log_2(1 + SNR \\cdot |\\mathbf{h}^H \\mathbf{w}|^2)$。",
+                "expected_outcome": "得到基线性能数据，预期Baseline 1在遮挡严重时性能极差，Baseline 2在非平稳环境下略好但存在资源浪费。"
+            },
+            {
+                "idx": 4,
+                "name": "创新方案步一：VR-Aware CKM 多任务网络设计",
+                "content": "1. 网络结构：设计一个具有共享隐藏层的MLP。输入 $(x, y, z)$。2. 分支一（定位支路）：输出预测的 $(\\hat{r}, \\hat{\\theta})$，使用MSE Loss。3. 分支二（可见性支路）：输出预测的 $\\mathbf{\\hat{V}}_{coarse}$（16维），使用Sigmoid激活和BCE Loss。4. 合并训练：$Loss = Loss_{MSE} + \\alpha Loss_{BCE}$。5. 推理逻辑：根据预测的 $\\mathbf{\\hat{V}}_{coarse}$ 决定开启哪些天线子块，结合 $(\\hat{r}, \\hat{\\theta})$ 生成局部波束赋形向量。",
+                "expected_outcome": "训练完成。在测试集上，$(\\hat{r}, \\hat{\\theta})$ 的预测误差极小，且 $\\mathbf{\\hat{V}}_{coarse}$ 的分类准确率达到95%以上。"
+            },
+            {
+                "idx": 5,
+                "name": "创新方案步二：硬件损伤下的鲁棒性优化",
+                "content": "1. 引入损伤：在测试阶段，给天线相位加入随机噪声 $\\phi \\sim \\mathcal{N}(0, 10^\\circ)$，并引入相邻天线的互耦系数矩阵 $\\mathbf{C}$。2. 鲁棒训练：在训练数据集中加入坐标扰动（模拟定位误差）和信道噪声，重新微调步四中的模型。3. 评估：对比模型在理想环境与损伤环境下的波束增益下降幅度。",
+                "expected_outcome": "模型在存在硬件损伤时，其预测的VR区域依然能覆盖大部分有效天线，波束增益损失控制在1.5dB以内。"
+            },
+            {
+                "idx": 6,
+                "name": "创新方案步三：基于少量导频的动态VR更新",
+                "content": "1. 场景设置：模拟遮挡物发生移动后的环境不匹配。2. 采样：系统随机选择8个特定的“哨兵天线”发射导频。3. 更新算法：计算这8个点的实际接收功率 $\\mathbf{P}_{obs}$。利用这8个观测值对CKM预测的 $\\mathbf{\\hat{V}}_{coarse}$ 进行修正：若预测可见但实测功率极低，则关闭该子块。4. 性能验证：比较预测修正前后的波束增益。",
+                "expected_outcome": "无需全量信道估计，仅靠8个导频点即可修正因环境突变导致的VR预测错误，恢复约80%的丢失增益。"
+            },
+            {
+                "idx": 7,
+                "name": "综合性能对比与可视化",
+                "content": "1. 汇总对比：将 Baseline 1, Baseline 2, 传统 CKM (无VR分支), 以及本文提出的 VR-Aware CKM 在同一坐标轨迹下进行测试。2. 绘图：绘制“用户距离 vs 频谱效率”曲线和“遮挡物大小 vs 能量效率”曲线。3. VR可视化：绘制一个热力图，展示在不同位置下，模型预测的可见子阵列与真实VR的重合度。",
+                "expected_outcome": "输出完整的对比图表。结果应显示 VR-Aware CKM 在频谱效率上显著优于传统CKM（约提升20%-40%），且在计算开销上远低于全阵列扫描。"
+            }
+        ],
+        "Agent_Task_ID": "idea_1_agent_1"
+    },
+    {
+        "Task_ID": "idea_1_agent_2",
+        "Original_Idea_Title": "Visibility-Region Aware CKM for Near-Field XL-MIMO Systems",
+        "Original_Idea": {
+            "Name": "VR-CKM",
+            "Title": "Visibility-Region Aware CKM for Near-Field XL-MIMO Systems",
+            "Background": "在 6G 极大规模天线阵列（XL-MIMO）场景下，用户通常处于辐射近场区。此时，天线阵列表现出明显的空间非平稳性（Spatial Non-stationarity），即阵列的不同部分可能观测到完全不同的散射路径。现有的 CKM 仅提供位置到信道系数或波束索引的映射，忽略了阵列内部的可见性差异。",
+            "Hypothesis": "通过在 CKM 中引入“可见性矩阵（Visibility Matrix）”维度，可以精确刻画每个地理位置对应的阵列可见区域（VR），从而在无需全阵列信道估计的情况下，实现子阵列选择与精准近场波束聚焦。",
+            "Methodology": "1. 建立基于坐标的 VR 映射模型，存储位置坐标与阵列子块可见性的对应关系；2. 考虑硬件损伤（如阵列互耦、相位噪声）对 VR 边界判定的影响；3. 提出一种基于压缩感知和少量采样点的 VR-CKM 动态更新算法，利用空间相关性补全未知区域的可见性特征。"
+        },
+        "Final_Decision": "Pass",
+        "Teacher_Final_Feedback": "Perfect plan.",
+        "Detailed_Plan": [
+            {
+                "idx": 1,
+                "name": "近场XL-MIMO系统模型与非平稳信道生成",
+                "content": "1. 参数设置：天线数N=256，频率f=30GHz，波长λ=0.01m，阵元间距d=λ/2=0.005m。阵列全长L=(N-1)d≈1.275m。2. 空间范围：Rayleigh距离D=2L^2/λ≈325m。设定用户坐标(x, y)采样范围为x∈[2, 50]m（典型近场区），y∈[-20, 20]m。3. 信道建模：h = Σ_{l=1}^L α_l * (v_l ⊙ a(θ_l, r_l))。其中α_l ~ CN(0, 1)。a是基于球面波的近场导向矢量，第n个阵元相位为 exp(-j*2π/λ * dist_n)，dist_n是阵元n到目标的欧氏距离。4. 可见性(VR)实现：对于每个位置(x,y)，随机生成一个可见区间[n_start, n_end]，其中n_start ~ U(0, N/2)，区间长度W ~ U(N/4, N/2)。在区间内v_n=1，其余为0。输入：坐标范围；输出：包含(x,y, h, n_start, n_end)的数据字典。",
+                "expected_outcome": "生成12000组样本。绘图验证：选取一个样本，横轴为天线索引1-256，纵轴为信道增益|h_n|，应观察到仅在[n_start, n_end]区间内有显著能量，其余区域为0。"
+            },
+            {
+                "idx": 2,
+                "name": "基线1：盲近场匹配滤波 (Blind Near-Field MF)",
+                "content": "1. 场景设定：基站已知用户位置(x, y)，但完全不感知VR信息（即不知道哪些天线是可见的）。2. 实施：采用全阵列匹配滤波向量 w = a(x, y) / ||a(x, y)||，其中a为全阵列256维导向矢量。3. 计算：接收功率 P_blind = |w^H * h|^2。4. 性能指标：频谱效率 SE = log2(1 + SNR * P_blind)，设定SNR=10dB。输入：步骤1生成的h和对应的理想导向矢量a；输出：全阵列盲赋形的平均SE值。",
+                "expected_outcome": "得到一个基准SE值。由于w包含了不可见区域的无效相位对齐，且分母||a||包含了所有天线功率归一化，预计SE较低。"
+            },
+            {
+                "idx": 3,
+                "name": "基线2：标准功率预测CKM (Standard Power-only CKM)",
+                "content": "1. 数据准备：使用步骤1的数据，输入为(x, y)，标签为总功率 P_total = ||h||^2。将数据按8:2划分为训练集和测试集。2. 模型构建：搭建一个简单的MLP（输入2 -> 隐藏层128 -> 隐藏层64 -> 输出1）。3. 训练：使用Adam优化器，MSE损失函数。4. 评估：在测试集上预测功率，计算NMSE。输入：(x, y)坐标；输出：预测的信道功率。该模型只知功率，不知VR空间分布。",
+                "expected_outcome": "模型收敛，但在非平稳特征明显的区域（VR变化剧烈处），功率预测误差较大。记录测试集NMSE作为基线。"
+            },
+            {
+                "idx": 4,
+                "name": "创新方案步1：VR-CKM 回归模型构建",
+                "content": "1. 任务定义：将VR预测建模为对[n_start/N, n_end/N]两个边界值的回归。2. 改进网络：MLP输出层改为3个神经元，分别对应 [s, e, p]，其中s, e ∈ [0, 1]代表归一化的VR边界，p代表预测功率。3. 损失函数：Loss = λ1*MSE(s, s_true) + λ2*MSE(e, e_true) + λ3*MSE(p, p_true)，设定λ1=λ2=1, λ3=0.1。4. 子阵列赋形：实际通信时，根据预测的[s, e]还原出索引[n_s, n_e]，仅使用该段子阵列进行MF赋形：w_sub = a[n_s:n_e] / ||a[n_s:n_e]||。输入：(x, y)；输出：预测的VR边界及对应子阵列赋形的SE。",
+                "expected_outcome": "VR边界预测的平均误差（IOU）优于85%。由于消除了不可见区域的噪声/干扰，其SE应显著高于基线1（Blind MF）。"
+            },
+            {
+                "idx": 5,
+                "name": "创新方案步2：考虑硬件损伤的鲁棒性建模",
+                "content": "1. 互耦建模：构造N×N的Toeplitz互耦矩阵C。C_{i,j} = exp(-j*2π*|i-j|*d/λ) / (1 + |i-j|)。观测信道变为 h_noisy = C * h + n_noise。2. 相位噪声：对h_noisy的每个元素乘以 exp(j*φ)，φ ~ N(0, 0.05^2)。3. 鲁棒训练：使用带损伤的数据重新训练步骤4的VR-CKM模型。4. 对比：对比“未考虑损伤训练的模型”和“针对性训练的模型”在硬件损伤环境下的VR判定准确率。输入：带互耦和相位噪声的信道数据；输出：鲁棒训练后的VR预测准确率。",
+                "expected_outcome": "通过带噪训练（数据增强），模型在互耦环境下仍能准确判定VR边界，SE下降幅度控制在10%以内。"
+            },
+            {
+                "idx": 6,
+                "name": "创新方案步3：基于CS和OMP算法的VR动态更新",
+                "content": "1. 采样设置：假设在某些新位置，CKM尚未离线训练。随机选择M=32个天线单元（观测矩阵Φ为M×N的抽样矩阵）进行导频探测，得到观测信号 y = Φ * h + n。2. 算法实施：利用VR向量在空间上的连续性（块稀疏），采用正交匹配追踪（OMP）算法。字典矩阵设为 D = Φ * diag(a(x,y))。求解 min ||v||_0 s.t. ||y - D*v|| < ε。3. 更新逻辑：将CS恢复出的v（0/1向量）转化为新的[n_start, n_end]，用于微调(Fine-tune)已有的VR-CKM模型。输入：M个随机采样点的观测值；输出：动态更新后的VR预测结果。",
+                "expected_outcome": "即使在CKM未覆盖的区域，通过32个点的少量采样，OMP算法能以较高概率恢复出VR区间。更新后的VR-CKM在该区域的SE提升明显。"
+            },
+            {
+                "idx": 7,
+                "name": "性能汇总与可视化分析",
+                "content": "1. 效率对比：绘制SE vs. SNR (0-30dB) 曲线，对比 Blind MF, Power-CKM, VR-CKM, CS-updated VR-CKM。2. 鲁棒性对比：在不同互耦强度下对比VR判定准确率。3. 消融实验：展示引入VR维度后，波束赋形增益的提升比例。4. 可视化：随机抽取3个测试点，画出真实VR区间 vs. VR-CKM预测区间 vs. CS恢复区间的对比条形图。输入：所有步骤的输出数据；输出：4张核心对比图表。",
+                "expected_outcome": "图表清晰显示：VR-CKM在近场非平稳场景下远超传统CKM；CS动态更新能有效解决“冷启动”或区域外覆盖问题。所有代码运行无误，数据逻辑自洽。"
+            }
+        ],
+        "Agent_Task_ID": "idea_1_agent_2"
+    }
+]

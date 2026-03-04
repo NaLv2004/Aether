@@ -6,6 +6,9 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # 导入您已经实现的 LLMAgent
 from llm import LLMAgent
+from utils import setup_logger
+
+logger = setup_logger("experiment_run.log")
 
 # ==========================================
 # 1. 提示词定义 (Prompts)
@@ -155,15 +158,16 @@ class PlannerStudent:
             )
 
         response, _ = self.agent.get_response(prompt, STUDENT_SYSTEM_PROMPT)
-        parsed_json = LLMAgent.extract_json_between_markers(response)
+        parsed_json = LLMAgent.robust_extract_json(response)
 
-        if parsed_json and "Plan" in parsed_json:
+        if parsed_json and ("Plan" in parsed_json):
             self.current_plan = parsed_json.get("Plan", [])
             self.thoughts = parsed_json.get("Thoughts", "")
             return True
         else:
             # 容错处理
             self.agent._log_event("[Error] Failed to parse valid JSON from Student output.")
+            logger.debug("[Error] Failed to parse valid JSON from Teacher output.")
             return False
 
 
@@ -182,7 +186,7 @@ class PlannerTeacher:
         )
 
         response, _ = self.agent.get_response(prompt, TEACHER_SYSTEM_PROMPT)
-        parsed_json = LLMAgent.extract_json_between_markers(response)
+        parsed_json = LLMAgent.robust_extract_json(response)
 
         if parsed_json:
             decision = parsed_json.get("Decision", "Refine")
@@ -190,6 +194,7 @@ class PlannerTeacher:
             return decision, feedback
         else:
             self.agent._log_event("[Error] Failed to parse valid JSON from Teacher output.")
+            logger.debug("[Error] Failed to parse valid JSON from Teacher output.")
             return "Refine", "请仔细检查你的输出格式，必须包含严谨的Plan列表，并且符合系统要求。"
 
 
@@ -199,7 +204,7 @@ class PlannerTeacher:
 
 def run_planner_pipeline(task_id, idea, config: PlannerConfig):
     """单对 Student-Teacher 协同处理一个 Idea 的流水线"""
-    print(f"[Task {task_id}] Started planning for Idea: {idea.get('Title', 'Unknown')[:30]}...")
+    logger.info(f"[Task {task_id}] Started planning for Idea: {idea.get('Title', 'Unknown')[:30]}...")
     
     student = PlannerStudent(task_id, config)
     teacher = PlannerTeacher(task_id, config)
@@ -209,7 +214,7 @@ def run_planner_pipeline(task_id, idea, config: PlannerConfig):
     final_decision = "Timeout"
 
     for i in range(config.max_iters):
-        print(f"[Task {task_id}] Iteration {i+1}/{config.max_iters} - Student generating plan...")
+        logger.info(f"[Task {task_id}] Iteration {i+1}/{config.max_iters} - Student generating plan...")
         
         # 1. 学生生成/修改计划
         success = student.generate_plan(idea, teacher_feedback)
@@ -218,22 +223,22 @@ def run_planner_pipeline(task_id, idea, config: PlannerConfig):
             continue
             
         # 2. 导师审查计划
-        print(f"[Task {task_id}] Iteration {i+1}/{config.max_iters} - Teacher reviewing plan...")
+        logger.info(f"[Task {task_id}] Iteration {i+1}/{config.max_iters} - Teacher reviewing plan...")
         decision, feedback = teacher.review_plan(idea, student.current_plan)
         
         if decision.upper() == "PASS":
-            print(f"[Task {task_id}] Iteration {i+1}: Teacher PASSED the plan.")
+            logger.info(f"[Task {task_id}] Iteration {i+1}: Teacher PASSED the plan.")
             final_plan = student.current_plan
             final_decision = "Pass"
             break
         else:
-            print(f"[Task {task_id}] Iteration {i+1}: Teacher asked to REFINE.")
+            logger.info(f"[Task {task_id}] Iteration {i+1}: Teacher asked to REFINE.")
             teacher_feedback = feedback
             final_plan = student.current_plan # 保留最新的一版
             final_decision = "Max_Iters_Reached"
 
     # 如果达到最大迭代次数依然没有Pass，我们仍然保留最后一版Plan
-    print(f"[Task {task_id}] Completed. Final Status: {final_decision}.")
+    logger.info(f"[Task {task_id}] Completed. Final Status: {final_decision}.")
     
     # 组装返回结果
     result = {
@@ -247,8 +252,8 @@ def run_planner_pipeline(task_id, idea, config: PlannerConfig):
     return result
 
 
-def generate_plan(parser):
-    args = parser.parse_args()
+def generate_plan(args):
+    # args = parser.parse_args()
 
     # 初始化配置 (为保证兼容性，仍将 output_dir 赋给原配置类的 output_file 属性)
     config = PlannerConfig(
@@ -261,31 +266,31 @@ def generate_plan(parser):
         max_workers=args.max_workers
     )
 
-    print("=== 启动 AI Scientist: Planner ===")
-    print(f"输入文件: {config.input_file}")
-    print(f"输出文件夹: {args.output_dir}")
-    print(f"Student 模型: {config.model_student} | Teacher 模型: {config.model_teacher}")
-    print(f"每个 Idea 分配: {args.k_agents} 组 Agent 同步进行")
-    print(f"最大迭代: {config.max_iters} 轮 | 线程池大小: {config.max_workers}")
-    print("==================================\n")
+    logger.info("=== 启动 AI Scientist: Planner ===")
+    logger.info(f"输入文件: {config.input_file}")
+    logger.info(f"输出文件夹: {args.output_dir}")
+    logger.info(f"Student 模型: {config.model_student} | Teacher 模型: {config.model_teacher}")
+    logger.info(f"每个 Idea 分配: {args.k_agents} 组 Agent 同步进行")
+    logger.info(f"最大迭代: {config.max_iters} 轮 | 线程池大小: {config.max_workers}")
+    logger.info("==================================\n")
 
     # 读取 Ideas
     if not os.path.exists(config.input_file):
-        print(f"找不到输入文件: {config.input_file}。请先运行Idea Generator生成Idea。")
+        logger.info(f"找不到输入文件: {config.input_file}。请先运行Idea Generator生成Idea。")
         return
         
     try:
         with open(config.input_file, "r", encoding="utf-8") as f:
             ideas = json.load(f)
     except Exception as e:
-        print(f"读取输入文件失败，请确认文件是否为合法的JSON格式。错误: {e}")
+        logger.info(f"读取输入文件失败，请确认文件是否为合法的JSON格式。错误: {e}")
         return
 
     if not isinstance(ideas, list):
         # 兼容单条idea的情况
         ideas = [ideas]
         
-    print(f"共读取到 {len(ideas)} 个 Ideas，准备开始制定计划...\n")
+    logger.info(f"共读取到 {len(ideas)} 个 Ideas，准备开始制定计划...\n")
 
     # 确保输出文件夹存在
     os.makedirs(args.output_dir, exist_ok=True)
@@ -318,7 +323,7 @@ def generate_plan(parser):
                 # 将结果追加到对应 Idea 的列表里
                 idea_plans[idea_idx].append(result)
             except Exception as exc:
-                print(f"[Task {task_id}] generated an exception: {exc}")
+                logger.info(f"[Task {task_id}] generated an exception: {exc}")
 
     # 将归类好的规划结果保存为每个 Idea 对应的独立 JSON 文件
     try:
@@ -333,12 +338,12 @@ def generate_plan(parser):
             with open(idea_file_path, "w", encoding="utf-8") as f:
                 json.dump(plans, f, indent=4, ensure_ascii=False)
                 
-        print(f"\n全部计划制定完成！各想法的并行汇总计划已成功保存至文件夹: {args.output_dir}")
+        logger.info(f"\n全部计划制定完成！各想法的并行汇总计划已成功保存至文件夹: {args.output_dir}")
         return idea_file_path
     except Exception as e:
-        print(f"保存最终结果失败: {e}")
+        logger.info(f"保存最终结果失败: {e}")
 
-if __name__ == "__main__":
-    generate_plan()
+# if __name__ == "__main__":
+#     generate_plan()
     
     

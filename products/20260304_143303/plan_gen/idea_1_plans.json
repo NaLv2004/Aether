@@ -1,0 +1,106 @@
+[
+    {
+        "Task_ID": "idea_1_agent_2",
+        "Original_Idea_Title": "Proactive Information-Theoretic CKM Maintenance via ISAC and AoI",
+        "Original_Idea": {
+            "Name": "Active-CKM",
+            "Title": "Proactive Information-Theoretic CKM Maintenance via ISAC and AoI",
+            "Background": "目前的 CKM 多被视为静态数据库。由于环境动态演进（如植被生长、新建筑），地图会随时间失效。被动更新依赖用户上报，而在低用户密度区域，地图可能长期处于错误状态。",
+            "Hypothesis": "引入‘信息新鲜度（Age of Information, AoI）’和‘空间熵’指标，基站可以主动探测环境。当某区域的 AoI 超过阈值或在该区域的通信质量频繁不达标时，基站利用 ISAC 波束在空闲时段主动扫描该区域，利用反射回波实时修复 CKM。",
+            "Methodology": "1. 定义 CKM 的空间 AoI 演进模型，考虑环境变化的马尔可夫特性。2. 设计基于 Thompson Sampling 的探索-利用（Exploration-Exploitation）框架，在保障通信服务质量的同时，最小化地图的不确定性。3. 利用 ISAC 的感知回波提取多径指纹（Fingerprint）的演变，实现对地图格点的增量更新。"
+        },
+        "Final_Decision": "Pass",
+        "Teacher_Final_Feedback": "Perfect plan.",
+        "Detailed_Plan": [
+            {
+                "idx": 1,
+                "name": "系统模型：动态复数信道与Gauss-Markov演进建模",
+                "content": "1. 场景设置：定义 $M \times N$ 的二维格点，每个格点 $i$ 的真实信道为复向量 $\\mathbf{h}_{i,t} = [h_{i,t}^{(1)}, \\dots, h_{i,t}^{(L)}]^T \\in \\mathbb{C}^L$（$L$为多径数，初始设$L=2$）。2. 环境演进：引入马尔可夫状态 $S_{i,t} \\in \\{0, 1\\}$，转移概率 $P(1|0)=p_{01}$。信道遵循 Gauss-Markov 过程：$\\mathbf{h}_{i,t} = \\sqrt{1-\rho_{i,t}} \\mathbf{h}_{i,t-1} + \\sqrt{\rho_{i,t}} \\mathbf{e}_{i,t}$，其中 $\\mathbf{e}_{i,t} \\sim \\mathcal{CN}(0, \\sigma_e^2 \\mathbf{I})$。若 $S_{i,t}=0$（稳定），$\rho_{i,t}=\rho_{low}$；若 $S_{i,t}=1$（突变），$\rho_{i,t}=\rho_{high}$。3. 通信模型：基站利用估计信道 $\\hat{\\mathbf{h}}_{i,t}$ 进行最大比发射（MRT）预编码 $\\mathbf{w}_{i,t} = \\hat{\\mathbf{h}}_{i,t} / \\|\\hat{\\mathbf{h}}_{i,t}\\|$，下行可达速率 $R_{i,t} = \\log_2(1 + \frac{P_{tx}|\\mathbf{h}_{i,t}^H \\mathbf{w}_{i,t}|^2}{\\sigma_n^2})$，其中 $P_{tx}=1W, \\sigma_n^2=10^{-3}W$。4. AoI定义：$\\Delta_{i,t+1} = 0$ 若探测，否则 $\\Delta_{i,t+1} = \\Delta_{i,t} + 1$。",
+                "expected_outcome": "实现仿真环境类，输出格点 $i$ 的信道随时间变化的轨迹图。验证：在 $S=1$ 时信道模值波动显著增大，代码能正确计算复数信道下的可达速率。"
+            },
+            {
+                "idx": 2,
+                "name": "基线实施：Round Robin与基于AoI的贪婪算法",
+                "content": "1. 资源分配：每个时隙固定 $K$ 个感知束。2. 策略1 (Round Robin)：按索引顺序遍历格点。3. 策略2 (AoI-Greedy)：每个时隙选择 $\\Delta_{i,t}$ 最大的 $K$ 个格点。4. 感知过程：获取观测值 $\\mathbf{y}_{i,t} = \\mathbf{h}_{i,t} + \\mathbf{n}_{s,t}$，其中 $\\mathbf{n}_{s,t} \\sim \\mathcal{CN}(0, \\sigma_s^2 \\mathbf{I})$。更新地图 $\\hat{\\mathbf{h}}_{i,t} = \\mathbf{y}_{i,t}$。5. 评估：记录 1000 个时隙内的平均速率 $\bar{R}$ 和平均 AoI。",
+                "expected_outcome": "完成两个基线算法。预期：AoI-Greedy 的平均 AoI 比 Round Robin 降低约 20-30%，但两者在信道突变时的平均速率损失（MSE）应接近。"
+            },
+            {
+                "idx": 3,
+                "name": "创新方案步1：基于复高斯共轭先验的 Thompson Sampling (TS)",
+                "content": "1. 概率建模：假设每个格点的信道分量服从独立复高斯分布 $\\mathcal{CN}(\boldsymbol{\\mu}_{i,t}, \boldsymbol{\\Sigma}_{i,t})$。2. 采样：每个时隙对每个格点采样 $\tilde{\\mathbf{h}}_{i,t} \\sim \\mathcal{CN}(\boldsymbol{\\mu}_{i,t}, \boldsymbol{\\Sigma}_{i,t})$。3. 决策：选择采样值与当前地图值偏差最大的 $K$ 个格点进行感知。4. 贝叶斯更新：观测到 $\\mathbf{y}_{i,t}$ 后，按共轭先验公式更新：$\boldsymbol{\\Sigma}_{i,t+1} = (\boldsymbol{\\Sigma}_{i,t}^{-1} + \\sigma_s^{-2}\\mathbf{I})^{-1}$，$\boldsymbol{\\mu}_{i,t+1} = \boldsymbol{\\Sigma}_{i,t+1}(\boldsymbol{\\Sigma}_{i,t}^{-1}\boldsymbol{\\mu}_{i,t} + \\sigma_s^{-2}\\mathbf{y}_{i,t})$。对于未探测格点，方差按 $\boldsymbol{\\Sigma}_{i,t+1} = \boldsymbol{\\Sigma}_{i,t} + \\sigma_e^2\\mathbf{I}$ 随时间增长。",
+                "expected_outcome": "TS 框架运行成功。量化指标：在相同感知开销下，TS 的 CKM 均方误差 (MSE) 应比 AoI-Greedy 降低至少 15%。"
+            },
+            {
+                "idx": 4,
+                "name": "创新方案步2：融合空间关联熵的探测奖励函数",
+                "content": "1. 空间关联建模：定义相关核 $k(i,j) = \\exp(-\frac{dist(i,j)^2}{2d_0^2})$。2. 局部联合熵计算：对格点 $i$，考虑其 3x3 邻域 $\\mathcal{N}_i$，构建协方差矩阵 $\\mathbf{C}_i \\in \\mathbb{C}^{9 \times 9}$，其元素 $[C_i]_{jk} = k(j,k) \\cdot \\sqrt{\\sigma^2_{j,t} \\sigma^2_{k,t}}$。3. 空间熵奖励：$H_{spatial,i} = \\ln(\\det(\\pi e \\mathbf{C}_i))$。4. 最终奖励函数：$V_{i,t} = \text{TS\\_Sample\\_Loss} + \\lambda H_{spatial,i}$，其中 $\\lambda$ 为调节系数。5. 逻辑：优先探测自身不确定性高且对邻居信息贡献大的格点。",
+                "expected_outcome": "实现空间熵计算模块。验证：当某个区域多个格点长时间未更新时，该区域中心格点的 $V_{i,t}$ 增长速度应显著快于孤立格点。"
+            },
+            {
+                "idx": 5,
+                "name": "创新方案步3：基于ISAC回波指纹的卡尔曼增量更新",
+                "content": "1. 物理模型集成：将感知观测值 $\\mathbf{y}_{i,t}$ 视为包含时延和增益的指纹向量。2. 增量更新逻辑：不再直接覆盖，而是采用卡尔曼增益 $K_{gain,t} = \boldsymbol{\\Sigma}_{i,t}(\boldsymbol{\\Sigma}_{i,t} + \\sigma_s^2\\mathbf{I})^{-1}$。3. 更新公式：$\\hat{\\mathbf{h}}_{i,t+1} = \\hat{\\mathbf{h}}_{i,t} + K_{gain,t}(\\mathbf{y}_{i,t} - \\hat{\\mathbf{h}}_{i,t})$。4. 学习率 $\\kappa$ 自动演化：注意到 $K_{gain,t}$ 随 AoI 增加（方差变大）而增大，实现了“旧地图越老，新观测权重越大”的特性。",
+                "expected_outcome": "完成全闭环系统。在噪声环境下（$\\sigma_s^2$ 较大），增量更新后的 CKM 轨迹应比直接覆盖方式更平滑，MSE 进一步下降 10% 以上。"
+            },
+            {
+                "idx": 6,
+                "name": "综合评估与消融实验",
+                "content": "1. 性能曲线：绘制随时间变化的累计平均速率、MSE、AoI。2. 消融实验：对比 (1) 纯AoI算法, (2) 纯TS算法, (3) TS+空间熵, (4) 完整方案 (TS+空间熵+增量更新)。3. 稳健性测试：改变环境突变频率 $p_{01}$，观察各算法的适应速度。",
+                "expected_outcome": "输出 3-4 张高质量对比图表。预期完整方案在所有指标（特别是动态适应环境的能力）上均表现最优，且在不同噪声水平下具有鲁棒性。"
+            }
+        ],
+        "Agent_Task_ID": "idea_1_agent_2"
+    },
+    {
+        "Task_ID": "idea_1_agent_1",
+        "Original_Idea_Title": "Proactive Information-Theoretic CKM Maintenance via ISAC and AoI",
+        "Original_Idea": {
+            "Name": "Active-CKM",
+            "Title": "Proactive Information-Theoretic CKM Maintenance via ISAC and AoI",
+            "Background": "目前的 CKM 多被视为静态数据库。由于环境动态演进（如植被生长、新建筑），地图会随时间失效。被动更新依赖用户上报，而在低用户密度区域，地图可能长期处于错误状态。",
+            "Hypothesis": "引入‘信息新鲜度（Age of Information, AoI）’和‘空间熵’指标，基站可以主动探测环境。当某区域的 AoI 超过阈值或在该区域的通信质量频繁不达标时，基站利用 ISAC 波束在空闲时段主动扫描该区域，利用反射回波实时修复 CKM。",
+            "Methodology": "1. 定义 CKM 的空间 AoI 演进模型，考虑环境变化的马尔可夫特性。2. 设计基于 Thompson Sampling 的探索-利用（Exploration-Exploitation）框架，在保障通信服务质量的同时，最小化地图的不确定性。3. 利用 ISAC 的感知回波提取多径指纹（Fingerprint）的演变，实现对地图格点的增量更新。"
+        },
+        "Final_Decision": "Pass",
+        "Teacher_Final_Feedback": "Perfect plan.",
+        "Detailed_Plan": [
+            {
+                "idx": 1,
+                "name": "系统场景初始化：网格化物理空间建模",
+                "content": "1. 空间参数：设定 $L \times L = 200m \times 200m$ 的区域，网格粒度 $N=20$（共 $400$ 个格点）。基站（BS）位于坐标 $(0,0,10)m$。\n2. 真实信道 $G_{i,j}(0)$ 建模：计算格点中心 $(x_i, y_j, 0)$ 到 BS 的距离 $d_{i,j}$。采用 3GPP UMa LOS 路径损耗模型：$PL(d_{i,j}) = 28.0 + 22\\log_{10}(d_{i,j}) + 20\\log_{10}(f_c)$，其中 $f_c = 2.4GHz$。初始信道增益 $G_{i,j}(0) = -PL(d_{i,j}) + S_{i,j}$，其中阴影衰落 $S_{i,j} \\sim \\mathcal{N}(0, \\sigma_s^2)$，$\\sigma_s = 4dB$。\n3. CKM 维护：BS 初始化估计图 $\\hat{G}_{i,j}(0) = G_{i,j}(0)$，AoI 矩阵 $A_{i,j}(0) = 0$。\n4. 确定性输入：格点坐标矩阵、距离矩阵、初始 $PL$ 矩阵。",
+                "expected_outcome": "成功生成 $20 \times 20$ 的初始信道增益矩阵 $G$。通过代码可视化初始热力图，确认中心点（距离 BS 近）增益高，边缘增益低，且叠加了随机阴影衰落。"
+            },
+            {
+                "idx": 2,
+                "name": "环境演进模型：基于马尔可夫过程的动态性实现",
+                "content": "1. 动态性定义：在每个离散时隙 $t$，每个格点 $(i,j)$ 处于两个状态之一：{稳定, 突变}。\n2. 状态转移：以概率 $p_{change} = 0.05$ 发生环境突变（模拟植被生长或障碍物移动）。\n3. 演进逻辑：若发生突变，$G_{i,j}(t) = G_{i,j}(t-1) + \\Delta w$，其中 $\\Delta w \\sim \\mathcal{N}(0, \\sigma_w^2)$，$\\sigma_w = 6dB$（大幅度变化）；若未发生，$G_{i,j}(t) = G_{i,j}(t-1) + \\delta n$，其中 $\\delta n \\sim \\mathcal{N}(0, 0.5^2)$（小幅漂移）。\n4. 误差累积：在不更新的情况下，运行 $T=100$ 个时隙，计算每一时刻的地图全网均方误差 $\text{MSE}(t) = \frac{1}{N^2} \\sum_{i,j} (G_{i,j}(t) - \\hat{G}_{i,j}(t))^2$。\n5. AoI 更新：$A_{i,j}(t) = A_{i,j}(t-1) + 1$。",
+                "expected_outcome": "生成 MSE 随时间上升的曲线图。在 $t=100$ 时，由于环境演进且无更新，MSE 应从 0 增长到显著的正值（如 >10dB）。"
+            },
+            {
+                "idx": 3,
+                "name": "基线方法实施：被动更新 vs. 盲目主动扫描",
+                "content": "1. 基线 A (Passive Update)：每时隙随机生成 $K=5$ 个用户（UE）位置。若 UE 落在格点 $(i,j)$，BS 获得通信反馈量测 $\tilde{G}_{i,j}(t) = G_{i,j}(t) + n_{com}$，更新 $\\hat{G}_{i,j}(t) = \tilde{G}_{i,j}(t)$，且重置 $A_{i,j}(t) = 0$。记录低 UE 密度格点的 MSE。\n2. 基线 B (Blind Sensing)：BS 每一时隙固定消耗 $M=2$ 个感知的资源块，按顺序（轮询）扫描格点。被选中的格点 $(i,j)$ 更新 $\\hat{G}_{i,j}(t) = G_{i,j}(t) + n_{sen}$，重置 $A_{i,j}(t) = 0$。\n3. 性能记录：在 500 个时隙内，记录全网平均 MSE 和平均 AoI。",
+                "expected_outcome": "得到两条 MSE 对比曲线。预期 Passive 基线在边缘区域误差极大，而 Blind Sensing 虽能抑制误差，但效率低下，很多不需要更新的格点被重复扫描。"
+            },
+            {
+                "idx": 4,
+                "name": "创新方案拆解 1：基于 Thompson Sampling 的智能探测决策器",
+                "content": "1. 贝叶斯参数：为每个格点维护 Beta 分布参数 $(\\alpha_{i,j}, \beta_{i,j})$，初始设为 $(1,1)$。\n2. 决策循环：在每个时隙，对所有格点进行采样 $\theta_{i,j} \\sim \text{Beta}(\\alpha_{i,j}, \beta_{i,j})$。计算综合评分 $S_{i,j} = \theta_{i,j} \\cdot \\log(1 + A_{i,j})$（结合环境变化概率和新鲜度）。\n3. 执行探测：选择评分最高的 $M=2$ 个格点进行感知，获得量测值 $\tilde{G}_{i,j}$。\n4. 后验更新：定义“发现显著变化”为 $|\tilde{G}_{i,j} - \\hat{G}_{i,j}(t-1)| > 3dB$。若发现，则 $\\alpha_{i,j} = \\alpha_{i,j} + 1$；否则 $\beta_{i,j} = \beta_{i,j} + 1$。随后更新 $\\hat{G}_{i,j}(t) = \tilde{G}_{i,j}$，$A_{i,j} = 0$。",
+                "expected_outcome": "实现 TS 算法逻辑。通过热力图观察发现，BS 感知动作高度集中在 $p_{change}$ 较高的动态区域，全网平均 MSE 显著低于轮询基线。"
+            },
+            {
+                "idx": 5,
+                "name": "创新方案拆解 2：ISAC 物理层反射指纹提取与增量更新模型",
+                "content": "1. 感知回波建模：对于被探测格点 $(i,j)$，ISAC 感知回波功率 $P_{rx} = \frac{P_{tx} \\cdot G_{ant}^2 \\cdot \\sigma_{rcs} \\cdot \\lambda^2}{(4\\pi)^3 d_{i,j}^4}$。假设雷达截面积 $\\sigma_{rcs}$ 与该格点环境增益 $G_{i,j}$ 强相关：$P_{rx} \\propto 10^{G_{i,j}/10}$。\n2. 观测值提取：考虑到感知噪声 $n_{sen}$，BS 提取到的增益观测值为 $\\hat{g}_{meas} = 10 \\log_{10}(P_{rx}/P_{noise})$。\n3. 指纹增量更新：不直接替换，而是采用卡尔曼滤波思想的加权更新：$\\hat{G}_{i,j}(t) = (1-K_t) \\hat{G}_{i,j}(t-1) + K_t \\hat{g}_{meas}$。其中增益 $K_t$ 与 AoI 相关：$K_t = \\min(1, 0.1 \\cdot A_{i,j})$。",
+                "expected_outcome": "建立从发射功率 $P_{tx}$ 到地图更新值的物理映射。仿真验证在感知噪声较大时，这种增量更新比直接替换方法得到的地图更平滑，且能有效过滤瞬时噪声。"
+            },
+            {
+                "idx": 6,
+                "name": "创新方案拆解 3：基于信息熵的通信-感知联合调度策略",
+                "content": "1. 空间不确定性（熵）定义：根据 TS 的参数，定义每个格点的不确定性 $H_{i,j} = \frac{\\alpha \beta}{(\\alpha+\beta)^2 (\\alpha+\beta+1)}$（Beta 分布的方差）。\n2. 联合代价函数：$Cost = \\sum_{i,j} (H_{i,j} \\cdot A_{i,j})$。当 $Cost > \text{Threshold}$ 时，触发“主动维护模式”，BS 将 20% 的子载波资源从通信切换到感知。\n3. 性能评估：对比（1）无主动感知、（2）固定感知、（3）本方案（TS + AoI + 动态触发）。\n4. 评估指标：绘制“感知资源消耗 vs. 地图 MSE”折衷曲线，以及“通信吞吐量损失 vs. 地图精度”曲线。",
+                "expected_outcome": "得到最终对比图。预期本方案在极低感知开销（如 <5% 资源占用）下，能维持与全量扫描相当的地图精度。代码输出包含 MSE、AoI、吞吐量三个维度的量化对比表。"
+            }
+        ],
+        "Agent_Task_ID": "idea_1_agent_1"
+    }
+]

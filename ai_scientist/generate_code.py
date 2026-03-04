@@ -12,7 +12,9 @@ import queue
 
 # 导入已经实现的 LLMAgent
 from llm import LLMAgent
+from utils import setup_logger
 
+logger = setup_logger("experiment_run.log")
 # ==========================================
 # 1. 配置与全局常量
 # ==========================================
@@ -155,7 +157,7 @@ def run_command_with_monitoring(script_path, cwd, orchestrator_agent):
     返回: success(bool), stdout(str), stderr(str), monitor_feedback(str)
     """
     cmd = f'conda run -n {CONDA_ENV_NAME} --no-capture-output cmd.exe /c "{script_path} & exit"'
-    print(f"\n[System] 执行脚本: {script_path} ...")
+    logger.info(f"\n[System] 执行脚本: {script_path} ...")
     
     # 启动子进程，将 stderr 合并到 stdout 以便监控
     env = os.environ.copy()
@@ -226,23 +228,23 @@ def run_command_with_monitoring(script_path, cwd, orchestrator_agent):
             # 获取当前硬件状态，提供给 Orchestrator 以辅助判断
             status_info = get_hardware_status()
             if recent_output.strip():
-                print(f"\n[System] 代码执行已历时 {int(current_time - start_time)} 秒。正在截取最新输出交由 Orchestrator 实时监控...")
+                logger.info(f"\n[System] 代码执行已历时 {int(current_time - start_time)} 秒。正在截取最新输出交由 Orchestrator 实时监控...")
                 monitor_prompt = f"【实时监控最新控制台输出片段】代码运行已经历时{int(current_time - start_time)} 秒，当前输出：\n{recent_output}\n\n宿主机硬件状态：\n{status_info}\n\n请判定程序是否正常运行，是否需要提前终止(KILL)？"
                 
                 resp, _ = orchestrator_agent.get_response_stream(monitor_prompt, MONITOR_SYSTEM_PROMPT)
                 monitor_json = LLMAgent.robust_extract_json(resp)
                 
                 if monitor_json and monitor_json.get("Action") == "KILL":
-                    print("\n[Orchestrator Monitor] 判定程序运行异常，下达指令：终止进程！")
+                    logger.info("\n[Orchestrator Monitor] 判定程序运行异常，下达指令：终止进程！")
                     killed_by_monitor = True
                     monitor_feedback = monitor_json.get("Feedback", "Orchestrator 根据实时输出强制终止了运行。")
                     # 在 Windows 下强杀进程树
                     subprocess.run(f"taskkill /F /T /PID {process.pid}", shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                     break
                 else:
-                    print("[Orchestrator Monitor] 判定程序正常，允许继续运行。")
+                    logger.info("[Orchestrator Monitor] 判定程序正常，允许继续运行。")
             else:
-                print(f"[System] 代码执行历时 {int(current_time - start_time)} 秒。暂无新输出。")
+                logger.info(f"[System] 代码执行历时 {int(current_time - start_time)} 秒。暂无新输出。")
 
         time.sleep(1) # 降低CPU占用
 
@@ -326,7 +328,7 @@ def save_files_to_workspace(files, cwd, base_readme=""):
                 f.write(final_content)
             saved_list.append(filename)
         except Exception as e:
-            print(f"[System Error] 无法保存文件 {filename}: {e}")
+            logger.info(f"[System Error] 无法保存文件 {filename}: {e}")
             
     return saved_list
 
@@ -347,7 +349,7 @@ def run_experiment(plan_file, experiment_dir, log_dir, model_orchestrator="gemin
     
     plan_steps, idea = load_plan(plan_file)
     if not plan_steps:
-        print("未能在计划文件中找到步骤 (Detailed_Plan为空)！")
+        logger.info("未能在计划文件中找到步骤 (Detailed_Plan为空)！")
         return
 
     # 1. 创建工作空间
@@ -355,10 +357,10 @@ def run_experiment(plan_file, experiment_dir, log_dir, model_orchestrator="gemin
     # workspace_dir = os.path.abspath(os.path.join("experiments", timestamp))
     workspace_dir = os.path.abspath(experiment_dir)
     os.makedirs(workspace_dir, exist_ok=True)
-    print(f"=== 实验启动 ===")
-    print(f"工作空间: {workspace_dir}")
-    print(f"共发现 {len(plan_steps)} 个步骤。")
-    print("================\n")
+    logger.info(f"=== 实验启动 ===")
+    logger.info(f"工作空间: {workspace_dir}")
+    logger.info(f"共发现 {len(plan_steps)} 个步骤。")
+    logger.info("================\n")
 
     # 2. 初始化 Agents
     orch_log = os.path.join(log_dir, "orchestrator.log")
@@ -380,7 +382,7 @@ def run_experiment(plan_file, experiment_dir, log_dir, model_orchestrator="gemin
         step_content = step.get("content", "")
         step_expected = step.get("expected_outcome", "")
         
-        print(f"\n>>> 开始执行 第 {step_idx + 1} 步: {step_name} <<<")
+        logger.info(f"\n>>> 开始执行 第 {step_idx + 1} 步: {step_name} <<<")
         
         # -----------------------------------------------------
         # 上下文压缩与注入
@@ -417,7 +419,7 @@ def run_experiment(plan_file, experiment_dir, log_dir, model_orchestrator="gemin
         orch_json = LLMAgent.robust_extract_json(response)
         
         if not orch_json:
-            print("[System] Orchestrator 初始输出解析失败，重试...")
+            logger.info("[System] Orchestrator 初始输出解析失败，重试...")
             continue
             
         current_orch_action = orch_json.get("Action", "PROMPT_CODER")
@@ -433,20 +435,20 @@ def run_experiment(plan_file, experiment_dir, log_dir, model_orchestrator="gemin
         
         while attempts < MAX_RETRIES and not step_passed:
             attempts += 1
-            print(f"\n--- [Step {step_idx + 1}] 尝试 {attempts}/{MAX_RETRIES} ---")
+            logger.info(f"\n--- [Step {step_idx + 1}] 尝试 {attempts}/{MAX_RETRIES} ---")
             
             files = {}
             run_script_path = ""
             
             # 路径分配：Orchestrator直接运行代码 还是 交给Coder编程
             if current_orch_action == "RUN_CODE" and current_run_script:
-                print("[Orchestrator] 选择绕过 Coder，直接带参数运行代码...")
+                logger.info("[Orchestrator] 选择绕过 Coder，直接带参数运行代码...")
                 run_script_path = os.path.join(workspace_dir, "orch_run.bat")
                 try:
                     with open(run_script_path, "w", encoding="utf-8") as f:
                         f.write(current_run_script)
                 except Exception as e:
-                    print(f"[System Error] 无法保存运行脚本: {e}")
+                    logger.info(f"[System Error] 无法保存运行脚本: {e}")
                     current_orch_action = "PROMPT_CODER"
                     continue
             else:
@@ -468,11 +470,11 @@ def run_experiment(plan_file, experiment_dir, log_dir, model_orchestrator="gemin
 请返回完整的，功能完善的，可运行的python代码以及运行此代码需要的bat脚本(必须命名为run.bat)。
 务必通过 argparser 暴露出各项超参，并在 readme.md 中写明参数意义及完整运行命令示例。
 """
-                print("[Coder] 正在思考并编写代码...")
+                logger.info("[Coder] 正在思考并编写代码...")
                 try:
                     coder_resp, _ = coder.get_response_stream(coder_prompt, CODER_SYSTEM_PROMPT.format(conda_env=CONDA_ENV_NAME))
                 except Exception as e:
-                    print(f"[System Error] 无法获取 Coder 输出: {e},等待10秒后重试... ")
+                    logger.info(f"[System Error] 无法获取 Coder 输出: {e},等待10秒后重试... ")
                     time.sleep(10)
                     continue
                 
@@ -480,16 +482,16 @@ def run_experiment(plan_file, experiment_dir, log_dir, model_orchestrator="gemin
                 if not files:
                     current_orch_instruction = "系统提示：没有检测到任何符合要求的代码块(### File: ...)，请严格按照Markdown格式重新输出代码。"
                     current_orch_action = "PROMPT_CODER"
-                    print("[System] Coder 没有输出文件格式。")
+                    logger.info("[System] Coder 没有输出文件格式。")
                     continue
                     
                 saved = save_files_to_workspace(files, workspace_dir, base_readme)
-                print(f"[System] 成功保存文件: {', '.join(saved)}")
+                logger.info(f"[System] 成功保存文件: {', '.join(saved)}")
                 
                 if "run.bat" not in files:
                     current_orch_instruction = "系统提示：你没有生成 run.bat 脚本，请必须提供该脚本以供执行！"
                     current_orch_action = "PROMPT_CODER"
-                    print("[System] 未找到 run.bat，打回。")
+                    logger.info("[System] 未找到 run.bat，打回。")
                     continue
                     
                 run_script_path = os.path.join(workspace_dir, "run.bat")
@@ -499,21 +501,21 @@ def run_experiment(plan_file, experiment_dir, log_dir, model_orchestrator="gemin
             
             # 运行失败或被强制中断处理
             if not success:
-                print(f"[System] 脚本执行异常！")
+                logger.info(f"[System] 脚本执行异常！")
                 if monitor_feedback:
                     # 被 Orchestrator 实时监控终止
                     current_orch_instruction = f"【系统提示：程序被Orchestrator强制中断】\n中断原因及修改建议：\n{monitor_feedback}\n\n中断前的最后部分控制台输出：\n{stdout[-1500:]}"
                 else:
                     # 原生报错崩溃
-                    print(f"Error Detail: {stdout[:500]}...")
+                    logger.info(f"Error Detail: {stdout[:500]}...")
                     current_orch_instruction = f"运行批处理脚本发生严重错误/崩溃，请根据以下输出信息修复代码：\n{stdout}"
                 
                 current_orch_action = "PROMPT_CODER"  # 发生错误后必须强行回退给 Coder 处理
                 continue
                 
             # 运行成功 -> 汇报给 Orchestrator 进行逻辑验收
-            print(f"[System] 脚本执行成功！返回：\n {stdout[:1000]}... (截断)\n")
-            print(f"[System] 正在交由 Orchestrator 验收结果...")
+            logger.info(f"[System] 脚本执行成功！返回：\n {stdout[:1000]}... (截断)\n")
+            logger.info(f"[System] 正在交由 Orchestrator 验收结果...")
             
             eval_prompt = f"""
 【系统报告：代码已成功运行完毕，退出码为 0】
@@ -541,7 +543,7 @@ def run_experiment(plan_file, experiment_dir, log_dir, model_orchestrator="gemin
             if action == "PASS_STEP":
                 step_passed = True
                 summary = orch_json.get("Summary", f"步骤 {step_name} 已成功完成。")
-                print(f"[Orchestrator] 验收通过！总结: {summary[:100]}...")
+                logger.info(f"[Orchestrator] 验收通过！总结: {summary[:100]}...")
                 
                 # 记录总结
                 past_summaries.append(f"【第 {step_idx + 1} 步: {step_name} 总结】: {summary}")
@@ -555,12 +557,12 @@ def run_experiment(plan_file, experiment_dir, log_dir, model_orchestrator="gemin
             elif action == "RUN_CODE":
                 current_orch_action = "RUN_CODE"
                 current_run_script = orch_json.get("Run_Script", "")
-                print(f"[Orchestrator] 决定使用自定义参数亲自重新运行代码: {current_run_script[:100]}...")
+                logger.info(f"[Orchestrator] 决定使用自定义参数亲自重新运行代码: {current_run_script[:100]}...")
             
             else: # REJECT_STEP
                 current_orch_action = "PROMPT_CODER"
                 current_orch_instruction = orch_json.get("Coder_Prompt", "Orchestrator 认为逻辑不符，请重新检查需求并修改。")
-                print(f"[Orchestrator] 验收驳回，修改意见: {current_orch_instruction[:100]}...")
+                logger.info(f"[Orchestrator] 验收驳回，修改意见: {current_orch_instruction[:100]}...")
                 
         # -----------------------------------------------------
         # 处理重试限制与回溯逻辑 (Backtracking)
@@ -568,25 +570,25 @@ def run_experiment(plan_file, experiment_dir, log_dir, model_orchestrator="gemin
         if step_passed:
             step_idx += 1 # 进入下一步
         else:
-            print(f"\n[System Error] 第 {step_idx + 1} 步在 {MAX_RETRIES} 次尝试后仍然失败。触发回退机制！")
+            logger.info(f"\n[System Error] 第 {step_idx + 1} 步在 {MAX_RETRIES} 次尝试后仍然失败。触发回退机制！")
             if step_idx > 0:
                 step_idx -= 1
                 if past_summaries:
                     past_summaries.pop()
-                print(f"[System] 已回退到第 {step_idx + 1} 步。")
+                logger.info(f"[System] 已回退到第 {step_idx + 1} 步。")
             else:
-                print("[System Fatal] 第一步就彻底失败，无法回退。实验终止。")
+                logger.info("[System Fatal] 第一步就彻底失败，无法回退。实验终止。")
                 break
 
-    print("\n=== 实验执行完毕 ===")
-    print(f"最终结果与代码保存在: {workspace_dir}")
+    logger.info("\n=== 实验执行完毕 ===")
+    logger.info(f"最终结果与代码保存在: {workspace_dir}")
 
 
-def generate_code(parser):
-    args = parser.parse_args()
+def generate_code(args):
+    # args = parser.parse_args()
     
     if not os.path.exists(args.plan_file):
-        print(f"找不到计划文件: {args.plan_file}")
+        logger.info(f"找不到计划文件: {args.plan_file}")
         return
         
     run_experiment(

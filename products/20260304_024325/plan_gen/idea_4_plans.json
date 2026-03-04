@@ -1,0 +1,90 @@
+[
+    {
+        "Task_ID": "idea_4_agent_1",
+        "Original_Idea_Title": "CKM-Aided Squint Compensation for Wideband Near-Field XL-MIMO",
+        "Original_Idea": {
+            "Name": "Wideband-Focus-CKM",
+            "Title": "CKM-Aided Squint Compensation for Wideband Near-Field XL-MIMO",
+            "Background": "在宽带 XL-MIMO 系统中，由于相移器（Phase Shifter）的频率无关性，不同频率成分的波束会聚焦在空间的不同点，即‘近场波束分裂’。传统的延迟线补偿需要复杂的实时估计。",
+            "Hypothesis": "CKM 可以存储特定地理位置对应的‘空间-频率流形’先验。通过查询 CKM，基站可以直接获取该位置在全带宽下的相位偏离规律，并据此预分配真延迟线（TTD）或设计频率选择性预编码，无需进行全频段的信道扫描。",
+            "Methodology": "1. 建模近场球面波下的频率相关性及波束分裂轨迹。2. 在 CKM 中引入‘时延-相位特征层’。3. 设计一种基于 CKM 先验的低开销宽带聚焦算法，通过位置索引直接匹配最优 TTD 补偿矢量。"
+        },
+        "Final_Decision": "Timeout",
+        "Teacher_Final_Feedback": "上一轮你的输出不符合JSON规范或缺少Plan字段，请严格按格式重新生成。",
+        "Detailed_Plan": null,
+        "Agent_Task_ID": "idea_4_agent_1"
+    },
+    {
+        "Task_ID": "idea_4_agent_2",
+        "Original_Idea_Title": "CKM-Aided Squint Compensation for Wideband Near-Field XL-MIMO",
+        "Original_Idea": {
+            "Name": "Wideband-Focus-CKM",
+            "Title": "CKM-Aided Squint Compensation for Wideband Near-Field XL-MIMO",
+            "Background": "在宽带 XL-MIMO 系统中，由于相移器（Phase Shifter）的频率无关性，不同频率成分的波束会聚焦在空间的不同点，即‘近场波束分裂’。传统的延迟线补偿需要复杂的实时估计。",
+            "Hypothesis": "CKM 可以存储特定地理位置对应的‘空间-频率流形’先验。通过查询 CKM，基站可以直接获取该位置在全带宽下的相位偏离规律，并据此预分配真延迟线（TTD）或设计频率选择性预编码，无需进行全频段的信道扫描。",
+            "Methodology": "1. 建模近场球面波下的频率相关性及波束分裂轨迹。2. 在 CKM 中引入‘时延-相位特征层’。3. 设计一种基于 CKM 先验的低开销宽带聚焦算法，通过位置索引直接匹配最优 TTD 补偿矢量。"
+        },
+        "Final_Decision": "Timeout",
+        "Teacher_Final_Feedback": "上一轮你的输出不符合JSON规范或缺少Plan字段，请严格按格式重新生成。",
+        "Detailed_Plan": null,
+        "Agent_Task_ID": "idea_4_agent_2"
+    },
+    {
+        "Task_ID": "idea_4_agent_3",
+        "Original_Idea_Title": "CKM-Aided Squint Compensation for Wideband Near-Field XL-MIMO",
+        "Original_Idea": {
+            "Name": "Wideband-Focus-CKM",
+            "Title": "CKM-Aided Squint Compensation for Wideband Near-Field XL-MIMO",
+            "Background": "在宽带 XL-MIMO 系统中，由于相移器（Phase Shifter）的频率无关性，不同频率成分的波束会聚焦在空间的不同点，即‘近场波束分裂’。传统的延迟线补偿需要复杂的实时估计。",
+            "Hypothesis": "CKM 可以存储特定地理位置对应的‘空间-频率流形’先验。通过查询 CKM，基站可以直接获取该位置在全带宽下的相位偏离规律，并据此预分配真延迟线（TTD）或设计频率选择性预编码，无需进行全频段的信道扫描。",
+            "Methodology": "1. 建模近场球面波下的频率相关性及波束分裂轨迹。2. 在 CKM 中引入‘时延-相位特征层’。3. 设计一种基于 CKM 先验的低开销宽带聚焦算法，通过位置索引直接匹配最优 TTD 补偿矢量。"
+        },
+        "Final_Decision": "Max_Iters_Reached",
+        "Teacher_Final_Feedback": "上一轮你的输出不符合JSON规范或缺少Plan字段，请严格按格式重新生成。",
+        "Detailed_Plan": [
+            {
+                "idx": 1,
+                "name": "系统模型数学建模：近场宽带XL-MIMO信道",
+                "content": "建立二维坐标系，基站（BS）位于原点，采用均匀线性阵列（ULA），天线数为N，阵元间距为d=λc/2。设置系统中心频率为fc，总带宽为B，划分为M个子载波，第m个子载波频率为fm = fc + (m - (M-1)/2) * (B/M)。\n1. 定义近场球面波导矢量：对于位于(r, θ)的用户，第n个阵元到用户的距离为dn = sqrt(r^2 + (nd)^2 - 2rnd*sinθ)。\n2. 第m个子载波的导向矢量定义为：a(fm, r, θ) = [exp(-j*2π*fm*d0/c), ..., exp(-j*2π*fm*dN-1/c)]^T，其中c为光速。\n3. 生成信道矩阵H_m：在LOS场景下，H_m = α * a(fm, r, θ)，α为复路径增益。",
+                "expected_outcome": "成功编写信道生成函数，输入位置(r, θ)和子载波索引m，输出长度为N的复数向量。验证：当r趋于无穷大时，该向量应退化为远场等效导向矢量。"
+            },
+            {
+                "idx": 2,
+                "name": "基线方法实施：传统相移器（PS-only）方案",
+                "content": "实现传统的窄带波束成形方案。BS仅使用频率无关的相移器（PS），其权矢量w依据中心频率fc设计：w = a(fc, r, θ) / sqrt(N)。\n计算所有子载波上的阵列增益：G_m = |w^H * a(fm, r, θ)|^2。\n计算全带宽的平均可达速率：R = (1/M) * sum(log2(1 + SNR * G_m))，其中SNR为信噪比。",
+                "expected_outcome": "得到随子载波偏移增加而显著下降的增益曲线（波束分裂现象）。在边缘频率处，G_m应远小于1。"
+            },
+            {
+                "idx": 3,
+                "name": "基线方法实施：理想真延迟线（Ideal TTD）方案",
+                "content": "实现具有完美信道状态信息（CSI）的TTD补偿作为上限基线。\n1. 为每个天线单元n分配一个理想时延τn = (dn - d0) / c。\n2. 第m个子载波的等效补偿相位为 exp(j*2π*fm*τn)。\n3. 此时第m个子载波的预编码向量为 w_m[n] = exp(j*(2π*fc*τn_PS + 2π*fm*τn_TTD))，在理想情况下，这可以完全抵消信道相位项。\n计算其平均可达速率 R_ideal。",
+                "expected_outcome": "在所有子载波上获得恒定的最大阵列增益G_m ≈ N，R_ideal应显著高于PS-only方案。"
+            },
+            {
+                "idx": 4,
+                "name": "创新方案步骤1：构建CKM离线“时延-相位特征层”",
+                "content": "1. 将区域划分为均匀网格(xi, yj)。\n2. 针对每个网格点，计算其对应的最优时延向量 T_ij = [τ0, τ1, ..., τN-1]，其中τn = (dn - d0) / c。同时计算对应的中心频率相位向量 P_ij = angle(a(fc, xi, yj))。\n3. 将这些数据存储在CKM字典中：Map: (xi, yj) -> {T_ij, P_ij}。\n4. 实现一个双线性插值函数，使得输入任意连续坐标(x, y)时，能从离散网格点插值出对应的时延和相位向量。",
+                "expected_outcome": "生成一个包含位置与时延/相位映射关系的数据库文件（如.mat或.npy）。插值函数在网格点处的误差应为0。"
+            },
+            {
+                "idx": 5,
+                "name": "创新方案步骤2：基于位置索引的CKM粗补偿方案",
+                "content": "模拟在线运行过程：\n1. 假设用户位于(r_true, θ_true)，但BS通过定位手段仅获得带误差的估计位置(r_est, θ_est)。\n2. BS查询CKM，通过插值获取对应的补偿时延矢量 T_query 和初始相位矢量 P_query。\n3. 应用补偿：第m个子载波的预编码 w_m[n] = exp(j * (P_query[n] + 2π * (fm - fc) * T_query[n]))。\n4. 计算该方案下的可达速率 R_ckm_coarse。",
+                "expected_outcome": "在定位精度较高时（如误差<0.5m），R_ckm_coarse应接近R_ideal；在无定位误差时，应完全重合。"
+            },
+            {
+                "idx": 6,
+                "name": "创新方案步骤3：考虑量化与位置不确定性的鲁棒性优化",
+                "content": "为了使AI执行者能更贴近实际，引入硬件约束和修正：\n1. 时延量化：将 T_query 中的值量化到有限位数的TTD硬件精度（如 5-bit TTD）。\n2. 引入“频率选择性微调”：如果CKM提供的位置不准，利用极少量的导频（如仅在带宽两端的子载波）对CKM检索出的时延进行线性修正：T_final = T_query + ΔT，其中ΔT由最小化两端子载波的相位残余误差得出。\n3. 计算最终的 R_ckm_refined。",
+                "expected_outcome": "即使在存在定位偏移（如1-2米）或低精度TTD硬件的情况下，R_ckm_refined 仍能保持在 R_ideal 的 90% 以上。"
+            },
+            {
+                "idx": 7,
+                "name": "对比方式与预期结果分析",
+                "content": "进行综合仿真对比：\n1. 绘制“频谱效率 vs. 带宽”曲线：对比 PS-only, Ideal TTD, CKM-coarse, CKM-refined。预期CKM方案在宽带下明显优于PS-only。\n2. 绘制“频谱效率 vs. 定位误差”曲线：观察CKM方案随位置不确定性增加的性能退化情况，验证步骤6中修正算法的有效性。\n3. 统计开销：对比全频段扫描（传统方法）与CKM索引（本方案）的反馈比特数/导频数量。",
+                "expected_outcome": "输出对比曲线图。预期结果：CKM方案在保持极低开销（无需全频段估计）的同时，性能接近完美CSI方案，且对定位误差具有鲁棒性。"
+            }
+        ],
+        "Agent_Task_ID": "idea_4_agent_3"
+    }
+]

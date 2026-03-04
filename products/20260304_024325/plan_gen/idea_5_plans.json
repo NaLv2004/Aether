@@ -1,0 +1,47 @@
+[
+    {
+        "Task_ID": "idea_5_agent_2",
+        "Original_Idea_Title": "Graph Spectral Anomaly Detection for Autonomous CKM Maintenance",
+        "Original_Idea": {
+            "Name": "Graph-Spectral-CKM",
+            "Title": "Graph Spectral Anomaly Detection for Autonomous CKM Maintenance",
+            "Background": "当城市环境发生永久性变化（如新增建筑物）时，CKM 的部分区域会失效。目前的维护依赖于昂贵的定期重测，缺乏自动识别‘地图过期’的能力。",
+            "Hypothesis": "CKM 上的信道特征在空间图域上应满足图平滑性（Graph Smoothness）。环境突变会导致图信号在频域产生异常的高频分量。利用图谱分析（Graph Spectral Analysis），可以用极少数活跃用户的反馈作为采样点，检测出 CKM 与实际环境的不一致性区域。",
+            "Methodology": "1. 将 CKM 区域抽象为地理关联图，以信道相关性为边权重。2. 定义图平滑度指标，实时监测用户上报 CSI 与 CKM 预测值的残差。3. 提出一种基于图采样理论的‘探测用户’调度方案，优先在异常概率高的区域激活感知任务，实现 CKM 的精准局部更新。"
+        },
+        "Final_Decision": "Timeout",
+        "Teacher_Final_Feedback": "上一轮你的输出不符合JSON规范或缺少Plan字段，请严格按格式重新生成。",
+        "Detailed_Plan": null,
+        "Agent_Task_ID": "idea_5_agent_2"
+    },
+    {
+        "Task_ID": "idea_5_agent_1",
+        "Original_Idea_Title": "Graph Spectral Anomaly Detection for Autonomous CKM Maintenance",
+        "Original_Idea": {
+            "Name": "Graph-Spectral-CKM",
+            "Title": "Graph Spectral Anomaly Detection for Autonomous CKM Maintenance",
+            "Background": "当城市环境发生永久性变化（如新增建筑物）时，CKM 的部分区域会失效。目前的维护依赖于昂贵的定期重测，缺乏自动识别‘地图过期’的能力。",
+            "Hypothesis": "CKM 上的信道特征在空间图域上应满足图平滑性（Graph Smoothness）。环境突变会导致图信号在频域产生异常的高频分量。利用图谱分析（Graph Spectral Analysis），可以用极少数活跃用户的反馈作为采样点，检测出 CKM 与实际环境的不一致性区域。",
+            "Methodology": "1. 将 CKM 区域抽象为地理关联图，以信道相关性为边权重。2. 定义图平滑度指标，实时监测用户上报 CSI 与 CKM 预测值的残差。3. 提出一种基于图采样理论的‘探测用户’调度方案，优先在异常概率高的区域激活感知任务，实现 CKM 的精准局部更新。"
+        },
+        "Final_Decision": "Timeout",
+        "Teacher_Final_Feedback": "上一轮你的输出不符合JSON规范或缺少Plan字段，请严格按格式重新生成。",
+        "Detailed_Plan": null,
+        "Agent_Task_ID": "idea_5_agent_1"
+    },
+    {
+        "Task_ID": "idea_5_agent_3",
+        "Original_Idea_Title": "Graph Spectral Anomaly Detection for Autonomous CKM Maintenance",
+        "Original_Idea": {
+            "Name": "Graph-Spectral-CKM",
+            "Title": "Graph Spectral Anomaly Detection for Autonomous CKM Maintenance",
+            "Background": "当城市环境发生永久性变化（如新增建筑物）时，CKM 的部分区域会失效。目前的维护依赖于昂贵的定期重测，缺乏自动识别‘地图过期’的能力。",
+            "Hypothesis": "CKM 上的信道特征在空间图域上应满足图平滑性（Graph Smoothness）。环境突变会导致图信号在频域产生异常的高频分量。利用图谱分析（Graph Spectral Analysis），可以用极少数活跃用户的反馈作为采样点，检测出 CKM 与实际环境的不一致性区域。",
+            "Methodology": "1. 将 CKM 区域抽象为地理关联图，以信道相关性为边权重。2. 定义图平滑度指标，实时监测用户上报 CSI 与 CKM 预测值的残差。3. 提出一种基于图采样理论的‘探测用户’调度方案，优先在异常概率高的区域激活感知任务，实现 CKM 的精准局部更新。"
+        },
+        "Final_Decision": "Timeout",
+        "Teacher_Final_Feedback": "上一轮你的输出不符合JSON规范或缺少Plan字段，请严格按格式重新生成。",
+        "Detailed_Plan": null,
+        "Agent_Task_ID": "idea_5_agent_3"
+    }
+]
