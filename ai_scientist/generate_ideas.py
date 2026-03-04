@@ -6,8 +6,10 @@ import time
 import argparse
 import requests
 import backoff
+import urllib.parse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from utils import setup_logger
+from utils import PDFReader
 
 logger = setup_logger("experiment_run.log")
 
@@ -15,7 +17,7 @@ logger = setup_logger("experiment_run.log")
 from llm import LLMAgent
 
 # ==========================================
-# 1. 辅助函数：OpenAlex 文献检索
+# 1. 辅助函数：OpenAlex 文献检索与 PDF 下载
 # ==========================================
 def on_backoff(details):
     logger.info(
@@ -24,7 +26,7 @@ def on_backoff(details):
     )
 
 @backoff.on_exception(backoff.expo, requests.exceptions.HTTPError, on_backoff=on_backoff)
-def search_for_papers(query, result_limit=10, engine="openalex"):
+def search_for_papers(query, result_limit=10, engine="openalex", open_access=True, has_pdf_url=True, from_year=2020):
     if not query:
         return None
         
@@ -43,6 +45,13 @@ def search_for_papers(query, result_limit=10, engine="openalex"):
                         if venue:
                             break
             title = work.get("title", "No Title")
+            doi = work.get("doi", "No DOI")
+            
+            # 获取下载链接：优先从 best_oa_location 获取 pdf_url
+            pdf_url = None
+            best_oa = work.get("best_oa_location")
+            if best_oa:
+                pdf_url = best_oa.get("pdf_url")
             
             # 解析 abstract_inverted_index
             abstract = ""
@@ -71,10 +80,21 @@ def search_for_papers(query, result_limit=10, engine="openalex"):
                 "year": work.get("publication_year"),
                 "abstract": abstract,
                 "citationCount": work.get("cited_by_count", 0),
+                "doi": doi,
+                "pdf_url": pdf_url
             }
 
         try:
-            works = Works().search(query).get(per_page=result_limit)
+            # 构建查询并应用过滤条件
+            search_query = Works().search(query)
+            if open_access:
+                search_query = search_query.filter(is_oa=True)
+            if has_pdf_url:
+                search_query = search_query.filter(has_pdf_url=True)
+            if from_year:
+                search_query = search_query.filter(from_publication_date=f"{from_year}-01-01")
+                
+            works = search_query.get(per_page=result_limit)
             papers = [extract_info_from_work(work) for work in works]
             return papers
         except Exception as e:
@@ -83,8 +103,57 @@ def search_for_papers(query, result_limit=10, engine="openalex"):
     else:
         raise NotImplementedError(f"{engine} not supported in this script!")
 
+
+def download_paper_pdf(pdf_url, doi, save_dir="pdfs"):
+    """
+    下载论文 PDF，更加鲁棒，不限于 arXiv。
+    """
+    if not pdf_url:
+        return None
+        
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+
+    # 用 DOI 构造安全的文件名
+    safe_name = urllib.parse.quote_plus(doi.replace("https://doi.org/", ""))
+    filename = f"{safe_name[:50]}.pdf"
+    save_path = os.path.join(save_dir, filename)
+    
+    if os.path.exists(save_path):
+        logger.info(f"[Download Info] PDF 已经存在: {filename}")
+        return save_path
+
+    logger.info(f"[Download] 尝试下载 PDF: {pdf_url}")
+    try:
+        # 伪装 User-Agent，防止被简单的反爬拦截
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
+            "Accept": "application/pdf,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+        }
+        # 允许重定向，设置超时时间
+        response = requests.get(pdf_url, headers=headers, timeout=30, allow_redirects=True)
+        
+        if response.status_code == 200:
+            content_type = response.headers.get("Content-Type", "").lower()
+            # 严格验证是否返回了 PDF 文件
+            if "application/pdf" in content_type or "binary/octet-stream" in content_type:
+                with open(save_path, "wb") as f:
+                    f.write(response.content)
+                logger.info(f"[Success] PDF 下载成功: {filename}")
+                return save_path
+            else:
+                logger.debug(f"[Warning] 下载失败：返回的内容类型不是 PDF ({content_type})")
+        else:
+             logger.debug(f"[Error] 下载失败：HTTP 状态码 {response.status_code}")
+             
+    except Exception as e:
+        logger.debug(f"[Error] PDF 下载过程发生异常: {e}")
+        
+    return None
+
+
 # ==========================================
-# 2. Prompts 提示词定义
+# 2. Prompts 提示词定义 (新增了 PapersToRead 字段)
 # ==========================================
 IDEA_GENERATOR_SYSTEM_PROMPT = """
 你是一个充满雄心壮志且富有创造力的通信领域AI科学家。
@@ -92,18 +161,21 @@ IDEA_GENERATOR_SYSTEM_PROMPT = """
 请遵循以下原则：
 1. 鼓励大胆假设，并充分考虑实际通信场景的复杂性（如信道衰落、硬件损伤、动态拓扑等）。
 2. 提出的假设必须非常具体，避免假大空。
-3. 鼓励进行广泛的文献调研。当你需要搜索文献时，请使用逻辑词或模糊查询词（例如 ""semantic communication" AND "dynamic resource allocation"" 或 ""MIMO detection" OR "machine learning""），而不是仅搜索某篇具体的文章。
-4. 你可以同时执行多项操作：生成新的Idea、优化（Refine）之前的Idea、发起新的文献搜索。
-5. 当你认为已经生成了非常满意的Idea，不需要再进行迭代或搜索时，请在你的思考(Thoughts)中包含 "I'm done" 这句话以结束迭代。
+3. 鼓励进行广泛的文献调研。当你需要搜索文献时，请使用逻辑词或模糊查询词。
+4. 你可以同时执行多项操作：生成新的Idea、优化（Refine）之前的Idea、发起新的文献搜索、选择阅读某篇文献的全文。
 6. 生成新的idea时，需要在返回的结果中包含之前的所有idea。
-6. 虽然鼓励进行跨学科的研究，但是不鼓励研究过于天马行空、脱离实际、无法落地的idea，例如，和语义通信、量子计算、脉冲神经网络、类脑计算等结合，都是严重脱离实际的坏idea。
 7. 研究对象不应该过于复杂，不应该堆砌过多技术名词，而是要聚焦于某一个具体问题，给出原理性的创新。
+8。每轮对话中，你都需要refine之前的idea（更加具体、可行、具有合理性），或者努力根据你已有的知识，或者搜索到的论文，提出新的insight和idea(或使用新的insights修改当前idea)。
+
+如果当前搜索结果中的摘要不足以判断，你可以要求阅读全文。将你想要阅读的论文的 DOI 填入 "PapersToRead" 列表中。系统会自动下载、阅读并把核心总结返回给你。
+此外，你需要通过阅读其他论文和摘要产生新的insights，而不是仅仅依据这些内容来鉴定创新性。
 
 你的回复必须包含如下JSON格式（可以包含在 ```json 和 ``` 之间）：
 ```json
 {
-    "Thoughts": "这里写下你的思考过程、对当前结果的分析以及你接下来的计划。如果结束，请在这里包含 'I'm done'。",
+    "Thoughts": "这里写下你的思考过程、对当前idea的分析以及你接下来的计划。",
     "SearchQueries": ["query1", "query2"], 
+    "PapersToRead": ["https://doi.org/10.xxxx/xxxx", "https://doi.org/10.yyyy/yyyy"],
     "Ideas": [
         {
             "Name": "简短的Idea英文代号",
@@ -114,10 +186,8 @@ IDEA_GENERATOR_SYSTEM_PROMPT = """
         }
     ]
 }
-
 ```
-如果当前轮次只是在调研文献尚未形成Idea，Ideas可为空列表。
-除了在第一轮对话，在每轮对话中，你都需要提出新的idea，适当修改之前的idea，并且进行新的文献调研来确认现有idea是否具有创新性，并寻求潜在的新的创新方向。
+如果不需要搜文献，SearchQueries 可为空；如果不需要读全文，PapersToRead 可为空；如果是第一轮只负责搜文献，Ideas 可为空。
 """
 
 IDEA_GENERATOR_FIRST_PROMPT = """
@@ -131,33 +201,36 @@ IDEA_GENERATOR_ITERATION_PROMPT = """
 这是你在上一轮中提交的文献搜索Query的结果：
 {search_results}
 
+这是你（或其它评审）之前要求精读的论文的全文总结笔记（知识库）：
+{knowledge_base}
+
 这是你之前已经生成的Ideas（供你参考，你可以选择Refine它们，或者提出全新的Idea）：
 {previous_ideas}
 
-请根据最新的文献结果，继续你的研究设想。如果发现你的Idea已经被前人做过，请大修你的假设。
-请输出符合系统要求的JSON。如果你的Idea已经打磨完毕且创新性足够，请在Thoughts中包含 "I'm done"。
+请根据最新的文献结果和精读笔记，继续你的研究设想。如果发现你的Idea已经被前人做过，请大修你的假设。如果需要阅读新搜索出的文献全文，请填入 PapersToRead。
+请输出符合系统要求的JSON。每轮搜索中，你都必须合理地refine你的idea。同时，你被鼓励多阅读全文。
 """
 
 NOVELTY_CHECK_SYSTEM_PROMPT = """
-你是一位顶尖通信学术会议（如 GLOBECOM, ICC, INFOCOM, SIGCOMM）或知名学术期刊的资深审稿人 (Area Chair)。
+你是一位顶尖通信学术会议（如 GLOBECOM, ICC）或知名学术期刊的资深审稿人 (Area Chair)。
 你的任务是严格审查一个新提交的科研Idea是否具有真正的学术创新价值。
-请注意这些idea均由AI生成，其正确性，合理性，创新性都无法保证，你必须谨慎评估。你必须做到非常严格。
-在做决定之前，你必须充分利用OpenAlex API进行文献调研，确保该Idea没有与已有文献严重撞车，并判断这些idead的逻辑性、可实现性如何（后续所有工作都会由AI完成，因此必须判断仿真层面的可实现性）
-由于OpenAlex对模糊检索支持有限，所以如果检索对象包含多个关键词，建议使用逻辑词连接search query，例如："Massive MIMO" OR "CHANNEL CODING"
-你可以进行多轮搜索。
-请在每轮回复中输出如下JSON：
+请注意这些idea均由AI生成，其正确性，合理性，创新性都无法保证，你必须谨慎评估。
+在做决定之前，你必须充分利用文献调研，确保该Idea没有与已有文献严重撞车。
 
+如果你怀疑某篇已发表的论文已经做过了这个 Idea，但仅仅看摘要无法确定，你可以将该论文的 DOI 放入 "PapersToRead" 列表中，要求系统阅读全文并提供核心总结。
+
+请在每轮回复中输出如下JSON：
 ```json
 {
     "Thoughts": "你的审查思路、对Idea的评价或对文献搜索结果的分析。",
     "SearchQueries": ["查找该idea相关文献的Query"],
+    "PapersToRead": ["https://doi.org/10.xxxx/xxxx"],
     "Decision": "Pending",
     "Score": null
 }
-
 ```
 
-当你在若干轮检索后有了明确结论，请将 "Decision" 设置为 "Finished"，并给出具体的 "Score" (1到10分，10分为最高分)，并在 "Thoughts" 中给出详细的评审意见和得分理由。
+若检索轮数超过8轮而且你在若干轮检索/阅读后有了明确结论，请将 "Decision" 设置为 "Finished"，并给出具体的 "Score" (1到10分)，并在 "Thoughts" 中给出详细的评审意见和得分理由。
 """
 
 NOVELTY_CHECK_EVAL_PROMPT = """
@@ -170,39 +243,107 @@ NOVELTY_CHECK_EVAL_PROMPT = """
 当前搜索结果反馈：
 {search_results}
 
-请继续你的审查。如果还需要搜索文献，请输出 "SearchQueries" 并在 "Decision" 中填 "Pending"。如果审查完毕，请在 "Decision" 中填 "Finished"
-无论你是否审查完毕，都需要给出"Thoughts"和"Score"。即便你认为搜索到的信息不足以判定，也应该结合你自己对相关学术领域已有的了解给出相应的字段。
+当前精读文献的全文笔记（知识库）：
+{knowledge_base}
+
+请继续你的审查。如果还需要搜索/阅读，请在Decision中填 "Pending"。如果审查完毕，请填 "Finished"。
 """
 
+PDFReader_PROMPT = """
+你是一个高级学术助理。你的任务是仔细阅读提供的PDF文献，并总结出其核心创新点(Key Takeaway)、使用的方法、以及它解决了什么具体问题。
+你需要详细解释：
+0) 论文标题（放在第一行）
+1）这篇文章想解决什么问题
+2）这篇文章采用了什么样的系统模型（给出具体文字描述和准确的公式描述）
+3）详细解释这篇文章的所有创新点，对关键创新点给出具体公式
+4）这篇文章的关键结论，取得的增益等
+5）概括这篇文章中总结的本领域之前的研究进展
+"""
+# ==========================================
+# 3. Agents 工作流实现与工具封装
 # ==========================================
 
-# 3. Agents 工作流实现
-
-# ==========================================
-
-def format_search_results(queries, engine="openalex"):
-    """执行批量检索并将结果格式化为字符串"""
+def format_search_results_and_update_map(queries, doi_url_map, engine="openalex", open_access=True, has_pdf_url=True, from_year=2020):
+    """执行检索，格式化字符串，并更新 doi_to_url 的映射表以便后续下载"""
     if not queries:
         return "没有进行文献检索。"
 
     results_str = ""
     for q in queries:
-        papers = search_for_papers(q, result_limit=50, engine=engine)
+        papers = search_for_papers(q, result_limit=20, engine=engine, 
+                                   open_access=open_access, has_pdf_url=has_pdf_url, from_year=from_year)
         results_str += f"\n--- Query: [{q}] 的搜索结果 ---\n"
         if not papers:
             results_str += "未找到相关文献。\n"
         else:
-            # logger.info(f"p['abstract'] ")
             for i, p in enumerate(papers):
-                results_str += f"{i+1}. {p['title']} ({p['year']}) - {p['venue']}\n   Authors: {p['authors']}\n   Abstract: {p['abstract'][:300]}...\n"
+                # 记录 DOI 到 PDF URL 的映射
+                if p['doi'] and p['pdf_url']:
+                    doi_url_map[p['doi']] = p['pdf_url']
+                
+                results_str += f"{i+1}. {p['title']} ({p['year']}) - {p['venue']}\n"
+                results_str += f"   DOI: {p['doi']}\n"  # 必须展示 DOI，让 Agent 知道填什么
+                results_str += f"   Authors: {p['authors']}\n   Abstract: {p['abstract'][:300]}...\n"
     return results_str
 
 
-def run_student_agent(student_id, theme, max_iters, model, log_dir):
+def process_papers_to_read(papers_to_read, doi_url_map, kb_txt_path):
+    """处理下载并阅读 PDF 的逻辑"""
+    if not papers_to_read:
+        return
+    
+    # 获取 Gemini API Key 供 PDFReader 使用
+    gemini_api_key = os.environ.get("JIANYI_API_KEY") 
+    if not gemini_api_key:
+        logger.warning("未设置 GEMINI_API_KEY 环境变量，跳过 PDF 全文阅读！")
+        return
+
+    # 初始化用于阅读长文的 Reader Agent (每次阅读用全新实例，防止上下文污染)
+    pdf_reader = PDFReader(
+        api_key=gemini_api_key,
+        system_prompt=PDFReader_PROMPT,
+        context_window_size=1
+    )
+
+    for doi in papers_to_read:
+        pdf_url = doi_url_map.get(doi)
+        if not pdf_url:
+            logger.debug(f"无法找到 DOI: {doi} 对应的 PDF 下载链接，跳过阅读。")
+            continue
+            
+        pdf_path = download_paper_pdf(pdf_url, doi)
+        if pdf_path:
+            logger.info(f"正在交由 AI 深入阅读: {pdf_path}")
+            # 调用 PDFReader 获取并追加知识到 txt
+            pdf_reader.read_pdf(
+                pdf_path=pdf_path, 
+                output_txt_path=kb_txt_path, 
+                user_prompt=f"Please read this paper (DOI: {doi}) and summarize its core methodology and key takeaways."
+            )
+        else:
+             logger.debug(f"PDF 下载失败，跳过阅读 DOI: {doi}")
+
+
+def read_knowledge_base(txt_path):
+    """读取已存储的全文阅读笔记"""
+    if os.path.exists(txt_path):
+        with open(txt_path, "r", encoding="utf-8") as f:
+            content = f.read().strip()
+            return content if content else "暂无精读笔记。"
+    return "暂无精读笔记。"
+
+
+def run_student_agent(student_id, theme, max_iters, model, log_dir, search_params):
     """Idea Generator Agent 的运行逻辑"""
     agent = LLMAgent(model=model, log_file=os.path.join(log_dir, f"log_student_{student_id}.log"))
     logger.info(f"[Student {student_id}] Started working on theme...")
-
+    agent.set_context_len(4)
+    # 每个 Student 独享一个 Knowledge Base 文件，用于存储它读过的论文笔记
+    kb_txt_path = os.path.join(log_dir, f"kb_student_{student_id}.txt")
+    
+    # 存储本轮搜索出的文献供下载查找
+    doi_url_map = {} 
+    
     current_prompt = IDEA_GENERATOR_FIRST_PROMPT.format(theme=theme)
     current_ideas = []
 
@@ -210,27 +351,45 @@ def run_student_agent(student_id, theme, max_iters, model, log_dir):
         logger.info(f"[Student {student_id}] Iteration {i+1}/{max_iters}")
         response, _ = agent.get_response(current_prompt, IDEA_GENERATOR_SYSTEM_PROMPT)
         
-        parsed_json = LLMAgent.extract_json_between_markers(response)
+        parsed_json = LLMAgent.robust_extract_json(response)
         if not parsed_json:
-            logger.info(f"[Student {student_id}] Failed to parse JSON. Retrying...")
+            logger.debug(f"[Student {student_id}] Failed to parse JSON. Retrying...")
             current_prompt = "你的输出不符合JSON格式要求，请修正并重新输出。"
             continue
             
         thoughts = parsed_json.get("Thoughts", "")
         queries = parsed_json.get("SearchQueries", [])
+        papers_to_read = parsed_json.get("PapersToRead", [])
         ideas = parsed_json.get("Ideas", [])
         
         if ideas:
-            current_ideas = ideas # 更新为最新的 Ideas
+            current_ideas = ideas
             
         if "i'm done" in thoughts.lower():
             logger.info(f"[Student {student_id}] Finished early: {thoughts[:50]}...")
             break
             
         if i < max_iters - 1:
-            search_feedback = format_search_results(queries)
+            # 1. 触发全文精读并写入 kb_txt_path
+            if papers_to_read:
+                logger.info(f"[Student {student_id}] 要求阅读全文: {papers_to_read}")
+                process_papers_to_read(papers_to_read, doi_url_map, kb_txt_path)
+                
+            # 2. 执行新的检索，更新 doi_url_map 供下一轮下载用
+            search_feedback = format_search_results_and_update_map(
+                queries, doi_url_map, 
+                open_access=search_params['open_access'], 
+                has_pdf_url=search_params['has_pdf_url'], 
+                from_year=search_params['from_year']
+            )
+            
+            # 3. 读取最新的精读知识库
+            kb_content = read_knowledge_base(kb_txt_path)
+            
+            # 4. 构建下一轮 Prompt
             current_prompt = IDEA_GENERATOR_ITERATION_PROMPT.format(
                 search_results=search_feedback,
+                knowledge_base=kb_content,
                 previous_ideas=json.dumps(current_ideas, indent=2, ensure_ascii=False)
             )
             
@@ -238,44 +397,60 @@ def run_student_agent(student_id, theme, max_iters, model, log_dir):
     return current_ideas
 
 
-def run_teacher_agent(teacher_id, idea, max_iters, model, log_dir):
+def run_teacher_agent(teacher_id, idea, max_iters, model, log_dir, search_params):
     """Novelty Check Agent 的运行逻辑"""
     agent = LLMAgent(model=model, log_file=os.path.join(log_dir, f"log_teacher_{teacher_id}.log"))
     logger.info(f"[Teacher {teacher_id}] Start reviewing idea: {idea.get('Title', 'Unknown')}")
 
+    kb_txt_path = os.path.join(log_dir, f"kb_teacher_{teacher_id}.txt")
+    doi_url_map = {}
+    
     search_feedback = "目前尚未进行任何搜索。"
     final_score = None
     review_comments = ""
 
     for i in range(max_iters):
+        # 读取此 Reviewer 看过的全文笔记
+        kb_content = read_knowledge_base(kb_txt_path)
+        
         current_prompt = NOVELTY_CHECK_EVAL_PROMPT.format(
             title=idea.get('Title', ''),
             background=idea.get('Background', ''),
             hypothesis=idea.get('Hypothesis', ''),
             methodology=idea.get('Methodology', ''),
-            search_results=search_feedback
+            search_results=search_feedback,
+            knowledge_base=kb_content
         )
         
         response, _ = agent.get_response(current_prompt, NOVELTY_CHECK_SYSTEM_PROMPT)
-        parsed_json = LLMAgent.extract_json_between_markers(response)
+        parsed_json = LLMAgent.robust_extract_json(response)
         
         if not parsed_json:
             search_feedback = "请严格按照要求的JSON格式输出你的评估和搜索Query。"
             continue
             
         decision = parsed_json.get("Decision", "Pending")
+        final_score = parsed_json.get("Score")
+        review_comments = parsed_json.get("Thoughts", "")
+        
         if decision == "Finished":
-            final_score = parsed_json.get("Score")
-            review_comments = parsed_json.get("Thoughts", "")
             logger.info(f"[Teacher {teacher_id}] Review finished. Score: {final_score}")
             break
-        else:
-            final_score = parsed_json.get("Score")
-            review_comments = parsed_json.get("Thoughts", "")
-        
             
+        # 处理全文精读请求
+        papers_to_read = parsed_json.get("PapersToRead", [])
+        if papers_to_read:
+            logger.info(f"[Teacher {teacher_id}] 要求阅读全文核查 Novelty: {papers_to_read}")
+            process_papers_to_read(papers_to_read, doi_url_map, kb_txt_path)
+            
+        # 执行新的检索更新 Feedback
         queries = parsed_json.get("SearchQueries", [])
-        search_feedback = format_search_results(queries)
+        search_feedback = format_search_results_and_update_map(
+            queries, doi_url_map, 
+            open_access=search_params['open_access'], 
+            has_pdf_url=search_params['has_pdf_url'], 
+            from_year=search_params['from_year']
+        )
         
     return {
         "Idea": idea,
@@ -285,174 +460,49 @@ def run_teacher_agent(teacher_id, idea, max_iters, model, log_dir):
     }
 
 
-
-import os
-import requests
-import http.cookiejar
-import re
-from urllib.parse import urlparse
-
-def load_cookies_from_netscape(cookie_file):
-    """
-    从 Netscape 格式的 txt 文件加载 cookie (兼容 wget/curl 格式)
-    """
-    cj = http.cookiejar.MozillaCookieJar(cookie_file)
-    try:
-        cj.load()
-        return cj
-    except Exception as e:
-        print(f"[Cookie Error] Failed to load cookies: {e}")
-        return None
-
-
-# get pdf from IEEEXplore. 
-def download_paper_pdf(paper_info, save_dir="pdfs", ieee_cookie_path="ieee_cookies.txt"):
-    """
-    下载论文 PDF。
-    策略：
-    1. 如果有 OpenAlex 提供的 OA 链接 (通常是 arXiv)，优先下载。
-    2. 如果是 IEEE 的 DOI，尝试使用本地 Cookie 下载。
-    """
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
-
-    title = paper_info.get("title", "untitled").replace("/", "_").replace(":", "-")
-    # 截断文件名防止过长
-    filename = f"{title[:50]}.pdf"
-    save_path = os.path.join(save_dir, filename)
-    
-    if os.path.exists(save_path):
-        print(f"[Info] File already exists: {filename}")
-        return save_path
-
-    # ---------------------------
-    # 策略 A: 尝试 Open Access (ArXiv 等)
-    # ---------------------------
-    oa_url = paper_info.get("oa_url")
-    if oa_url and "arxiv.org" in oa_url:
-        print(f"[Download] Trying arXiv for: {title}")
-        try:
-            # ArXiv 需要特殊的 User-Agent，否则会拒绝
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-            }
-            response = requests.get(oa_url, headers=headers, timeout=30)
-            if response.status_code == 200 and "application/pdf" in response.headers.get("Content-Type", ""):
-                with open(save_path, "wb") as f:
-                    f.write(response.content)
-                print(f"[Success] Downloaded from OA: {filename}")
-                return save_path
-        except Exception as e:
-            print(f"[Error] OA download failed: {e}")
-
-    # ---------------------------
-    # 策略 B: 尝试 IEEE Xplore (带 Cookie)
-    # ---------------------------
-    doi = paper_info.get("doi")
-    if doi and ("10.1109" in doi or "IEEE" in paper_info.get("venue", "").upper()):
-        print(f"[Download] Trying IEEE Xplore for: {title}")
-        
-        # 1. 构造 IEEE 下载链接
-        # OpenAlex 的 DOI 通常是 https://doi.org/10.1109/XXX.2023.1234567
-        # 我们需要先访问 DOI 获取重定向后的 IEEE 真实链接，或者直接解析
-        
-        session = requests.Session()
-        # 加载你的机构 Cookie
-        if os.path.exists(ieee_cookie_path):
-            session.cookies = load_cookies_from_netscape(ieee_cookie_path)
-        else:
-            print("[Warning] No IEEE cookie file found! Download will likely fail.")
-
-        session.headers.update({
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
-            "Referer": "https://ieeexplore.ieee.org/"
-        })
-
-        try:
-            # 第一步：访问 DOI 链接，允许重定向，让 IEEE 验证 Cookie 并跳转到文章页
-            # 注意：这里我们直接构造 stamp 地址可能更直接，但先通过 DOI 跳转更稳健
-            response = session.get(doi, allow_redirects=True, timeout=15)
-            final_url = response.url
-            
-            # 从 URL 中提取 arnumber (IEEE 的文章 ID)
-            # URL 可能是 https://ieeexplore.ieee.org/document/10380315
-            arnumber_match = re.search(r"document/(\d+)", final_url)
-            
-            if arnumber_match:
-                arnumber = arnumber_match.group(1)
-                # 构造直接下载接口
-                # 这种链接通常会触发下载，或者再次重定向到 CDN
-                pdf_url = f"https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber={arnumber}"
-                
-                print(f"[Info] Found IEEE arnumber: {arnumber}, requesting PDF...")
-                
-                # 请求 PDF (再次允许重定向)
-                pdf_response = session.get(pdf_url, allow_redirects=True, stream=True, timeout=60)
-                
-                # 检查是否真的拿到了 PDF (如果 Cookie 失效，这里会返回 HTML 网页)
-                content_type = pdf_response.headers.get("Content-Type", "")
-                if "application/pdf" in content_type:
-                    with open(save_path, "wb") as f:
-                        for chunk in pdf_response.iter_content(chunk_size=8192):
-                            f.write(chunk)
-                    print(f"[Success] Downloaded from IEEE: {filename}")
-                    return save_path
-                else:
-                    print(f"[Failed] IEEE returned {content_type} instead of PDF. Cookies might be expired.")
-                    # 可以在这里记录日志，提醒你更新 cookie.txt
-            else:
-                print(f"[Error] Could not extract arnumber from URL: {final_url}")
-
-        except Exception as e:
-            print(f"[Error] IEEE download failed: {e}")
-
-    return None
-
-    
-
-# --- 使用示例 ---
-# if __name__ == "__main__":
-#     # 模拟从 search_for_papers 返回的一个结果
-#     mock_paper = {
-#         "title": "Deep Learning for Massive MIMO",
-#         "doi": "https://doi.org/10.1109/TWC.2019.2946123", # 这是一个 IEEE 的 DOI
-#         "oa_url": None, # 假设没有 OA
-#         "venue": "IEEE Transactions on Wireless Communications"
-#     }
-    
-#     # 请确保同目录下有 ieee_cookies.txt
-#     download_paper_pdf(mock_paper)
 # ==========================================
-
 # 4. 主控流程
-def generate_ideas(args):
-    # args = parser.parse_args()
+# ==========================================
+def generate_ideas(args, open_access=True, has_pdf_url=True, from_year=2020):
+    """
+    修改了函数签名，支持将搜索参数暴露出来
+    """
+    # 包装搜索参数字典传递给 Agent
+    search_params = {
+        "open_access": open_access,
+        "has_pdf_url": has_pdf_url,
+        "from_year": from_year
+    }
 
-    # 1. 读取主题文件 
     if not os.path.exists(args.theme_file):
         logger.info(f"找不到主题文件: {args.theme_file}。请先创建该文件并写入研究主题。")
         return
+        
+    if not os.path.exists(args.log_dir):
+        os.makedirs(args.log_dir)
+
     with open(args.theme_file, "r", encoding="utf-8") as f:
         theme = f.read().strip()
 
     logger.info(f"=== 启动 AI Scientist ===")
     logger.info(f"Theme: {theme}")
+    logger.info(f"Search Config - OA:{open_access}, PDF:{has_pdf_url}, Year>={from_year}")
     logger.info(f"Students: {args.n_students}, Teachers: {args.n_teachers}, Model: {args.model}")
     logger.info("=========================\n")
 
-    # 2. 阶段一：并行启动 Idea Generators
+    # >>> 阶段一：并行启动 Idea Generators <<<
     all_ideas = []
     logger.info(">>> 阶段一：Idea Generation (并发多 Agent) <<<")
     with ThreadPoolExecutor(max_workers=args.n_students) as executor:
         future_to_student = {
-            executor.submit(run_student_agent, i+1, theme, args.max_student_iters, args.model, args.log_dir): i+1 
+            executor.submit(run_student_agent, i+1, theme, args.max_student_iters, args.model, args.log_dir, search_params): i+1 
             for i in range(args.n_students)
         }
         for future in as_completed(future_to_student):
             student_ideas = future.result()
             all_ideas.extend(student_ideas)
             
-    # 将所有的idea记录到单独的txt文件中
+    # 保存所有初步生成的 idea
     with open(args.output_file, "w", encoding="utf-8") as f:
         json.dump(all_ideas, f, indent=4, ensure_ascii=False)
     logger.info(f"阶段一结束。共生成 {len(all_ideas)} 个Ideas，已保存至 {args.output_file}。\n")
@@ -461,25 +511,23 @@ def generate_ideas(args):
         logger.info("未生成任何Idea，程序退出。")
         return
 
-    # 3. 打乱 Idea 顺序
+    # 打乱 Idea 顺序
     random.shuffle(all_ideas)
 
-    # 4. 阶段二：并行启动 Novelty Checkers (Teachers) 进行评估
-    # 为了简化，我们将所有打乱后的idea分配给 N 个 teacher 组成的线程池进行评估。
+    # >>> 阶段二：并行启动 Novelty Checkers (Teachers) <<<
     logger.info(">>> 阶段二：Novelty Check (并发严苛审稿) <<<")
     evaluated_results = []
 
-    # 控制并发量为 n_teachers，处理所有的 ideas
     with ThreadPoolExecutor(max_workers=args.n_teachers) as executor:
         future_to_idea = {
-            executor.submit(run_teacher_agent, idx % args.n_teachers + 1, idea, args.max_teacher_iters, args.model, args.log_dir): idea
+            executor.submit(run_teacher_agent, idx % args.n_teachers + 1, idea, args.max_teacher_iters, args.model, args.log_dir, search_params): idea
             for idx, idea in enumerate(all_ideas)
         }
         for future in as_completed(future_to_idea):
             result = future.result()
             evaluated_results.append(result)
 
-    # 5. 输出审查结果到控制台和独立的Log文件
+    # 汇总输出
     logger.info("\n>>> 最终审查结果汇总 <<<")
     with open(args.review_log, "w", encoding="utf-8") as f:
         for idx, res in enumerate(evaluated_results):
@@ -497,123 +545,5 @@ def generate_ideas(args):
             f.write(output_str)
             
     logger.info(f"\n所有评估结束，详细评分已保存至 {args.review_log}。")
-    return args.output_file # 返回生成的idea文件路径
-    pass
-    
-# test functions for pdf download
-import os
-import shutil
-# 假设你的下载函数保存在 downloader.py 文件中，或者直接粘贴在同一个文件里
-# from downloader import download_paper_pdf 
+    return args.output_file
 
-def test_arxiv_download():
-    """
-    测试用例 1: ArXiv 免费下载
-    目标：验证是否能自动识别 oa_url 并下载，无需 Cookie。
-    """
-    print("\n" + "="*40)
-    print("Test Case 1: Downloading from ArXiv (Open Access)")
-    print("="*40)
-
-    # 这是一个真实的 ArXiv 论文数据结构 (模拟 OpenAlex 返回)
-    # 论文: "Attention Is All You Need"
-    paper_info = {
-        "title": "Attention Is All You Need",
-        "authors": "Ashish Vaswani et al.",
-        "venue": "ArXiv",
-        "year": 2017,
-        "doi": "https://doi.org/10.48550/arXiv.1706.03762",
-        # OpenAlex 通常会提供这个字段
-        "oa_url": "https://arxiv.org/pdf/1706.03762.pdf", 
-        "is_oa": True
-    }
-
-    # 执行下载
-    save_path = download_paper_pdf(paper_info, save_dir="./test_pdfs")
-
-    # 验证结果
-    if save_path and os.path.exists(save_path):
-        file_size = os.path.getsize(save_path)
-        print(f"✅ [PASS] ArXiv download successful!")
-        print(f"   Saved at: {save_path}")
-        print(f"   File size: {file_size / 1024:.2f} KB")
-        
-        # 简单验证文件头是否为 PDF
-        with open(save_path, 'rb') as f:
-            header = f.read(4)
-            if header == b'%PDF':
-                print("   File header check: Valid PDF")
-            else:
-                print(f"   ⚠️ File header check: Invalid ({header})")
-    else:
-        print("❌ [FAIL] ArXiv download failed.")
-
-
-def test_ieee_download():
-    """
-    测试用例 2: IEEE Xplore 下载
-    目标：验证 Cookie 是否生效，能否穿透权限墙下载。
-    注意：需要目录下存在有效的 ieee_cookies.txt
-    """
-    print("\n" + "="*40)
-    print("Test Case 2: Downloading from IEEE Xplore (Auth Required)")
-    print("="*40)
-
-    # cookie_file = "coockies\\ieee_coockies.txt"
-    cookie_file = r"D:\\ChannelCoding\\Aether\\coockies\\ieee_cookies.txt"
-    if not os.path.exists(cookie_file):
-        print(f"⚠️ [SKIP] {cookie_file} not found. Skipping IEEE test.")
-        print("   Please export cookies using the browser extension first.")
-        return
-
-    # 这是一个真实的 IEEE 通信领域论文 (Deep Learning for Massive MIMO)
-    # DOI: 10.1109/TWC.2019.2946123
-    paper_info = {
-        "title": "An Introduction to Deep Learning for the Physical Layer",
-        "authors": "T. O'Shea et al.",
-        "venue": "IEEE Transactions on Cognitive Communications and Networking",
-        "year": 2017,
-        "doi": "https://doi.org/10.1109/TCCN.2017.2758370",
-        # 模拟没有 OA 链接的情况，强制走 IEEE 渠道
-        "oa_url": None, 
-        "is_oa": False
-    }
-
-    # 执行下载
-    save_path = download_paper_pdf(
-        paper_info, 
-        save_dir="./test_pdfs", 
-        ieee_cookie_path=cookie_file
-    )
-
-    # 验证结果
-    if save_path and os.path.exists(save_path):
-        file_size = os.path.getsize(save_path)
-        
-        # 关键检查：如果没有权限，IEEE 可能会返回一个 100KB 左右的 HTML 登录页
-        # 真正的 PDF 通常大于 200KB
-        if file_size < 150 * 1024: 
-            print(f"⚠️ [WARNING] File size is suspiciously small ({file_size/1024:.2f} KB).")
-            print("   It might be an HTML login page. Check your cookies.")
-            
-            # 检查文件头
-            with open(save_path, 'rb') as f:
-                header = f.read(4)
-                if header != b'%PDF':
-                    print("❌ [FAIL] Content is NOT a PDF (likely HTML). Cookie invalid.")
-                    return
-
-        print(f"✅ [PASS] IEEE download successful!")
-        print(f"   Saved at: {save_path}")
-        print(f"   File size: {file_size / 1024:.2f} KB")
-    else:
-        print("❌ [FAIL] IEEE download failed.")
-
-if __name__ == "__main__":
-    # 清理之前的测试目录（可选）
-    if os.path.exists("pdfs"):
-        shutil.rmtree("pdfs")
-    
-    # 运行测试
-    test_arxiv_download()
-    test_ieee_download()
