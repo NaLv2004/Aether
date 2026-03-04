@@ -284,6 +284,144 @@ def run_teacher_agent(teacher_id, idea, max_iters, model, log_dir):
         "Review_Comments": review_comments
     }
 
+
+
+import os
+import requests
+import http.cookiejar
+import re
+from urllib.parse import urlparse
+
+def load_cookies_from_netscape(cookie_file):
+    """
+    从 Netscape 格式的 txt 文件加载 cookie (兼容 wget/curl 格式)
+    """
+    cj = http.cookiejar.MozillaCookieJar(cookie_file)
+    try:
+        cj.load()
+        return cj
+    except Exception as e:
+        print(f"[Cookie Error] Failed to load cookies: {e}")
+        return None
+
+
+# get pdf from IEEEXplore. 
+def download_paper_pdf(paper_info, save_dir="pdfs", ieee_cookie_path="ieee_cookies.txt"):
+    """
+    下载论文 PDF。
+    策略：
+    1. 如果有 OpenAlex 提供的 OA 链接 (通常是 arXiv)，优先下载。
+    2. 如果是 IEEE 的 DOI，尝试使用本地 Cookie 下载。
+    """
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+
+    title = paper_info.get("title", "untitled").replace("/", "_").replace(":", "-")
+    # 截断文件名防止过长
+    filename = f"{title[:50]}.pdf"
+    save_path = os.path.join(save_dir, filename)
+    
+    if os.path.exists(save_path):
+        print(f"[Info] File already exists: {filename}")
+        return save_path
+
+    # ---------------------------
+    # 策略 A: 尝试 Open Access (ArXiv 等)
+    # ---------------------------
+    oa_url = paper_info.get("oa_url")
+    if oa_url and "arxiv.org" in oa_url:
+        print(f"[Download] Trying arXiv for: {title}")
+        try:
+            # ArXiv 需要特殊的 User-Agent，否则会拒绝
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+            }
+            response = requests.get(oa_url, headers=headers, timeout=30)
+            if response.status_code == 200 and "application/pdf" in response.headers.get("Content-Type", ""):
+                with open(save_path, "wb") as f:
+                    f.write(response.content)
+                print(f"[Success] Downloaded from OA: {filename}")
+                return save_path
+        except Exception as e:
+            print(f"[Error] OA download failed: {e}")
+
+    # ---------------------------
+    # 策略 B: 尝试 IEEE Xplore (带 Cookie)
+    # ---------------------------
+    doi = paper_info.get("doi")
+    if doi and ("10.1109" in doi or "IEEE" in paper_info.get("venue", "").upper()):
+        print(f"[Download] Trying IEEE Xplore for: {title}")
+        
+        # 1. 构造 IEEE 下载链接
+        # OpenAlex 的 DOI 通常是 https://doi.org/10.1109/XXX.2023.1234567
+        # 我们需要先访问 DOI 获取重定向后的 IEEE 真实链接，或者直接解析
+        
+        session = requests.Session()
+        # 加载你的机构 Cookie
+        if os.path.exists(ieee_cookie_path):
+            session.cookies = load_cookies_from_netscape(ieee_cookie_path)
+        else:
+            print("[Warning] No IEEE cookie file found! Download will likely fail.")
+
+        session.headers.update({
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
+            "Referer": "https://ieeexplore.ieee.org/"
+        })
+
+        try:
+            # 第一步：访问 DOI 链接，允许重定向，让 IEEE 验证 Cookie 并跳转到文章页
+            # 注意：这里我们直接构造 stamp 地址可能更直接，但先通过 DOI 跳转更稳健
+            response = session.get(doi, allow_redirects=True, timeout=15)
+            final_url = response.url
+            
+            # 从 URL 中提取 arnumber (IEEE 的文章 ID)
+            # URL 可能是 https://ieeexplore.ieee.org/document/10380315
+            arnumber_match = re.search(r"document/(\d+)", final_url)
+            
+            if arnumber_match:
+                arnumber = arnumber_match.group(1)
+                # 构造直接下载接口
+                # 这种链接通常会触发下载，或者再次重定向到 CDN
+                pdf_url = f"https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber={arnumber}"
+                
+                print(f"[Info] Found IEEE arnumber: {arnumber}, requesting PDF...")
+                
+                # 请求 PDF (再次允许重定向)
+                pdf_response = session.get(pdf_url, allow_redirects=True, stream=True, timeout=60)
+                
+                # 检查是否真的拿到了 PDF (如果 Cookie 失效，这里会返回 HTML 网页)
+                content_type = pdf_response.headers.get("Content-Type", "")
+                if "application/pdf" in content_type:
+                    with open(save_path, "wb") as f:
+                        for chunk in pdf_response.iter_content(chunk_size=8192):
+                            f.write(chunk)
+                    print(f"[Success] Downloaded from IEEE: {filename}")
+                    return save_path
+                else:
+                    print(f"[Failed] IEEE returned {content_type} instead of PDF. Cookies might be expired.")
+                    # 可以在这里记录日志，提醒你更新 cookie.txt
+            else:
+                print(f"[Error] Could not extract arnumber from URL: {final_url}")
+
+        except Exception as e:
+            print(f"[Error] IEEE download failed: {e}")
+
+    return None
+
+    
+
+# --- 使用示例 ---
+# if __name__ == "__main__":
+#     # 模拟从 search_for_papers 返回的一个结果
+#     mock_paper = {
+#         "title": "Deep Learning for Massive MIMO",
+#         "doi": "https://doi.org/10.1109/TWC.2019.2946123", # 这是一个 IEEE 的 DOI
+#         "oa_url": None, # 假设没有 OA
+#         "venue": "IEEE Transactions on Wireless Communications"
+#     }
+    
+#     # 请确保同目录下有 ieee_cookies.txt
+#     download_paper_pdf(mock_paper)
 # ==========================================
 
 # 4. 主控流程
@@ -361,3 +499,121 @@ def generate_ideas(args):
     logger.info(f"\n所有评估结束，详细评分已保存至 {args.review_log}。")
     return args.output_file # 返回生成的idea文件路径
     pass
+    
+# test functions for pdf download
+import os
+import shutil
+# 假设你的下载函数保存在 downloader.py 文件中，或者直接粘贴在同一个文件里
+# from downloader import download_paper_pdf 
+
+def test_arxiv_download():
+    """
+    测试用例 1: ArXiv 免费下载
+    目标：验证是否能自动识别 oa_url 并下载，无需 Cookie。
+    """
+    print("\n" + "="*40)
+    print("Test Case 1: Downloading from ArXiv (Open Access)")
+    print("="*40)
+
+    # 这是一个真实的 ArXiv 论文数据结构 (模拟 OpenAlex 返回)
+    # 论文: "Attention Is All You Need"
+    paper_info = {
+        "title": "Attention Is All You Need",
+        "authors": "Ashish Vaswani et al.",
+        "venue": "ArXiv",
+        "year": 2017,
+        "doi": "https://doi.org/10.48550/arXiv.1706.03762",
+        # OpenAlex 通常会提供这个字段
+        "oa_url": "https://arxiv.org/pdf/1706.03762.pdf", 
+        "is_oa": True
+    }
+
+    # 执行下载
+    save_path = download_paper_pdf(paper_info, save_dir="./test_pdfs")
+
+    # 验证结果
+    if save_path and os.path.exists(save_path):
+        file_size = os.path.getsize(save_path)
+        print(f"✅ [PASS] ArXiv download successful!")
+        print(f"   Saved at: {save_path}")
+        print(f"   File size: {file_size / 1024:.2f} KB")
+        
+        # 简单验证文件头是否为 PDF
+        with open(save_path, 'rb') as f:
+            header = f.read(4)
+            if header == b'%PDF':
+                print("   File header check: Valid PDF")
+            else:
+                print(f"   ⚠️ File header check: Invalid ({header})")
+    else:
+        print("❌ [FAIL] ArXiv download failed.")
+
+
+def test_ieee_download():
+    """
+    测试用例 2: IEEE Xplore 下载
+    目标：验证 Cookie 是否生效，能否穿透权限墙下载。
+    注意：需要目录下存在有效的 ieee_cookies.txt
+    """
+    print("\n" + "="*40)
+    print("Test Case 2: Downloading from IEEE Xplore (Auth Required)")
+    print("="*40)
+
+    # cookie_file = "coockies\\ieee_coockies.txt"
+    cookie_file = r"D:\\ChannelCoding\\Aether\\coockies\\ieee_cookies.txt"
+    if not os.path.exists(cookie_file):
+        print(f"⚠️ [SKIP] {cookie_file} not found. Skipping IEEE test.")
+        print("   Please export cookies using the browser extension first.")
+        return
+
+    # 这是一个真实的 IEEE 通信领域论文 (Deep Learning for Massive MIMO)
+    # DOI: 10.1109/TWC.2019.2946123
+    paper_info = {
+        "title": "An Introduction to Deep Learning for the Physical Layer",
+        "authors": "T. O'Shea et al.",
+        "venue": "IEEE Transactions on Cognitive Communications and Networking",
+        "year": 2017,
+        "doi": "https://doi.org/10.1109/TCCN.2017.2758370",
+        # 模拟没有 OA 链接的情况，强制走 IEEE 渠道
+        "oa_url": None, 
+        "is_oa": False
+    }
+
+    # 执行下载
+    save_path = download_paper_pdf(
+        paper_info, 
+        save_dir="./test_pdfs", 
+        ieee_cookie_path=cookie_file
+    )
+
+    # 验证结果
+    if save_path and os.path.exists(save_path):
+        file_size = os.path.getsize(save_path)
+        
+        # 关键检查：如果没有权限，IEEE 可能会返回一个 100KB 左右的 HTML 登录页
+        # 真正的 PDF 通常大于 200KB
+        if file_size < 150 * 1024: 
+            print(f"⚠️ [WARNING] File size is suspiciously small ({file_size/1024:.2f} KB).")
+            print("   It might be an HTML login page. Check your cookies.")
+            
+            # 检查文件头
+            with open(save_path, 'rb') as f:
+                header = f.read(4)
+                if header != b'%PDF':
+                    print("❌ [FAIL] Content is NOT a PDF (likely HTML). Cookie invalid.")
+                    return
+
+        print(f"✅ [PASS] IEEE download successful!")
+        print(f"   Saved at: {save_path}")
+        print(f"   File size: {file_size / 1024:.2f} KB")
+    else:
+        print("❌ [FAIL] IEEE download failed.")
+
+if __name__ == "__main__":
+    # 清理之前的测试目录（可选）
+    if os.path.exists("pdfs"):
+        shutil.rmtree("pdfs")
+    
+    # 运行测试
+    test_arxiv_download()
+    test_ieee_download()
