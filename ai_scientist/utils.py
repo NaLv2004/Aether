@@ -40,7 +40,7 @@ import base64
 import os
 
 class PDFReader:
-    def __init__(self, api_key, system_prompt, context_window_size=1, host="jeniya.top", model="gemini-3-pro-preview"):
+    def __init__(self, api_key, system_prompt, context_window_size=1, host="jeniya.top", model="gemini-3-flash-preview"):
         """
         初始化 PDFReader
         :param api_key: 你的 API 密钥 / Token

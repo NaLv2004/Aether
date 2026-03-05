@@ -168,7 +168,7 @@ IDEA_GENERATOR_SYSTEM_PROMPT = """
 8。每轮对话中，你都需要refine之前的idea（更加具体、可行、具有合理性），或者努力根据你已有的知识，或者搜索到的论文，提出新的insight和idea(或使用新的insights修改当前idea)。
 
 如果当前搜索结果中的摘要不足以判断，你可以要求阅读全文。将你想要阅读的论文的 DOI 填入 "PapersToRead" 列表中。系统会自动下载、阅读并把核心总结返回给你。
-此外，你需要通过阅读其他论文和摘要产生新的insights，而不是仅仅依据这些内容来鉴定创新性。
+此外，你需要通过阅读其他论文和摘要产生新的insights，而不是仅仅依据这些内容来鉴定创新性。此外，需要保证你提出的idea不仅仅是简单的排列组合。最好能够有较长，较完整的创新逻辑链条。
 
 你的回复必须包含如下JSON格式（可以包含在 ```json 和 ``` 之间）：
 ```json
@@ -187,14 +187,48 @@ IDEA_GENERATOR_SYSTEM_PROMPT = """
     ]
 }
 ```
-如果不需要搜文献，SearchQueries 可为空；如果不需要读全文，PapersToRead 可为空；如果是第一轮只负责搜文献，Ideas 可为空。
+SearchQueries 不可为空，Ideas字段不可以为空。；如果不需要读全文，PapersToRead 可为空。
 """
 
+# IDEA_GENERATOR_SYSTEM_PROMPT = """
+# 你是一个充满雄心壮志且富有创造力的通信领域AI科学家。
+# 你的目标是根据给定的主题，提出能够被顶级通信期刊接收的idea。
+# 请遵循以下原则：
+# 1. 鼓励大胆假设，提出的idea需要能够被TCOM等期刊接收。
+# 2. 提出的假设必须非常具体，避免假大空。
+# 3. 鼓励进行广泛的文献调研。当你需要搜索文献时，请使用逻辑词或模糊查询词。
+# 4. 你可以同时执行多项操作：生成新的Idea、优化（Refine）之前的Idea、发起新的文献搜索、选择阅读某篇文献的全文。
+# 6. 生成新的idea时，必须在返回的结果中包含之前的所有idea。
+# 7. 研究对象不应该过于复杂，不应该堆砌过多技术名词，而是要聚焦于某一个具体问题，给出原理性的创新。
+# 8。每轮对话中，你都需要refine之前的idea（更加具体、可行、具有合理性），或者努力根据你已有的知识，或者搜索到的论文，提出新的insight和idea(或使用新的insights修改当前idea)。
+
+# 如果当前搜索结果中的摘要不足以判断，你可以要求阅读全文。将你想要阅读的论文的 DOI 填入 "PapersToRead" 列表中。系统会自动下载、阅读并把核心总结返回给你。
+# 此外，你需要通过阅读其他论文和摘要产生新的insights，而不是仅仅依据这些内容来鉴定创新性。
+
+# 你的回复必须包含如下JSON格式（可以包含在 ```json 和 ``` 之间）：
+# ```json
+# {
+#     "Thoughts": "这里写下你的思考过程、对当前idea的分析以及你接下来的计划。",
+#     "SearchQueries": ["query1", "query2"], 
+#     "PapersToRead": ["https://doi.org/10.xxxx/xxxx", "https://doi.org/10.yyyy/yyyy"],
+#     "Ideas": [
+#         {
+#             "Name": "简短的Idea英文代号",
+#             "Title": "Idea的完整标题",
+#             "Background": "研究背景与动机",
+#             "Hypothesis": "具体的大胆假设",
+#             "Methodology": "具体的研究方法与实际复杂场景考量"
+#         }
+#     ]
+# }
+# ```
+# 如果不需要搜文献，SearchQueries 可为空；如果不需要读全文，PapersToRead 可为空；如果是第一轮只负责搜文献，Ideas 可为空。
+# """
 IDEA_GENERATOR_FIRST_PROMPT = """
 我们正在探索以下粗略的研究主题：
 【{theme}】
 
-请根据该主题，提出你初步的想法，或者直接给出一系列广泛的文献检索Query以帮助你构思。请输出符合系统提示词要求的JSON。
+请根据该主题，提出你初步的想法和idea，并且给出一系列广泛的文献检索Query以帮助你构思。请输出符合系统提示词要求的JSON。
 """
 
 IDEA_GENERATOR_ITERATION_PROMPT = """
@@ -204,7 +238,7 @@ IDEA_GENERATOR_ITERATION_PROMPT = """
 这是你（或其它评审）之前要求精读的论文的全文总结笔记（知识库）：
 {knowledge_base}
 
-这是你之前已经生成的Ideas（供你参考，你可以选择Refine它们，或者提出全新的Idea）：
+这是你之前已经生成的Ideas（供你参考，你可以选择Refine它们，或者提出全新的Idea）.注意，每次json中返回的Ideas列表中，至少要包含之前提出的所有Ideas，也必须追加新的Ideas,并refine之前的。
 {previous_ideas}
 
 请根据最新的文献结果和精读笔记，继续你的研究设想。如果发现你的Idea已经被前人做过，请大修你的假设。如果需要阅读新搜索出的文献全文，请填入 PapersToRead。
@@ -349,7 +383,7 @@ def run_student_agent(student_id, theme, max_iters, model, log_dir, search_param
 
     for i in range(max_iters):
         logger.info(f"[Student {student_id}] Iteration {i+1}/{max_iters}")
-        response, _ = agent.get_response(current_prompt, IDEA_GENERATOR_SYSTEM_PROMPT)
+        response, _ = agent.get_response_stream(current_prompt, IDEA_GENERATOR_SYSTEM_PROMPT)
         
         parsed_json = LLMAgent.robust_extract_json(response)
         if not parsed_json:
@@ -422,7 +456,7 @@ def run_teacher_agent(teacher_id, idea, max_iters, model, log_dir, search_params
             knowledge_base=kb_content
         )
         
-        response, _ = agent.get_response(current_prompt, NOVELTY_CHECK_SYSTEM_PROMPT)
+        response, _ = agent.get_response_stream(current_prompt, NOVELTY_CHECK_SYSTEM_PROMPT)
         parsed_json = LLMAgent.robust_extract_json(response)
         
         if not parsed_json:

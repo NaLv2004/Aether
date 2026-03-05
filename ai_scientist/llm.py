@@ -7,10 +7,10 @@ import anthropic
 import backoff
 import openai
 
-MAX_NUM_TOKENS = 1000000
+MAX_NUM_TOKENS = 65000
 
 class LLMAgent:
-    def __init__(self, model, temperature=0.75, log_file="llm_agent.log"):
+    def __init__(self, model, temperature=1, log_file="llm_agent.log"):
         """
         初始化 LLMAgent 实例。
         
@@ -98,8 +98,9 @@ class LLMAgent:
         elif "gemini" in model:
             print(f"Using OpenAI API with {model}.")
             return openai.OpenAI(
-                api_key = os.environ.get("GEMINI_API_KEY"),
-                base_url="https://newapi.baosiapi.com/v1"
+                api_key = os.environ.get("JIANYI_API_KEY"),
+                #base_url="https://newapi.baosiapi.com/v1"
+                base_url = "https://jeniya.top/v1"
             ), model
         else:
             raise ValueError(f"Model {model} not supported.")

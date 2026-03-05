@@ -1,0 +1,93 @@
+[
+    {
+        "Name": "TweedieConsistencyDet",
+        "Title": "基于Tweedie引导与软量化约束的一致性模型单步检测",
+        "Background": "传统Diffusion检测速度慢，而Consistency Model（CM）虽然支持单步生成，但缺乏对MIMO离散符号的先验约束。直接应用连续CM会导致输出落在星座点之间，需要额外的搜索步骤。",
+        "Hypothesis": "将Tweedie去噪公式作为‘教师信号’，指导学生网络学习从噪声 $x_t$ 到 $x_0$ 的直接映射。关键创新在于引入一个‘软量化一致性损失（Soft-Quantization Consistency Loss）’，在蒸馏过程中惩罚偏离QAM星座点的预测，迫使一致性轨迹的终点‘坍缩’到合法符号上。假设这种约束能使模型在单步推理中直接输出高置信度的离散符号，无需后处理。",
+        "Methodology": "1. **Tweedie教师构建**：使用预训练的Score Network生成去噪轨迹作为Ground Truth。\n2. **软量化蒸馏**：定义损失函数 $L = ||f_\\theta(x_t) - \\text{Tweedie}(x_t)|| + \\lambda \\cdot \\text{dist}(f_\\theta(x_t), \\mathcal{C})$，其中 $\\mathcal{C}$ 为星座点集合。\n3. **单步推理**：输入接收信号和随机噪声，网络直接输出离散符号估计。"
+    },
+    {
+        "Name": "SymplecticVISA-LLR",
+        "Title": "基于辛几何VISA动力学的热力学软信息提取",
+        "Background": "VISA模型利用3D向量自旋解决了组合优化的局部最优问题，但通信系统需要软信息（LLR）进行信道译码。现有的物理求解器通常只输出基态（Hard Decision）。",
+        "Hypothesis": "利用辛积分器（Symplectic Integrator）模拟VISA的哈密顿动力学，不仅能保持能量守恒，还能生成符合正则系综（Canonical Ensemble）分布的相空间轨迹。假设在动力学演化的稳态阶段，向量自旋在各离散状态附近的‘滞留时间（Residence Time）’严格正比于其边缘后验概率。通过统计这些热力学涨落，我们可以精确重构出比特级的LLR。",
+        "Methodology": "1. **VISA哈密顿量建模**：构建包含MIMO似然项的3D向量自旋系统。\n2. **辛热浴采样**：使用Langevin或者Nose-Hoover热浴结合辛积分器，在固定温度下进行长时间演化。\n3. **直方图LLR估计**：统计自旋矢量投影在QAM星座点区域的频次，计算对数似然比。"
+    },
+    {
+        "Name": "GraphMamba-CellFree",
+        "Title": "基于图Mamba的去蜂窝大规模MIMO协作检测",
+        "Background": "在去蜂窝（Cell-Free）MIMO中，接入点（AP）分布不规则，传统的CNN或2D Mamba难以处理这种非欧几里得拓扑。GNN虽然适合图结构，但消息传递层数深时会出现过平滑（Over-smoothing），且计算复杂度高。",
+        "Hypothesis": "将分布式的AP视为图节点，利用**Graph Mamba**架构。通过一种‘图拓扑感知的序列化策略’（如基于信道强度的随机游走或谱聚类排序），将图结构转化为序列输入到Mamba块中。假设Mamba的状态空间机制能在线性复杂度下捕捉AP之间的长距离协作干扰模式，解决GNN的可扩展性瓶颈。",
+        "Methodology": "1. **AP图构建与序列化**：根据大尺度衰落构建AP连接图，并生成保留局部性的节点序列。\n2. **Graph Mamba层**：使用Mamba块处理节点序列，同时融入图位置编码（Graph Positional Encoding）。\n3. **协作检测**：多层堆叠实现从局部AP处理到全局信息融合的迭代检测。"
+    },
+    {
+        "Name": "SingularityFree-GreenOp",
+        "Title": "去奇异化神经格林算子用于近场全息波束成形",
+        "Background": "全息MIMO的近场信道建模依赖格林函数。当用户非常靠近天线表面时，格林函数 $1/|r-r'|$ 出现奇异性，导致标准神经算子（FNO/DeepONet）难以拟合，训练不稳定。",
+        "Hypothesis": "结合深度广义格林函数（DGGF）的思想，将近场传播算子分解为‘奇异部分’（解析已知）和‘正则部分’（未知但平滑）。利用神经算子仅学习**正则部分**的映射关系，而在推理时将解析的奇异项加回。这种‘物理分割’策略将彻底消除近场奇异性带来的数值问题，实现任意近距离的高精度波束成形。",
+        "Methodology": "1. **算子分解**：$G(x,y) = G_{singular}(x,y) + G_{regular}(x,y)$，其中前者由物理公式给出。\n2. **正则算子学习**：利用FNO/DeepONet学习从电流分布到 $G_{regular}$ 的映射。\n3. **混合推理**：最终场分布由网络输出加上解析奇异项合成。"
+    },
+    {
+        "Name": "ImplicitCSI-Field",
+        "Title": "基于隐式神经表示（INR）的全息MIMO连续CSI压缩与反馈",
+        "Background": "全息MIMO的天线阵列极其密集，导致CSI矩阵维度巨大，反馈开销不可承受。传统的压缩感知或自编码器仍基于离散矩阵，忽略了近场信道的空间连续性。",
+        "Hypothesis": "信道在空间上是连续变化的电磁场。利用**隐式神经表示（INR/NeRF）**的思想，训练一个微型多层感知机（MLP），将空间坐标 $(x,y,z)$ 映射到该点的CSI值。用户端只需反馈这个微型MLP的权重（仅数千字节），基站即可通过查询该网络重建任意分辨率的连续信道场，实现极致的压缩比。",
+        "Methodology": "1. **坐标网络训练**：在用户端利用导频估计的稀疏CSI样本，过拟合（Overfit）一个微型MLP（如SIREN）。\n2. **权重反馈**：量化并传输MLP的权重参数。\n3. **连续场重建**：基站端运行MLP，以任意高的分辨率查询信道状态，用于波束成形。"
+    },
+    {
+        "Name": "Riemannian-Langevin-Net",
+        "Title": "基于黎曼流形展开朗之万动力学的MIMO检测网络",
+        "Background": "在MIMO检测中，信道矩阵 $\\mathbf{H}$ 的条件数往往很高，导致后验概率分布呈现‘狭长山谷’状。标准的Langevin动力学在欧氏空间进行各向同性的随机游走，收敛效率极低。CMDNet等方法虽然引入了学习机制，但未显式利用信道的几何信息。",
+        "Hypothesis": "将MIMO检测建模为黎曼流形上的采样问题。利用黎曼流形朗之万动力学（RMLD），引入一个与位置相关的预处理矩阵 $\\mathbf{G}(\\mathbf{x})$（黎曼度量张量），以此来抵消信道引起的畸变。通过Deep Unrolling，我们可以学习这个度量张量的参数化表示（而非昂贵的精确Hessian逆），实现自适应的‘变度量’采样。",
+        "Methodology": "1. **黎曼动力学展开**：基于RMLD方程 $\\mathbf{x}_{k+1} = \\mathbf{x}_k + \\epsilon_k [\\mathbf{G}(\\mathbf{x}_k)^{-1} \\nabla \\log p(\\mathbf{x}_k|\\mathbf{y}) + \\Gamma(\\mathbf{x}_k)] + \\sqrt{2\\epsilon_k \\mathbf{G}(\\mathbf{x}_k)^{-1}} \\mathbf{z}_k$，将其展开为网络层。\n2. **度量学习**：设计一个轻量级子网络来预测局部度量 $\\mathbf{G}(\\mathbf{x})$ 的逆，或者学习一个对角化的近似矩阵，使其能够拉伸解空间，使‘山谷’变圆。\n3. **混合Score驱动**：似然项的梯度利用已知 $\\mathbf{H}$ 计算，先验项的Score利用QAM的解析GMM Score或预训练网络提供。"
+    },
+    {
+        "Name": "Zero-Shot-Annealed-MIMO",
+        "Title": "基于解析高斯混合Score的零样本退火检测",
+        "Background": "现有的AI检测器（如DetNet, OAMP-Net）泛化性差，一旦调制阶数（如16QAM变64QAM）或信道模型改变，就需要重新训练。事实上，QAM信号的先验分布是完全已知的GMM，无需从数据中‘黑盒’学习。",
+        "Hypothesis": "利用QAM星座的解析Score函数（由Tweedie公式导出的软判决函数），配合退火朗之万动力学，可以构建一个完全不需要训练（Training-Free）的MIMO检测器。该检测器通过‘噪声退火’（Noise Annealing），在迭代初期将星座平滑为单峰分布以避免局部最优，随后逐渐降低温度使其分裂为离散星座点。",
+        "Methodology": "1. **解析Score推导**：推导GMM分布 $p_\\sigma(\\mathbf{x})$ 的Score函数 $\\mathbf{s}(\\mathbf{x}, \\sigma) = (\\sum w_i (c_i - \\mathbf{x})) / \\sigma^2$，其中 $w_i$ 是基于当前 $\\mathbf{x}$ 与星座点 $c_i$ 距离的Softmax权重。\n2. **退火调度**：设计一个从大 $\\sigma$ 到小 $\\sigma$ 的指数衰减噪声调度表。在每一步，利用解析Score作为梯度方向进行更新。\n3. **零样本推理**：该算法仅依赖物理模型（H和星座图），无需任何训练数据，即可在任意调制阶数下工作。"
+    },
+    {
+        "Name": "Tweedie-OAMP-Net",
+        "Title": "集成解析Tweedie去噪器的OAMP检测网络",
+        "Background": "OAMP算法的瓶颈在于非线性去噪器（Denoiser）。传统方法要么使用次优的高斯去噪器，要么使用黑盒CNN学习去噪器（缺乏可解释性）。Tweedie公式明确了最优MMSE去噪器与数据Score的关系。",
+        "Hypothesis": "将OAMP算法中的去噪步骤替换为基于解析GMM Score的Tweedie去噪器。为了弥补解析模型与真实复杂信道环境（如非理想CSI）之间的差距，引入一个微小的‘残差修正网络’（Residual Correction Network），仅学习理论去噪器与实际最优去噪器之间的偏差。",
+        "Methodology": "1. **Tweedie去噪模块**：构建模块 $D(\\mathbf{r}) = \\mathbf{r} + \\sigma^2 \\mathbf{s}_{analytical}(\\mathbf{r}, \\sigma)$，其中 $\\mathbf{s}_{analytical}$ 是Idea 2中的解析Score。\n2. **残差修正**：实际输出设为 $D(\\mathbf{r}) + \\text{NN}(\\mathbf{r})$，其中NN是一个极小的MLP，用于微调。\n3. **OAMP展开**：将上述模块嵌入OAMP的迭代循环，利用OAMP的状态演化理论计算每一步的 $\\sigma$，端到端微调残差网络。"
+    },
+    {
+        "Name": "Discrete-Bridge-Diffusion",
+        "Title": "基于离散桥扩散的MIMO比特级检测",
+        "Background": "在比特级（Bit-level）进行MIMO检测更贴合信道编码。现有的Bit-Flip Diffusion是从纯噪声到数据的生成过程，难以直接用于条件生成（即给定接收信号 $\\mathbf{y}$ 恢复 $\\mathbf{b}$）。",
+        "Hypothesis": "构建一个‘离散薛定谔桥’（Discrete Schrödinger Bridge）或‘条件流匹配’（Conditional Flow Matching）模型，直接学习从简单的伯努利先验分布到后验比特分布 $p(\\mathbf{b}|\\mathbf{y})$ 的转移概率。与无梯度的Bit-Flip不同，利用接收信号 $\\mathbf{y}$ 的似然梯度来偏置（Bias）比特翻转的概率。",
+        "Methodology": "1. **条件翻转率**：定义比特翻转概率 $P(b_i \\to 1-b_i)$ 不仅取决于当前时间步 $t$，还受到 $\\nabla_{b_i} \\log p(\\mathbf{y}|\\mathbf{b})$（似然灵敏度）的加权控制。\n2. **网络参数化**：使用Graph Neural Network (GNN) 处理比特间的依赖关系，预测每一步的最佳翻转策略。\n3. **桥接训练**：通过最小化前向扩散轨迹与后向推理轨迹之间的KL散度来训练网络，使其学会最高效的去噪路径。"
+    },
+    {
+        "Name": "Hybrid-Graph-Mamba-MIMO",
+        "Title": "混合图-Mamba架构：基于动态干扰时变与局部消息传递的MIMO检测",
+        "Background": "虽然动态步长SSM（如DyG-Mamba）能通过“虚拟时间”模拟干扰衰减，但将无向图序列化不可避免地会割裂某些强局部连接，导致检测性能损失。GNN（如MPNN）擅长捕捉局部强连接，但无法扩展到全局交互。",
+        "Hypothesis": "构建一个**混合图-Mamba（Hybrid Graph-Mamba）** 检测器。利用**MPNN**层处理由强干扰用户组成的稀疏子图（Short-range interactions），利用**动态步长SSM**处理序列化后的全局弱干扰（Long-range interactions）。SSM的隐藏状态不仅受序列历史影响，还通过MPNN聚合局部邻居的“残差状态”。这种架构在 $O(N)$ 复杂度下兼顾了全局感受野和局部精细干扰消除。",
+        "Methodology": "1. **双流交互**：输入信号同时进入SSM分支和MPNN分支。SSM分支按信道模值排序，MPNN分支仅连接信道增益大于阈值 $\\tau$ 的邻居。\n2. **动态步长注入**：SSM的 $\\Delta t_i$ 由前后用户间的干扰强度决定（同Idea 1）。\n3. **状态融合**：SSM的每一步更新公式修改为 $h_t = \\bar{A}_t h_{t-1} + \\bar{B}_t x_t + \\text{MPNN}_{neigh}(h_{neigh})$。即当前状态融合了“历史记忆”和“空间邻居信息”。\n4. **端到端训练**：联合优化检测误差。"
+    },
+    {
+        "Name": "Manifold-Orthogonal-NOMA",
+        "Title": "基于生成流形正交性的语义NOMA盲源分离",
+        "Background": "传统的NOMA依赖功率域差异，而语义通信中的多用户干扰消除本质上是盲源分离问题。不同模态（文本/图像）或不同主题的数据在深度生成模型的潜空间中位于几乎正交的低维流形上。",
+        "Hypothesis": "利用预训练扩散模型的**分数场（Score Field）** 来定义语义流形。接收端的叠加信号分离问题可以建模为寻找潜变量 $z_1, z_2$，使得它们的组合 $H(G(z_1) + G(z_2))$ 逼近接收信号 $y$，同时 $z_1, z_2$ 分别位于各自先验模型的高概率区域。利用**Langevin动力学在组合能量函数上的采样**，可以自动将混合信号“拉”开到各自的流形上，实现无需正交导频的盲分离。",
+        "Methodology": "1. **组合能量函数**：$E(z_1, z_2) = ||y - H(G(z_1)+G(z_2))||^2 - \\lambda_1 \\log p_1(z_1) - \\lambda_2 \\log p_2(z_2)$。\n2. **退火朗之万采样**：通过梯度下降 $\\nabla_{z_1} E, \\nabla_{z_2} E$ 迭代更新潜变量。利用Score Function $\\nabla \\log p(z)$ 替代显式的先验项。\n3. **流形正交性分析**：理论分析不同生成模型Score向量内积的分布，证明在高维空间中其近似为零，从而保证分离的可行性。"
+    },
+    {
+        "Name": "Anchor-Guided-Inverse-SemCom",
+        "Title": "锚点引导的逆向语义通信接收机",
+        "Background": "测试时优化（Test-Time Optimization）可以解决OOD问题，但纯粹的潜变量优化是非凸的，易陷入局部极小值（即解码出语义通顺但与发送内容无关的信息，即“幻觉”）。需要引入强约束。",
+        "Hypothesis": "在发送的语义Token序列中，插入少量**语义锚点（Semantic Anchors）**（例如每10个Token插入一个已知的高鲁棒性Token，或物理层导频携带的Token）。在接收端的逆向优化过程中，这些锚点充当“路标”，在潜空间的能量景观中挖出深坑（Deep Wells），强迫优化轨迹经过这些点。这极大地缩小了搜索空间，消除了语义幻觉。",
+        "Methodology": "1. **混合帧结构**：数据包包含 $N$ 个数据Token和 $K$ 个锚点Token。\n2. **约束优化目标**：$\\min_z ||y - H(G(z))||^2 + \\alpha \\sum_{k} ||z_{anchor_k} - \\hat{z}_{known}||^2 + \\text{Prior}(z)$。\n3. **多阶段优化**：第一阶段仅优化锚点之间的插值路径；第二阶段放开所有变量进行微调。"
+    },
+    {
+        "Name": "ThirdOrder-LowRank-Unfold",
+        "Title": "低秩预条件三阶动力学展开检测器",
+        "Background": "三阶动力学加速了收敛，但预条件矩阵 $C$ 的计算是瓶颈。利用MIMO信道的空间相关性，预条件矩阵通常是低秩加对角的结构。",
+        "Hypothesis": "利用GNN预测 $C$ 的**低秩分解** $C \\approx D + U V^T$，其中 $D$ 是对角矩阵，$U, V \\in \\mathbb{R}^{N \\times r}$ ($r \\ll N$)。利用**Sherman-Morrison-Woodbury公式**，我们可以仅用 $O(Nr^2)$ 的复杂度计算逆矩阵乘积，从而在保持 $O(N)$ 复杂度的同时享受到二阶/拟牛顿法的加速效果。",
+        "Methodology": "1. **GNN预测器**：输入信道 $H$，GNN输出 $D$ 的对角元素和 $U, V$ 矩阵。\n2. **快速更新层**：在三阶动力学层中，利用低秩结构快速计算预条件梯度方向 $C^{-1} \\nabla E$。\n3. **端到端学习**：联合训练GNN参数和动力学参数（步长、阻尼等）。"
+    }
+]
