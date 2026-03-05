@@ -1,0 +1,7 @@
+{
+    "Name": "IB-CellFree-GNN",
+    "Title": "Resource-Inference GNN for Backhaul-Constrained Cell-Free MIMO: A Task-Oriented Successive Refinement Approach",
+    "Background": "在 6G 分布式 MIMO（Cell-Free）架构中，回传链路（Fronthaul/Midhaul）的带宽动态波动是性能瓶颈。传统的量化方法无法根据实时带宽限制和信道状态（CSI）调整传输比特，导致资源浪费或检测精度下降。现有方案往往将量化与检测解耦，无法实现“任务驱动”的最优比特分配，即：如何以最少的比特传达最关键的解调信息。",
+    "Hypothesis": "通过构建基于变分信息瓶颈（VIB）的“累进式量化器”，可以将 AP 端的观测信号分解为按重要性排序的比特层。结合一个在训练阶段习得的“资源门控推理模块”，网络能够根据全局带宽约束和瞬时 SNR，直接推理出每个 AP 应回传的比特位宽。GNN 能够自适应处理这些非对称精度的信号，从而在带宽受限时牺牲边缘 AP 的精度，保障核心 AP 的信息完整性。",
+    "Methodology": "1. **O-RAN 适配模型**：采用逻辑上的 O-DU/O-CU 分离架构。$L$ 个 AP 接收信号并提取局部 LMMSE 估计 $\\hat{\\mathbf{s}}_l$。系统目标是最小化用户端解调 MSE，且满足总比特率 $\\sum b_l \\le C_{total}$。\n2. **AP 端（分层残差编码权重）**：AP 部署分层编码器。第一层生成基础特征 $\\mathbf{z}_l^{(0)}$（低比特），随后的层 $\\mathbf{z}_l^{(n)}$ 传输残差信息。AP 本地仅存储编码权重的量化版本，执行简单的线性映射与比特截断（Bit-slicing）。\n3. **推理模块（Training-stage Resource Allocation）**：在 CPU 侧设计一个“位宽决策器（Bit-width Controller）”。在训练阶段，利用 Gumbel-Softmax 将离散的比特选择转化为可微操作，并将回传比特总和作为惩罚项加入 Loss 函数。训练完成后，该决策器能根据 $(SNR, C_{total})$ 直接推理出各 AP 的最优 $b_l$ 指令下发给 AP。\n4. **CPU 端（异步图卷积聚合）**：CPU 接收来自 AP 的变长特征。构建异构 GNN，其边权重由 AP 上报的量化阶数（Bit-depth）进行自适应调整（Attention-based）。当某个 AP 仅传回 1-bit 信息时，GNN 会自动降低该节点的消息权重，并利用周边 AP 的高精度特征进行空域补偿。\n5. **交互流程与信息流**：\n   - **AP->CPU**：上报局部有效信道强度和压缩后的残差比特流。\n   - **CPU->AP**：下发位宽分配指令（决定 AP 截断哪一层比特）。\n   - **分布**：AP 侧执行低复杂度的线性压缩；CPU 侧执行高复杂度的全局 GNN 干扰消除与非线性解调。\n6. **仿真设计**：在 3GPP 密集市区信道模型下，模拟回传容量随时间呈随机波动的过程，对比“最优位宽推理方案”与“平均比特分配方案”在端到端和速率（Sum-rate）上的增益。"
+}

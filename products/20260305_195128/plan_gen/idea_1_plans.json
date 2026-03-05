@@ -1,0 +1,112 @@
+[
+    {
+        "Task_ID": "idea_1_agent_2",
+        "Original_Idea_Title": "Resource-Inference GNN for Backhaul-Constrained Cell-Free MIMO: A Task-Oriented Successive Refinement Approach",
+        "Original_Idea": {
+            "Name": "IB-CellFree-GNN",
+            "Title": "Resource-Inference GNN for Backhaul-Constrained Cell-Free MIMO: A Task-Oriented Successive Refinement Approach",
+            "Background": "在 6G 分布式 MIMO（Cell-Free）架构中，回传链路（Fronthaul/Midhaul）的带宽动态波动是性能瓶颈。传统的量化方法无法根据实时带宽限制和信道状态（CSI）调整传输比特，导致资源浪费或检测精度下降。现有方案往往将量化与检测解耦，无法实现“任务驱动”的最优比特分配，即：如何以最少的比特传达最关键的解调信息。",
+            "Hypothesis": "通过构建基于变分信息瓶颈（VIB）的“累进式量化器”，可以将 AP 端的观测信号分解为按重要性排序的比特层。结合一个在训练阶段习得的“资源门控推理模块”，网络能够根据全局带宽约束和瞬时 SNR，直接推理出每个 AP 应回传的比特位宽。GNN 能够自适应处理这些非对称精度的信号，从而在带宽受限时牺牲边缘 AP 的精度，保障核心 AP 的信息完整性。",
+            "Methodology": "1. **O-RAN 适配模型**：采用逻辑上的 O-DU/O-CU 分离架构。$L$ 个 AP 接收信号并提取局部 LMMSE 估计 $\\hat{\\mathbf{s}}_l$。系统目标是最小化用户端解调 MSE，且满足总比特率 $\\sum b_l \\le C_{total}$。\n2. **AP 端（分层残差编码权重）**：AP 部署分层编码器。第一层生成基础特征 $\\mathbf{z}_l^{(0)}$（低比特），随后的层 $\\mathbf{z}_l^{(n)}$ 传输残差信息。AP 本地仅存储编码权重的量化版本，执行简单的线性映射与比特截断（Bit-slicing）。\n3. **推理模块（Training-stage Resource Allocation）**：在 CPU 侧设计一个“位宽决策器（Bit-width Controller）”。在训练阶段，利用 Gumbel-Softmax 将离散的比特选择转化为可微操作，并将回传比特总和作为惩罚项加入 Loss 函数。训练完成后，该决策器能根据 $(SNR, C_{total})$ 直接推理出各 AP 的最优 $b_l$ 指令下发给 AP。\n4. **CPU 端（异步图卷积聚合）**：CPU 接收来自 AP 的变长特征。构建异构 GNN，其边权重由 AP 上报的量化阶数（Bit-depth）进行自适应调整（Attention-based）。当某个 AP 仅传回 1-bit 信息时，GNN 会自动降低该节点的消息权重，并利用周边 AP 的高精度特征进行空域补偿。\n5. **交互流程与信息流**：\n   - **AP->CPU**：上报局部有效信道强度和压缩后的残差比特流。\n   - **CPU->AP**：下发位宽分配指令（决定 AP 截断哪一层比特）。\n   - **分布**：AP 侧执行低复杂度的线性压缩；CPU 侧执行高复杂度的全局 GNN 干扰消除与非线性解调。\n6. **仿真设计**：在 3GPP 密集市区信道模型下，模拟回传容量随时间呈随机波动的过程，对比“最优位宽推理方案”与“平均比特分配方案”在端到端和速率（Sum-rate）上的增益。"
+        },
+        "Final_Decision": "Pass",
+        "Teacher_Final_Feedback": "Perfect plan.",
+        "Detailed_Plan": [
+            {
+                "idx": 1,
+                "name": "系统模型数学建模与数据流水线构建",
+                "content": "建立Cell-Free MIMO上行链路模型。设置$L$个单天线AP和$K$个单天线用户均匀分布在$D \times D$区域。生成信道矩阵 $\\mathbf{H} \\in \\mathbb{C}^{L \times K}$，其中 $h_{lk} = \\sqrt{\beta_{lk}} g_{lk}$，$\beta_{lk}$ 遵循路径损耗模型，$g_{lk} \\sim \\mathcal{CN}(0,1)$。用户发送QPSK符号 $\\mathbf{x} \\in \\mathbb{C}^K$。AP $l$ 接收信号 $y_l = \\mathbf{h}_l^H \\mathbf{x} + n_l$。关键步骤：AP $l$ 执行局部LMMSE获得对所有 $K$ 个用户的初步估计 $\\hat{\\mathbf{s}}_l = \\mathbf{w}_l y_l \\in \\mathbb{C}^K$，其中 $\\mathbf{w}_l$ 是基于局部CSI $\\mathbf{h}_l$ 的 $K \times 1$ 合并向量。将 $\\hat{\\mathbf{s}}_l$ 转换为实数向量 $\\mathbf{r}_l = [\text{Re}(\\hat{\\mathbf{s}}_l)^T, \text{Im}(\\hat{\\mathbf{s}}_l)^T]^T \\in \\mathbb{R}^{2K}$ 作为后续AI模块的输入。",
+                "expected_outcome": "成功生成数据集。验证 $\\mathbf{r}_l$ 的维度为 $(Batch, 2K)$；验证在无压缩情况下，中心化MMSE合并的BER基准随SNR下降。"
+            },
+            {
+                "idx": 2,
+                "name": "基线方法实施：平均分配与标准GNN",
+                "content": "实施两个基线。Baseline 1：平均比特分配方案。将总带宽 $C_{total}$ 平分给每个AP，$b_l = \\lfloor C_{total}/L \rfloor$。AP对 $\\mathbf{r}_l$ 进行均匀量化（Uniform Quantization），CPU端进行线性合并。Baseline 2：构建一个标准GNN，不含位宽感知机制。GNN节点输入为固定位宽（如4-bit）量化后的 $\\mathbf{r}_l$。训练该GNN以最小化符号解调MSE：$\\mathcal{L}_{mse} = \\mathbb{E}[\\|\\mathbf{x} - \\hat{\\mathbf{x}}\\|^2]$。",
+                "expected_outcome": "获得在不同 $C_{total}$ 下的BER和MSE曲线，作为后续改进方案的对比基准。"
+            },
+            {
+                "idx": 3,
+                "name": "创新方案步骤1：带STE的可导量化器与VIB基础AE",
+                "content": "实现AP侧的基础压缩器。1) 引入Straight-Through Estimator (STE) 实现可导量化层：在前向传播执行 $Q(x) = \text{round}(x \\cdot 2^b)/2^b$，在反向传播令梯度直接跳过round函数。2) 构建基于VIB的Autoencoder。编码器 $f_{\\phi}$ 输出均值 $\\mu_l$ 和方差 $\\sigma_l$，通过重采样得到隐含变量 $\\mathbf{z}_l$。损失函数引入KL散度项：$\\mathcal{L} = \\mathcal{L}_{mse} + \beta \\sum_l KL(q(\\mathbf{z}_l|\\mathbf{r}_l) \\| p(\\mathbf{z}_l))$，其中 $p(\\mathbf{z}_l)$ 为标准正态分布。这一步旨在学习出最具代表性的特征，并利用VIB实现信息压缩。",
+                "expected_outcome": "量化层梯度不消失（反向传播正常）；在固定位宽下，VIB-AE的重构误差（或后续解调误差）低于简单量化。输出KL散度随训练平稳下降。"
+            },
+            {
+                "idx": 4,
+                "name": "创新方案步骤2：分层残差编码结构 (Successive Refinement)",
+                "content": "将步骤3的编码器扩展为分层结构。AP将 $\\mathbf{z}_l$ 分解为 $N$ 个残差层：$\\mathbf{z}_l^{(0)} = f_{\\phi, 0}(\\mathbf{r}_l)$，$\\mathbf{z}_l^{(1)} = f_{\\phi, 1}(\\mathbf{r}_l - \text{Dec}(\\mathbf{z}_l^{(0)}))$，以此类推。每一层对应 1-bit 或 2-bit 的增量信息。CPU端接收到前 $b$ 层比特后，通过累加恢复特征：$\\hat{\\mathbf{z}}_l = \\sum_{n=0}^{b-1} \\mathbf{z}_l^{(n)}$。这种结构允许在不重新编码的情况下，通过简单的截断来适配不同的回传带宽。",
+                "expected_outcome": "验证随着累加层数 $b$ 的增加，恢复特征的质量和解调精度单调提升，且各层残差的能量逐渐减小。"
+            },
+            {
+                "idx": 5,
+                "name": "创新方案步骤3：基于Gumbel-Softmax的位宽推理模块",
+                "content": "在CPU侧设计决策网络。输入为全局大尺度衰落矩阵 $\\{\beta_{lk}\\}$、当前SNR和总带宽约束 $C_{total}$。网络通过全连接层输出每个AP选择位宽等级 $m \\in \\{1, 2, \\dots, M\\}$ 的概率 $\\pi_{l,m}$。利用Gumbel-Softmax采样：$b_l = \text{one\\_hot}(\text{argmax}(\\log \\pi_{l,m} + g_{l,m}))$ 实现离散位宽选择的可导化。在总损失中加入约束项 $\\lambda \\cdot \\max(0, \\sum_l b_l - C_{total})$，强迫模型在满足回传约束的前提下，为对解调贡献大的AP分配更高位宽。",
+                "expected_outcome": "决策网络能自适应输出非均匀位宽分配。例如，信道条件差或距离用户远的AP被分配到 0 或 1 bit，而核心AP分配到最高比特。总比特数符合 $C_{total}$ 约束。"
+            },
+            {
+                "idx": 6,
+                "name": "创新方案步骤4：位宽感知的注意力GNN聚合",
+                "content": "构建异构GNN，节点 $l$ 的输入特征为 $\\hat{\\mathbf{z}}_l$。引入“位宽感知”机制：1) 将 $b_l$ 传入一个Embedding层得到向量 $\\mathbf{e}_{b_l}$，将其拼接到节点特征上；2) 在AP到UE的消息传递中，计算注意力权重 $\\alpha_{lk} = \frac{\\exp(e_{lk})}{\\sum \\exp(e_{lk})}$，其中分数 $e_{lk}$ 的计算显式包含 $b_l$。具体算式：$e_{lk} = \text{LeakyReLU}(\\mathbf{a}^T [\\mathbf{v}_k \\| \\hat{\\mathbf{z}}_l \\| \\mathbf{e}_{b_l} \\| \beta_{lk}])$。这使得GNN能自动降低低精度AP信号的权重，并依靠高精度AP进行空域补偿。最后端到端联合微调步骤4、5、6的所有参数。",
+                "expected_outcome": "完成最终模型。在动态带宽波动环境下，该GNN表现出极强的鲁棒性。量化指标：在相同 $C_{total}$ 下，相比于Baseline 2，MSE降低 20% 以上。"
+            },
+            {
+                "idx": 7,
+                "name": "对比实验与多维度性能评估",
+                "content": "在3GPP Urban Micro (UMi) 场景下进行大规模对比测试。1) 绘制 MSE vs. $C_{total}$ 曲线，观察不同方案在带宽极度匮乏时的性能。2) 验证任务导向性：对比“最小化重构误差”和“最小化符号检测误差”两种目标下的位宽分配结果。3) 测试方案对动态拓扑（AP开关或用户移动）的泛化能力。计算可量化指标：Sum-rate, BER, 和能量效率（Bit-per-Joule的AI等效衡量）。",
+                "expected_outcome": "提供多组对比曲线。证明本方案在异构回传受限场景下的绝对优势，特别是在非均匀用户分布时，相比平均分配方案有显著的“信息增益”。"
+            }
+        ],
+        "Agent_Task_ID": "idea_1_agent_2"
+    },
+    {
+        "Task_ID": "idea_1_agent_1",
+        "Original_Idea_Title": "Resource-Inference GNN for Backhaul-Constrained Cell-Free MIMO: A Task-Oriented Successive Refinement Approach",
+        "Original_Idea": {
+            "Name": "IB-CellFree-GNN",
+            "Title": "Resource-Inference GNN for Backhaul-Constrained Cell-Free MIMO: A Task-Oriented Successive Refinement Approach",
+            "Background": "在 6G 分布式 MIMO（Cell-Free）架构中，回传链路（Fronthaul/Midhaul）的带宽动态波动是性能瓶颈。传统的量化方法无法根据实时带宽限制和信道状态（CSI）调整传输比特，导致资源浪费或检测精度下降。现有方案往往将量化与检测解耦，无法实现“任务驱动”的最优比特分配，即：如何以最少的比特传达最关键的解调信息。",
+            "Hypothesis": "通过构建基于变分信息瓶颈（VIB）的“累进式量化器”，可以将 AP 端的观测信号分解为按重要性排序的比特层。结合一个在训练阶段习得的“资源门控推理模块”，网络能够根据全局带宽约束和瞬时 SNR，直接推理出每个 AP 应回传的比特位宽。GNN 能够自适应处理这些非对称精度的信号，从而在带宽受限时牺牲边缘 AP 的精度，保障核心 AP 的信息完整性。",
+            "Methodology": "1. **O-RAN 适配模型**：采用逻辑上的 O-DU/O-CU 分离架构。$L$ 个 AP 接收信号并提取局部 LMMSE 估计 $\\hat{\\mathbf{s}}_l$。系统目标是最小化用户端解调 MSE，且满足总比特率 $\\sum b_l \\le C_{total}$。\n2. **AP 端（分层残差编码权重）**：AP 部署分层编码器。第一层生成基础特征 $\\mathbf{z}_l^{(0)}$（低比特），随后的层 $\\mathbf{z}_l^{(n)}$ 传输残差信息。AP 本地仅存储编码权重的量化版本，执行简单的线性映射与比特截断（Bit-slicing）。\n3. **推理模块（Training-stage Resource Allocation）**：在 CPU 侧设计一个“位宽决策器（Bit-width Controller）”。在训练阶段，利用 Gumbel-Softmax 将离散的比特选择转化为可微操作，并将回传比特总和作为惩罚项加入 Loss 函数。训练完成后，该决策器能根据 $(SNR, C_{total})$ 直接推理出各 AP 的最优 $b_l$ 指令下发给 AP。\n4. **CPU 端（异步图卷积聚合）**：CPU 接收来自 AP 的变长特征。构建异构 GNN，其边权重由 AP 上报的量化阶数（Bit-depth）进行自适应调整（Attention-based）。当某个 AP 仅传回 1-bit 信息时，GNN 会自动降低该节点的消息权重，并利用周边 AP 的高精度特征进行空域补偿。\n5. **交互流程与信息流**：\n   - **AP->CPU**：上报局部有效信道强度和压缩后的残差比特流。\n   - **CPU->AP**：下发位宽分配指令（决定 AP 截断哪一层比特）。\n   - **分布**：AP 侧执行低复杂度的线性压缩；CPU 侧执行高复杂度的全局 GNN 干扰消除与非线性解调。\n6. **仿真设计**：在 3GPP 密集市区信道模型下，模拟回传容量随时间呈随机波动的过程，对比“最优位宽推理方案”与“平均比特分配方案”在端到端和速率（Sum-rate）上的增益。"
+        },
+        "Final_Decision": "Pass",
+        "Teacher_Final_Feedback": "Perfect plan.",
+        "Detailed_Plan": [
+            {
+                "idx": 1,
+                "name": "增强型Cell-Free MIMO系统建模与参数硬化",
+                "content": "1. 场景：$16$个单天线AP，$4$个单天线用户，区域$1 \times 1 \text{km}^2$。2. 信道：$h_{lk} = \\sqrt{\beta_{lk}} g_{lk}$，其中路径损耗 $\beta_{lk} = -30.5 - 36.7 \\log_{10}(d_{lk}/1m) + \text{Shadowing}(8\text{dB})$，小尺度 $g_{lk} \\sim \\mathcal{CN}(0,1)$。3. CSI获取：AP通过导频估计获得 $\\hat{h}_{lk}$，假设估计误差方差 $\\sigma_e^2 = 0.01$。4. 带宽约束：总带宽 $C_{total}$ 动态采样自 $\\{32, 48, 64, ..., 128\\}$ bits/symbol。5. 数据生成：生成100,000组 $(\\mathbf{H}, \\mathbf{y}, \\mathbf{x}, \\mathbf{B})$ 供后续训练与测试，其中 $\\mathbf{B}$ 为大尺度衰落矩阵。",
+                "expected_outcome": "生成标准化的数据张量，形状如 `H: [N, 16, 4]`, `y: [N, 16]`, `x: [N, 4]`。验证 SNR=10dB 时的接收信号能量是否符合物理量级。"
+            },
+            {
+                "idx": 2,
+                "name": "基线方案实现 (Ideal & Lloyd-Max)",
+                "content": "1. Ideal Upper Bound: 实现全局LMMSE解调器，直接输入原始复数信号 $y_l$，计算 MSE 和和速率。2. Lloyd-Max Baseline: (a) 每个AP利用 $\\hat{h}_{lk}$ 执行局部LMMSE合并得到初步估计 $\\hat{s}_l \\in \\mathbb{C}^4$；(b) 设定固定比特分配 $b = \\lfloor C_{total}/(16 \times 4 \times 2) \rfloor$（考虑实部虚部及K个用户）；(c) 使用训练好的Lloyd-Max非均匀量化器对比特建模。3. 评估：绘制 $C_{total}$ 变化时的 MSE 曲线。",
+                "expected_outcome": "得到两个基线指标。Lloyd-Max在低比特（如$b=2$）时应表现出明显的量化噪声平台。"
+            },
+            {
+                "idx": 3,
+                "name": "创新步1：分层VIB编码器与感知深度GNN的预训练 (Stage 1)",
+                "content": "1. AP端编码：设计Encoder $f_{\theta}$，输入为 $y_l$。输出 $N=4$ 层特征，每层特征对应 $b_n=2$ bits。每层输出均值 $\\mu_l^{(n)}$ 和方差 $\\sigma_l^{(n)}$。2. 信号生成：通过重参数化 $z_l^{(n)} = \\mu_l^{(n)} + \\sigma_l^{(n)} \\epsilon$ 生成潜变量。3. 归一化聚合：CPU接收前 $k_l$ 层特征，计算 $\bar{Z}_l = (\\sum_{n=1}^{k_l} z_l^{(n)}) / \\sqrt{k_l}$ 以消除模长差异。4. GNN解调：使用2层感知位宽的GAT（Graph Attention Network），注意力系数计算中拼接比特数 $b_{total,l} = k_l \times 2$。5. 训练：随机采样 $k_l \\in \\{1, 2, 3, 4\\}$。损失函数 $\\mathcal{L}_{stage1} = \\|\\mathbf{x} - \\hat{\\mathbf{x}}\\|^2 + \beta \\sum_{l,n} KL(q(z_l^{(n)}|y_l)|| \\mathcal{N}(0,1))$。此处用 $-MSE$ 替代互信息 $I(X;Z)$ 的约束。",
+                "expected_outcome": "Encoder和GNN能够在随机比特选择下收敛。验证：在所有AP都给满4层时，性能应逼近理想LMMSE。"
+            },
+            {
+                "idx": 4,
+                "name": "创新步2：带拉格朗日乘子的比特决策器训练 (Stage 2)",
+                "content": "1. 冻结Encoder和GNN的参数。2. 决策网络设计：输入为大尺度衰落 $\beta_{lk}$（向量化后输入）、当前 SNR 和总约束 $C_{total}$。3. 离散采样：输出 $L=16$ 个AP对应的层数概率分布，通过 Gumbel-Softmax 采样得到 one-hot 向量 $m_{l,n}$。4. 约束处理：定义 $L_{res} = \\lambda \\cdot (\\sum_l \\sum_n m_{l,n} \\cdot b_n - C_{total})$。5. 动态学习：在训练过程中，每 100 个 iteration 检查一次约束，若超额则 $\\lambda = \\lambda \times 1.1$，若剩余则 $\\lambda = \\lambda \times 0.9$。训练目标是最小化解调 MSE。",
+                "expected_outcome": "决策器（Controller）学会“聪明”地分配比特：靠近用户的AP分配更多层（高位宽），远离的分配1层（低位宽），且总和严格守住在 $C_{total}$ 以内。"
+            },
+            {
+                "idx": 5,
+                "name": "创新步3：系统端到端微调与权重优化",
+                "content": "1. 解冻所有参数，以极低学习率（如 $10^{-5}$）进行全量微调。2. 引入“任务导向”修正：在Loss中对不同用户的MSE根据其优先级（如保证公平性）进行加权。3. 检查特征分布：可视化 VIB 产生的潜变量分布，确保 KL 散度项没有坍塌。4. 优化：针对 Gumbel-Softmax 的温度系数 $\tau$ 进行退火处理，从 1.0 降低到 0.1，使决策更趋于硬决策。",
+                "expected_outcome": "系统达到最优稳态。记录训练好的权重，准备进行最终性能测试。"
+            },
+            {
+                "idx": 6,
+                "name": "综合性能评估与可视化分析",
+                "content": "1. 核心曲线：绘制 MSE vs. $C_{total}$ 曲线，对比本方案与 Lloyd-Max、均匀比特分配 GNN。2. 决策热力图：在给定的用户分布下，画出各个 AP 的比特分配热力图，验证其是否符合物理直觉（如核心 AP 比特多）。3. 消融实验：(a) 移除 VIB 约束；(b) 移除 GNN 注意力对比特深度的感知；(c) 移除动态惩罚。4. 和速率映射：将 MSE 转换为和速率 $R = \\sum \\log_2(1 + \frac{1}{MSE_k})$ 进行对比。",
+                "expected_outcome": "生成 3-4 张高质量图表。预期本方案在 $C_{total} < 64$ 的低带宽区域相比传统方案有 3dB 以上增益，且在动态带宽下表现出更平滑的性能曲线。"
+            }
+        ],
+        "Agent_Task_ID": "idea_1_agent_1"
+    }
+]

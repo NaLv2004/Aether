@@ -1,0 +1,7 @@
+{
+    "Name": "IB-CellFree-GNN",
+    "Title": "Semantic-Aware Rate-Adaptive GNN for Cell-Free MIMO: A Successive Refinement VIB Approach",
+    "Background": "在 6G 演进中，Cell-Free MIMO 的前传/回传带宽约束是性能瓶颈。传统的量化方案（如固定比特 LMMSE）在带宽波动时缺乏灵活性。最新的语义通信研究表明，并非所有物理层比特对解调都有同等贡献。因此，需要一种能够根据当前信道状态和剩余带宽，自动推理并提取“解调语义特征”的分布式架构。",
+    "Hypothesis": "通过在 AP 端设计“分层残差信息瓶颈（Hierarchical Residual VIB）”，AP 能够将原始信号编码为一组具有优先级顺序的特征分量（Successive Refinement）。在 CPU 侧，GNN 能够根据已收到的特征层级数量动态调整解调精度。这种架构允许网络在不改变权重的情况下，通过调整发送的特征层级数，实现对回传带宽的毫秒级自适应分配。",
+    "Methodology": "1. **系统模型与图构建**：建立由 $K$ 个 UE 和 $L$ 个 AP 构成的二分图。AP $l$ 仅保留局部观测 $\\mathbf{y}_l$。2. **AP 端（语义编码器）**：部署参数共享的“万能编码器（Universal Encoder）”。该编码器基于 VIB 提取隐变量 $\\mathbf{z}_l$，并将其分解为多个残差层 $\\{\\mathbf{z}_l^{(1)}, \\mathbf{z}_l^{(2)}, ...\\}$，每一层对应不同的信息增量。3. **动态推理与资源分配**：引入“门控位宽控制器（Gated Rate Controller）”。该模块根据 CPU 反馈的当前总线带宽 $B_{total}$ 和 AP 的瞬时 SNR，自动决定截断哪一层残差量。这实现了“网络本身根据条件直接推理出最优资源（比特数）分配”。4. **CPU 端（全局交互解调）**：接收变长度的特征流，构建异构 GNN。第一层 GNN 处理基础特征进行粗略解调，随后的层结合接收到的残差特征进行精细化干扰抵消（Successive MUD）。5. **权重分布策略**：(a) AP 侧：固化轻量化特征提取权重，减少控制面开销；(b) CPU 侧：部署深度图神经网络，利用全局 CSI 修正 AP 端的语义偏差。6. **仿真验证**：在非理想回传（Non-ideal Backhaul）且带宽呈马尔可夫链波动的场景下，验证系统在“端到端解调误差（E2E-MSE）”与“回传能效”之间的帕累托最优性能。"
+}

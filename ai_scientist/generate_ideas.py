@@ -494,10 +494,143 @@ def run_teacher_agent(teacher_id, idea, max_iters, model, log_dir, search_params
     }
 
 
+
+IDEA_REFINER_SYSTEM_PROMPT = """
+你是一个专业的通信领域科研助手。你的任务是根据用户的反馈和指令，修改并完善一个已有的科研Idea。
+请遵循以下原则：
+1. 严格针对用户提出的修改意见进行调整。如果用户认为某部分不合理，请根据你的专业知识进行修正。
+2. 如果用户允许搜索文献，请积极利用搜索工具验证新的假设或寻找解决方案。
+3. 保持Idea的完整性，输出格式必须严格遵守JSON结构。
+4. 你输出的 "Ideas" 列表中应当只包含当前正在修改的这一个Idea（即修改后的版本）。
+
+你的回复必须包含如下JSON格式（可以包含在 ```json 和 ``` 之间）：
+```json
+{
+    "Thoughts": "你对用户反馈的理解，以及你修改Idea的思路。",
+    "SearchQueries": ["query1", "query2"], 
+    "PapersToRead": ["https://doi.org/10.xxxx/xxxx"],
+    "Ideas": [
+        {
+            "Name": "Idea代号(保持不变)",
+            "Title": "修改后的标题",
+            "Background": "修改后的背景",
+            "Hypothesis": "修改后的假设",
+            "Methodology": "修改后的方法"
+        }
+    ]
+}
+```
+如果不需要搜文献或用户禁止搜索，SearchQueries 应为空列表；如果不需要读全文，PapersToRead 应为空列表。
+"""
+
+IDEA_REFINER_START_PROMPT = """
+这是当前版本的Idea：
+{current_idea}
+
+用户对该Idea的修改反馈/指令如下：
+【{user_feedback}】
+
+请根据用户的指令，对Idea进行修改和完善。
+"""
+
+IDEA_REFINER_ITERATION_PROMPT = """
+这是你在上一轮中提交的文献搜索Query的结果：
+{search_results}
+
+这是你要求精读的论文的全文总结笔记（知识库）：
+{knowledge_base}
+
+这是上一轮修改后的Idea版本：
+{previous_idea}
+
+请根据最新的文献结果和之前的思路，继续完善Idea。确保回应了用户的初始反馈。
+"""
+def refine_idea(idea, user_instructions, allow_search, max_iters, model, log_dir, search_params):
+    """
+    根据用户指令Refine特定的Idea。
+    """
+    # 为Refine过程创建一个临时的Agent
+    refine_id = int(time.time()) # 使用时间戳作为ID避免冲突
+    agent = LLMAgent(model=model, log_file=os.path.join(log_dir, f"log_refiner_{refine_id}.log"))
+    logger.info(f"[Refiner] Started refining idea: {idea.get('Name', 'Unknown')}")
+    agent.set_context_len(4)
+    
+    # 独立的知识库文件
+    kb_txt_path = os.path.join(log_dir, f"kb_refiner_{refine_id}.txt")
+    doi_url_map = {} 
+    
+    current_idea = idea
+    # 初始 Prompt
+    current_prompt = IDEA_REFINER_START_PROMPT.format(
+        current_idea=json.dumps(current_idea, indent=2, ensure_ascii=False),
+        user_feedback=user_instructions
+    )
+
+    for i in range(max_iters):
+        logger.info(f"[Refiner] Iteration {i+1}/{max_iters}")
+        
+        # 获取 LLM 响应
+        response, _ = agent.get_response_stream(current_prompt, IDEA_REFINER_SYSTEM_PROMPT)
+        parsed_json = LLMAgent.robust_extract_json(response)
+        
+        if not parsed_json:
+            logger.debug(f"[Refiner] Failed to parse JSON. Retrying...")
+            current_prompt = "你的输出不符合JSON格式要求，请修正并重新输出。"
+            continue
+            
+        thoughts = parsed_json.get("Thoughts", "")
+        queries = parsed_json.get("SearchQueries", [])
+        papers_to_read = parsed_json.get("PapersToRead", [])
+        refined_ideas_list = parsed_json.get("Ideas", [])
+        
+        # 更新当前的 Idea
+        if refined_ideas_list and len(refined_ideas_list) > 0:
+            current_idea = refined_ideas_list[0]
+            
+        # 如果 LLM 认为完成了（可以通过thoughts判断，也可以跑满轮数），这里简化为跑满轮数或由用户判断
+        # 但为了让 Agent 有机会利用搜索结果，我们需要继续循环
+        
+        # 处理搜索和阅读逻辑
+        search_feedback = "用户未开启搜索权限或本轮未进行搜索。"
+        kb_content = "暂无新笔记。"
+
+        if allow_search:
+            # 1. 阅读全文
+            if papers_to_read:
+                logger.info(f"[Refiner] 要求阅读全文: {papers_to_read}")
+                process_papers_to_read(papers_to_read, doi_url_map, kb_txt_path)
+            
+            # 2. 搜索文献
+            if queries:
+                search_feedback = format_search_results_and_update_map(
+                    queries, doi_url_map, 
+                    open_access=search_params['open_access'], 
+                    has_pdf_url=search_params['has_pdf_url'], 
+                    from_year=search_params['from_year']
+                )
+            
+            # 3. 读取知识库
+            kb_content = read_knowledge_base(kb_txt_path)
+        else:
+            # 如果不允许搜索，且已经生成了新的Idea，其实可以提前结束，或者让模型自省一轮
+            if i == 0: 
+                logger.info("[Refiner] Search disabled. Only using internal knowledge.")
+            
+        # 构建下一轮 Prompt
+        current_prompt = IDEA_REFINER_ITERATION_PROMPT.format(
+            search_results=search_feedback,
+            knowledge_base=kb_content,
+            previous_idea=json.dumps(current_idea, indent=2, ensure_ascii=False)
+        )
+        
+    logger.info(f"[Refiner] Refinement completed.")
+    return current_idea
+
+
 # ==========================================
 # 4. 主控流程
 # ==========================================
-def generate_ideas(args, open_access=True, has_pdf_url=True, from_year=2020):
+def generate_ideas(args, open_access=True, has_pdf_url=True, from_year=2020, interactive=True):
     """
     修改了函数签名，支持将搜索参数暴露出来
     """
@@ -577,7 +710,157 @@ def generate_ideas(args, open_access=True, has_pdf_url=True, from_year=2020):
             
             logger.info(output_str)
             f.write(output_str)
+    if interactive:
+        print("\n" + "="*60)
+        print("   INTERACTIVE MODE ENABLED")
+        print("="*60)
+        
+        # --- 1. 整合所有 Ideas 和 评审结果 ---
+        # 建立一个 ID 到 评审结果 的映射，方便查找
+        # 注意：all_ideas 是原始列表，evaluated_results 是评审过的列表
+        # 我们使用对象的内存 id 或者标题来匹配（假设标题唯一，或者直接引用对象）
+        
+        review_map = {}
+        if evaluated_results:
+            for res in evaluated_results:
+                # 这里的 res['Idea'] 是 all_ideas 中某个字典的引用
+                # 我们可以用 id(res['Idea']) 作为 key
+                review_map[id(res['Idea'])] = {
+                    "score": res["Score"],
+                    "comments": res["Review_Comments"]
+                }
+        
+        # 准备显示列表：包含 all_ideas 中的每一个
+        display_list = []
+        for idx, idea in enumerate(all_ideas):
+            review_info = review_map.get(id(idea))
+            if review_info:
+                score = review_info['score']
+                comments = review_info['comments']
+            else:
+                score = "Pending/Not Reviewed"
+                comments = "该 Idea 尚未被 Teacher Agent 评审。"
             
-    logger.info(f"\n所有评估结束，详细评分已保存至 {args.review_log}。")
-    return args.output_file
+            display_list.append({
+                "id": idx + 1,
+                "idea": idea,
+                "score": score,
+                "comments": comments
+            })
+
+        user_satisfied = False
+        
+        # --- 2. 主交互循环 ---
+        while True:
+            print(f"\n>>> 总共生成了 {len(display_list)} 个 Idea。列表如下：\n")
+            
+            # 完整展示所有 Idea 的内容
+            for item in display_list:
+                print(f"Option [{item['id']}] (Score: {item['score']})")
+                print("-" * 40)
+                # 使用 json.dumps 格式化打印完整内容
+                print(json.dumps(item['idea'], indent=4, ensure_ascii=False))
+                print("-" * 40)
+                if item['score'] != "Pending/Not Reviewed":
+                    print(f"Review Comments: {item['comments'][:200]}..." + (" (more)" if len(item['comments']) > 200 else ""))
+                print("=" * 60 + "\n")
+
+            # 用户选择
+            try:
+                choice = input("\n请输入你想 **进一步处理** 的 Idea 编号 (输入 q 退出): ").strip()
+                if choice.lower() == 'q':
+                    logger.info("用户退出交互模式。")
+                    return args.output_file
+                
+                selected_idx = int(choice) - 1
+                if not (0 <= selected_idx < len(display_list)):
+                    print("无效的编号，请重新输入。")
+                    continue
+            except ValueError:
+                print("请输入数字。")
+                continue
+
+            # 选中了某个 Idea，进入该 Idea 的子循环
+            current_item = display_list[selected_idx]
+            current_idea = current_item['idea']
+            
+            while True:
+                print("\n" + "#"*50)
+                print(f"   当前选中: Option [{current_item['id']}]")
+                print("#"*50)
+                print(json.dumps(current_idea, indent=4, ensure_ascii=False))
+                print("\n>>> 评审意见:")
+                print(current_item['comments'])
+                print("#"*50)
+
+                confirm = input("\n请选择操作:\n [y] 满意此版本 (保存并结束)\n [n] 不满意 (进入修改/Refine模式)\n [b] 返回 Idea 列表\n [q] 退出程序\n您的选择: ").lower().strip()
+                
+                if confirm == 'q':
+                    logger.info("用户退出。")
+                    return args.output_file
+                
+                elif confirm == 'b':
+                    break # 跳出子循环，回到列表展示
+                
+                elif confirm == 'y':
+                    # 虽然已经保存过，但这里可以确认最终版本
+                    final_path = args.output_file.replace(".json", "_final_selected.json")
+                    with open(final_path, "w", encoding="utf-8") as f:
+                        json.dump(current_idea, f, indent=4, ensure_ascii=False)
+                    print(f"最终选定的 Idea 已保存至: {final_path}")
+                    return final_path
+                
+                elif confirm == 'n':
+                    # 进入 Refine 流程
+                    instructions = input("\n请输入你的具体修改指令 (例如: '增加对低轨卫星场景的考虑'): ").strip()
+                    if not instructions:
+                        print("指令为空，取消修改。")
+                        continue
+                    
+                    search_choice = input("允许 Agent 搜索新文献吗? (y/n, 默认 n): ").lower()
+                    allow_search = (search_choice == 'y')
+                    
+                    print(f"\n>>> 正在启动 Refiner Agent 对 Idea 进行优化 (Search={allow_search})...")
+                    
+                    try:
+                        refined_idea_result = refine_idea(
+                            idea=current_idea,
+                            user_instructions=instructions,
+                            allow_search=allow_search,
+                            max_iters=3,  # 设定为3轮，防止等待过久
+                            model=args.model,
+                            log_dir=args.log_dir,
+                            search_params=search_params
+                        )
+                        
+                        # 更新内存中的 Idea
+                        current_idea = refined_idea_result
+                        current_item['idea'] = current_idea # 更新列表中的引用
+                        
+                        # 自动备份这个 Refined 版本
+                        refined_filename = f"refined_idea_{current_item['id']}_{int(time.time())}.json"
+                        # 优先存 output_dir，没有则存 log_dir
+                        save_dir = getattr(args, 'output_dir', args.log_dir)
+                        if not os.path.exists(save_dir): os.makedirs(save_dir)
+                        
+                        refined_path = os.path.join(save_dir, refined_filename)
+                        with open(refined_path, "w", encoding="utf-8") as f:
+                            json.dump(current_idea, f, indent=4, ensure_ascii=False)
+                            
+                        print(f"\n[Success] 修改完成！新版本已保存至 {refined_path}")
+                        print("请查看上方的新版本内容。")
+                        # 循环会回到子循环开头，展示新的 JSON 内容
+                        
+                    except Exception as e:
+                        logger.error(f"Refine 过程出错: {e}")
+                        print("修改过程中发生错误，请检查日志。")
+                else:
+                    print("无效输入，请重新选择。")
+
+    if not interactive:
+        return args.output_file
+    else:
+        return refined_path
+
+
 

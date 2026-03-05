@@ -1,1 +1,1 @@
-MIMO Detection
+GNN for cell-free MIMO detection

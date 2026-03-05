@@ -13,12 +13,12 @@ logger = setup_logger("experiment_run.log")
 def main():
     # =========================================Parameter Configurations==============================================
     # Parameters for idea generation
-    MODEL = 'gemini-3-pro-preview'
+    MODEL = 'gemini-3-flash-preview'
     THEME_FILE_PATH = 'theme_idea_gen.txt'
     N_PARALLEL_IDEA_GENERATOR = 3
-    MAX_STUDENT_ITERS = 8
+    MAX_STUDENT_ITERS = 2
     N_PARALLEL_TEACHER_CHECKER = 3
-    MAX_TEACHER_ITERS = 4
+    MAX_TEACHER_ITERS = 2
     # parameters for plan generation
     MAX_PLAN_REVIEW_ITER = 3
     N_PARALLEL_PLAN_GENERATOR = 3
@@ -52,12 +52,13 @@ def main():
     parser_idea_gen.add_argument("--max_teacher_iters", type=int, default=MAX_TEACHER_ITERS, help="Teacher最大检索评估次数")
     parser_idea_gen.add_argument("--model", type=str, default=MODEL, help="使用的LLM模型名称")
     parser_idea_gen.add_argument("--output_file", type=str, default=os.path.join(OUTPUT_PATH_SUB['idea_gen'], "all_generated_ideas.txt"), help="所有生成的Idea保存位置")
+    parser_idea_gen.add_argument("--output_dir", type=str, default=OUTPUT_PATH_SUB['idea_gen'], help="输出文件夹中")
     parser_idea_gen.add_argument("--review_log", type=str, default=os.path.join(LOG_PATH_SUB['idea_gen'], "review.log"), help="审查结果的输出位置")
     parser_idea_gen.add_argument("--log_dir", type=str, default=LOG_PATH_SUB['idea_gen'], help="审查结果的输出位置")
     # run idea generator
     
     logger.info(f"Starting Idea Generation...")
-    output_ideas_path = generate_ideas(parser_idea_gen.parse_args())
+    output_ideas_path = generate_ideas(parser_idea_gen.parse_args(),interactive=True)
     logger.info(f"Idea Generation Finished. Output File: {output_ideas_path}")
     # to do : let the user select one of the ideas.
     # parser.add_argument()
