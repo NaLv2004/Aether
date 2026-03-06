@@ -194,30 +194,50 @@ def load_state(workspace_dir):
 def git_init(workspace_dir, remote_repo=None):
     if not os.path.exists(os.path.join(workspace_dir, ".git")):
         subprocess.run(["git", "init"], cwd=workspace_dir, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        logger.info(f"[Git] 初始化 Git 仓库...")
     with open(os.path.join(workspace_dir, ".gitignore"), "w") as f:
         f.write("**pycache**/\n*.pyc\npdfs/\n*.log\n")
     subprocess.run(["git", "add", "."], cwd=workspace_dir, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     subprocess.run(["git", "commit", "-m", "Initial commit"], cwd=workspace_dir, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     if remote_repo:
-        subprocess.run(["git", "remote", "add", "origin", remote_repo], cwd=workspace_dir, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        subprocess.run(["git", "branch", "-M", "main"], cwd=workspace_dir, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        try:
+            subprocess.run(["git", "remote", "add", "origin", remote_repo], cwd=workspace_dir, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            subprocess.run(["git", "branch", "-M", "main"], cwd=workspace_dir, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            logger.info(f"[Git] 已关联远程仓库: {remote_repo}")
 
+        except Exception as e:
+            logger.warning(f"[Git] 关联远程仓库失败: {e}")
+        
 def git_commit_and_push(workspace_dir, step_idx, remote_repo=None):
     subprocess.run(["git", "add", "."], cwd=workspace_dir, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     status = subprocess.run(["git", "status", "--porcelain"], cwd=workspace_dir, capture_output=True, text=True).stdout
     if status.strip():
         subprocess.run(["git", "commit", "-m", f"Step {step_idx} passed"], cwd=workspace_dir, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        logger.info(f"[Git] 提交 Git 仓库...")
     if remote_repo:
-        subprocess.run(["git", "push", "origin", "main", "-f"], cwd=workspace_dir, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        try:
+             subprocess.run(["git", "push", "origin", "main", "-f"], cwd=workspace_dir, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+             logger.info(f"[Git] 推送到远程仓库...")
+        except Exception as e:
+            logger.warning(f"[Git] 推送到远程仓库失败")
 
 def git_rollback(workspace_dir, remote_repo=None):
     if remote_repo:
-        subprocess.run(["git", "fetch", "origin"], cwd=workspace_dir, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        subprocess.run(["git", "reset", "--hard", "origin/main"], cwd=workspace_dir, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        try:
+            subprocess.run(["git", "fetch", "origin"], cwd=workspace_dir, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            subprocess.run(["git", "reset", "--hard", "origin/main"], cwd=workspace_dir, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            logger.info(f"[Git] 回滚 Git 仓库...")
+        except Exception as e:
+            logger.warning(f"[Git] 从远程仓库回滚失败: {e}")
     else:
-    # 强制重置清除污染，恢复至上一次正确的 Commit 节点
-        subprocess.run(["git", "reset", "--hard", "HEAD"], cwd=workspace_dir, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        subprocess.run(["git", "clean", "-fd"], cwd=workspace_dir, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+         try:
+            # 强制重置清除污染，恢复至上一次正确的 Commit 节点
+            subprocess.run(["git", "reset", "--hard", "HEAD"], cwd=workspace_dir, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            subprocess.run(["git", "clean", "-fd"], cwd=workspace_dir, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            logger.info(f"[Git] 回滚本地 Git 仓库...")
+        except Exception as e:
+            logger.warning(f"[Git] 从本地仓库回滚失败: {e}")
+    
 
 # ==========================================
 
@@ -468,16 +488,18 @@ class ToolManager:
             if action == "READ_CODE":
                 result = self.read_code(params.get("filename", ""))
                 coder_history.append({"action": action, "params": params, "result": result})
+                logger.info(f"[Coder Action] 读取文件 {params.get('filename', '')}。")
             elif action == "RUN_CODE":
                 result = self.run_code(params.get("run_script", ""))
                 coder_history.append({"action": action, "params": params, "result": result})
+                logger.info(f"[Coder Action] 运行脚本 {params.get('run_script', '')}。")
             elif action == "SUBMIT_CODE":
                 files = extract_files_from_coder(resp)
                 if not files:
                     coder_history.append({"action": action, "params": params, "result": "错误: 选择了 SUBMIT_CODE 但未按格式输出 Markdown 代码块。"})
                     continue
                 saved_files = save_files_to_workspace(files, self.workspace_dir, base_readme)
-                
+                # logger.info(f"[Coder Action] 提交文件。")
                 # Append last run result if available
                 last_run = next((item for item in reversed(coder_history) if item["action"] == "RUN_CODE"), None)
                 run_res = ""
@@ -598,12 +620,15 @@ def run_experiment(plan_file, experiment_dir, log_dir, model_orchestrator, model
             elif action == "SEARCH_LITERATURE":
                 res = tool_manager.search_literature(params.get("queries", []))
                 tool_calls_history.append({"action": action, "params": params, "result": res})
+                logger.info(f"[Orchestrator]请求文献搜索： {params.get('queries', [])}"[:70])
             elif action == "READ_PAPER":
                 res = tool_manager.read_paper(params.get("dois", []))
                 tool_calls_history.append({"action": action, "params": params, "result": res})
+                logger.info(f"[Orchestrator]请求阅读论文： {params.get('dois', [])}"[:70])
             elif action == "READ_CODE":
                 res = tool_manager.read_code(params.get("filename", ""))
                 tool_calls_history.append({"action": action, "params": params, "result": res})
+                logger.info(f"[Orchestrator]请求阅读代码： {params.get('filename', '')}"[:70])
             elif action == "PROMPT_CODER":
                 res = tool_manager.prompt_coder(params.get("instruction", ""), base_readme)
                 path = os.path.join(workspace_dir, "readme.md")
@@ -611,11 +636,14 @@ def run_experiment(plan_file, experiment_dir, log_dir, model_orchestrator, model
                     with open(path, "r", encoding="utf-8") as f:
                         base_readme = f.read()
                 tool_calls_history.append({"action": action, "params": params, "result": res})
+                logger.info(f"[Orchestrator]请求 Coder 编写代码： {params.get('instruction', '')}"[:70])
             elif action == "RUN_CODE":
                 res = tool_manager.run_code(params.get("run_script", ""))
                 tool_calls_history.append({"action": action, "params": params, "result": res})
+                logger.info(f"[Orchestrator]请求运行脚本： {params.get('run_script', '')}"[:70])
             else:
                 tool_calls_history.append({"action": action, "params": params, "result": f"Unknown action: {action}"})
+                logger.warning(f"[Orchestrator]未知指令： {action}"[:70])
                 
             if not step_passed:
                 # 无论结果如何，每次行动都保存，保证断电不丢数据

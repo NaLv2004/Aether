@@ -24,7 +24,7 @@ def main():
     MAX_STUDENT_SELF_REFINE_ITER = 4
     N_PARALLEL_PLAN_GENERATOR = 3
     N_GENERATOR_PER_IDEA = 2
-    
+    REPO_URL = "https://github.com/NaLv2004/aether-products.git"
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     LOG_ROOT_DIR = 'logs'
     LOG_DIR = os.path.join(LOG_ROOT_DIR, timestamp)
@@ -91,6 +91,7 @@ def main():
     parser_code_gen.add_argument("--experiment_log_dir", type=str, default=LOG_PATH_SUB['code_gen'], help="实验log的输出目录")
     parser_code_gen.add_argument("--experiment_dir", type=str, default=OUTPUT_PATH_SUB['code_gen'], help="实验log的输出目录")
     parser_code_gen.add_argument("--include_all_files", type=bool, default=True, help="Orchestrator的context中是否包含所有文件")
+    parser_code_gen.add_argument("--repo_url", type=str, default=REPO_URL, help="Orchestrator的context中是否包含所有文件")
     
     
     # run code generator
