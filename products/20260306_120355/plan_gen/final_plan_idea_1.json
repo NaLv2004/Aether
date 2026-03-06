@@ -1,0 +1,44 @@
+[
+    {
+        "idx": 1,
+        "name": "局部信息驱动的系统建模 (Local-CSI Based System Modeling)",
+        "content": "构建 $L$ 个AP和 $K$ 个用户的Cell-Free MIMO上行链路。AP $l$ 仅利用局部信道 $\\mathbf{h}_{lk}$ 进行 LMMSE 处理。定义每个 AP 的传输负载为 $B_l = \\sum_k b_{lk}$，其中 $b_{lk} \\in \\{0, 2, 4, 8\\}$。目标函数为端到端检测误差 $\\mathcal{L}_{task} = \\mathbb{E}[\\|\\mathbf{s} - \\mathbf{s}_{GNN}\\|^2]$，并受限于回传约束。",
+        "expected_outcome": "确立含大尺度衰落的数据集，定义 $b_{lk}$ 对应的离散位宽集合与回传带宽代价函数。"
+    },
+    {
+        "idx": 2,
+        "name": "传统全精度与量化基准确立 (Traditional Baselines Establishment)",
+        "content": "实现集中式 MMSE (C-MMSE) 和 LSFD 作为全精度上限。同时实现固定位宽（2-bit, 4-bit）的 Lloyd-Max 量化 LSFD 作为性能下限。对比全精度与低比特下传统算法的 BER 曲线。",
+        "expected_outcome": "在 SNR=15dB 时，获得 C-MMSE, LSFD 与 2-bit LSFD 的 BER 基准数据，明确量化损失规模。"
+    },
+    {
+        "idx": 3,
+        "name": "全精度 GNN 检测器预训练 (Full-Precision GNN Pre-training)",
+        "content": "设计异构 GNN，AP 节点特征为浮点数 $\\hat{s}_{lk}$。通过两层消息传递（AP to CPU, CPU to AP）消除多用户干扰。在无量化情况下训练至收敛，作为 QAT 的 Teacher 模型。",
+        "expected_outcome": "全精度 GNN 的 BER 性能需优于 LSFD 至少 15%，验证其作为骨干网络的有效性。"
+    },
+    {
+        "idx": 4,
+        "name": "PyTorch 可微量化器核心设计 (Differentiable LSQ Quantizer in PyTorch)",
+        "content": "利用 `torch.autograd.Function` 实现 STE 算子。定义前向计算：$\\hat{v} = \\text{round}(\\text{clamp}(v/s, v_{min}, v_{max})) \\cdot s$，其中步长 $s$ 为可学习参数。反向梯度传播：$\\frac{\\partial \\hat{v}}{\\partial v} = 1$ (在 clamp 范围内)，$\\frac{\\partial \\hat{v}}{\\partial s}$ 遵循 LSQ 梯度更新公式。针对 2-bit ($v_{min}=-2, v_{max}=1$) 和 3-bit ($v_{min}=-4, v_{max}=3$) 设定对称量化区间。",
+        "expected_outcome": "实现一个自定义 `Quantizer` 类，能够在 PyTorch 中自动优化量化阶数 $s$，支持 FP32 输入到低比特离散值的平滑映射。"
+    },
+    {
+        "idx": 5,
+        "name": "累进式位宽策略网络 (Successive Refinement Policy Network)",
+        "content": "为每个 AP 设计策略网络 $\\pi_{\\theta}(\\cdot)$，输出 $K$ 个用户信号的位宽概率分布向量 $\\mathbf{p}_{lk}$。训练时使用 Gumbel-Softmax：$b_{lk, soft} = \\sum_{i} \text{one\\_hot}(i) \\cdot \text{softmax}((\\log p_{lk,i} + g_i)/\\tau)$。量化器采用残差结构：2-bit 提取 MSB，4-bit 在 2-bit 残差上再量化 2-bit。最终回传特征为 $\\tilde{\\mathbf{s}}_l = \\sum_{i \\in \\mathcal{B}} w_i \\cdot Q_i(\\hat{s}_{lk})$，其中 $w_i$ 为 Gumbel 权重。",
+        "expected_outcome": "策略网络能根据局部信道增益自动为信号分配合适位宽，且整个选择过程对损失函数梯度可导。"
+    },
+    {
+        "idx": 6,
+        "name": "联合量化感知训练 (Joint Quantization-Aware Training)",
+        "content": "将步骤 4 的可微量化模块集成进 GNN。在训练中，AP 节点输入被替换为量化后的离散值（在计算图中仍保留梯度）。引入位宽感知注意力 (Bit-Aware Attention)，将 $b_{lk}$ 作为输入嵌入到 GNN 边权重中。使用退火策略减小 Gumbel-Softmax 的温度参数 $\\tau$，使策略在训练后期趋于确定性选择。",
+        "expected_outcome": "在平均位宽为 2.5 bit 时，GNN 检测性能达到全精度的 90% 以上，显著优于等位宽分配方案。"
+    },
+    {
+        "idx": 7,
+        "name": "硬选择推理与鲁棒性验证 (Evaluation & Deployment Simulation)",
+        "content": "推理时固定位宽决策为 $\\arg\\max$。在 3GPP UMi 信道下测试。评估：(1) 不同回传带宽 $C_{total}$ 下的 BER 表现；(2) 复杂度分析，对比 AP 侧策略网络与 LMMSE 的计算量；(3) 验证在个别 AP 回传完全断开（0-bit）时系统的生存能力。",
+        "expected_outcome": "证明所提方案在极低带宽（如每用户 2-bit）下仍能通过 GNN 空间补偿保持链路可用，BER 相比贪心策略降低 1 个数量级。"
+    }
+]

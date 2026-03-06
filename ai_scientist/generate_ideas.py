@@ -142,12 +142,12 @@ def download_paper_pdf(pdf_url, doi, save_dir="pdfs"):
                 logger.info(f"[Success] PDF 下载成功: {filename}")
                 return save_path
             else:
-                logger.debug(f"[Warning] 下载失败：返回的内容类型不是 PDF ({content_type})")
+                logger.error(f"[Warning] 下载失败：返回的内容类型不是 PDF ({content_type})")
         else:
-             logger.debug(f"[Error] 下载失败：HTTP 状态码 {response.status_code}")
+             logger.error(f"[Error] 下载失败：HTTP 状态码 {response.status_code}")
              
     except Exception as e:
-        logger.debug(f"[Error] PDF 下载过程发生异常: {e}")
+        logger.error(f"[Error] PDF 下载过程发生异常: {e}")
         
     return None
 
@@ -342,7 +342,7 @@ def process_papers_to_read(papers_to_read, doi_url_map, kb_txt_path):
     for doi in papers_to_read:
         pdf_url = doi_url_map.get(doi)
         if not pdf_url:
-            logger.debug(f"无法找到 DOI: {doi} 对应的 PDF 下载链接，跳过阅读。")
+            logger.error(f"无法找到 DOI: {doi} 对应的 PDF 下载链接，跳过阅读。")
             continue
             
         pdf_path = download_paper_pdf(pdf_url, doi)
@@ -355,7 +355,7 @@ def process_papers_to_read(papers_to_read, doi_url_map, kb_txt_path):
                 user_prompt=f"Please read this paper (DOI: {doi}) and summarize its core methodology and key takeaways."
             )
         else:
-             logger.debug(f"PDF 下载失败，跳过阅读 DOI: {doi}")
+             logger.error(f"PDF 下载失败，跳过阅读 DOI: {doi}")
 
 
 def read_knowledge_base(txt_path):
@@ -387,7 +387,7 @@ def run_student_agent(student_id, theme, max_iters, model, log_dir, search_param
         
         parsed_json = LLMAgent.robust_extract_json(response)
         if not parsed_json:
-            logger.debug(f"[Student {student_id}] Failed to parse JSON. Retrying...")
+            logger.error(f"[Student {student_id}] Failed to parse JSON. Retrying...")
             current_prompt = "你的输出不符合JSON格式要求，请修正并重新输出。"
             continue
             
@@ -574,7 +574,7 @@ def refine_idea(idea, user_instructions, allow_search, max_iters, model, log_dir
         parsed_json = LLMAgent.robust_extract_json(response)
         
         if not parsed_json:
-            logger.debug(f"[Refiner] Failed to parse JSON. Retrying...")
+            logger.error(f"[Refiner] Failed to parse JSON. Retrying...")
             current_prompt = "你的输出不符合JSON格式要求，请修正并重新输出。"
             continue
             
@@ -861,6 +861,3 @@ def generate_ideas(args, open_access=True, has_pdf_url=True, from_year=2020, int
         return args.output_file
     else:
         return refined_path
-
-
-

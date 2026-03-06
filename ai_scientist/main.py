@@ -21,6 +21,7 @@ def main():
     MAX_TEACHER_ITERS = 2
     # parameters for plan generation
     MAX_PLAN_REVIEW_ITER = 3
+    MAX_STUDENT_SELF_REFINE_ITER = 4
     N_PARALLEL_PLAN_GENERATOR = 3
     N_GENERATOR_PER_IDEA = 2
     
@@ -58,7 +59,8 @@ def main():
     # run idea generator
     
     logger.info(f"Starting Idea Generation...")
-    output_ideas_path = generate_ideas(parser_idea_gen.parse_args(),interactive=True)
+    # output_ideas_path = generate_ideas(parser_idea_gen.parse_args(),interactive=True)
+    output_ideas_path = r"products\\20260305_195128\\idea_gen\\refined_idea_4_1772712730.json"
     logger.info(f"Idea Generation Finished. Output File: {output_ideas_path}")
     # to do : let the user select one of the ideas.
     # parser.add_argument()
@@ -69,11 +71,13 @@ def main():
     parser_plan_gen.add_argument("--output_dir", type=str, default=OUTPUT_PATH_SUB['plan_gen'], help="输出完整Plan的汇总文件夹路径")
     parser_plan_gen.add_argument("--log_dir", type=str, default=LOG_PATH_SUB['plan_gen'], help="存放Log文件的文件夹路径")
     parser_plan_gen.add_argument("--max_iters", type=int, default=MAX_PLAN_REVIEW_ITER, help="每个Idea的师生最大讨论轮数")
+    parser_plan_gen.add_argument("--max_inner_iters", type=int, default=MAX_STUDENT_SELF_REFINE_ITER, help="每个Idea的师生最大讨论轮数")
     parser_plan_gen.add_argument("--model_student", type=str, default= MODEL, help="Student Planner使用的模型")
     parser_plan_gen.add_argument("--model_teacher", type=str, default= MODEL, help="Teacher Planner使用的模型")
     parser_plan_gen.add_argument("--max_workers", type=int, default=N_PARALLEL_PLAN_GENERATOR, help="并发处理的总线程数")
     # 新增参数：每个 idea 分配的 agent 数量
     parser_plan_gen.add_argument("--k_agents", type=int, default=N_GENERATOR_PER_IDEA, help="每个Idea分配几对并行的Student和Teacher")
+    parser_plan_gen.add_argument("--interactive", type=bool, default=True, help="是否启用交互模式")
     # run plan generator
     logger.info(f"Starting Plan Generation...")
     plan_file_path = generate_plan(parser_plan_gen.parse_args())
@@ -85,6 +89,7 @@ def main():
     parser_code_gen.add_argument("--coder", type=str, default=MODEL, help="Coder 使用的模型")
     parser_code_gen.add_argument("--experiment_log_dir", type=str, default=LOG_PATH_SUB['code_gen'], help="实验log的输出目录")
     parser_code_gen.add_argument("--experiment_dir", type=str, default=OUTPUT_PATH_SUB['code_gen'], help="实验log的输出目录")
+    
     
     # run code generator
     logger.info(f"Starting Code Generation...")
