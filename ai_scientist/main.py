@@ -80,7 +80,8 @@ def main():
     parser_plan_gen.add_argument("--interactive", type=bool, default=True, help="是否启用交互模式")
     # run plan generator
     logger.info(f"Starting Plan Generation...")
-    plan_file_path = generate_plan(parser_plan_gen.parse_args())
+    # plan_file_path = generate_plan(parser_plan_gen.parse_args())
+    plan_file_path = r"products\\20260306_120355\\plan_gen\\initial_plans.json"
     logger.info(f"Plan Generation Finished. Output File: {plan_file_path}")
     
     parser_code_gen = argparse.ArgumentParser(description="AI Scientist - Experiment Performer")
@@ -89,6 +90,7 @@ def main():
     parser_code_gen.add_argument("--coder", type=str, default=MODEL, help="Coder 使用的模型")
     parser_code_gen.add_argument("--experiment_log_dir", type=str, default=LOG_PATH_SUB['code_gen'], help="实验log的输出目录")
     parser_code_gen.add_argument("--experiment_dir", type=str, default=OUTPUT_PATH_SUB['code_gen'], help="实验log的输出目录")
+    parser_code_gen.add_argument("--include_all_files", type=bool, default=True, help="Orchestrator的context中是否包含所有文件")
     
     
     # run code generator
