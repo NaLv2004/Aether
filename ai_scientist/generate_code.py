@@ -29,7 +29,7 @@ logger = setup_logger("experiment_run.log")
 # 1. 配置与全局常量
 # ==========================================
 CONDA_ENV_NAME = "AutoGenOld"  # 指定的 Conda 环境名称
-MAX_RETRIES = 10               # 每一步最大失败重试次数，超过则触发 Git 回退机制
+MAX_RETRIES = 30               # 每一步最大失败重试次数，超过则触发 Git 回退机制
 
 # ==========================================
 # 2. 系统提示词定义 (System Prompts)
@@ -230,7 +230,7 @@ def git_rollback(workspace_dir, remote_repo=None):
         except Exception as e:
             logger.warning(f"[Git] 从远程仓库回滚失败: {e}")
     else:
-         try:
+        try:
             # 强制重置清除污染，恢复至上一次正确的 Commit 节点
             subprocess.run(["git", "reset", "--hard", "HEAD"], cwd=workspace_dir, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             subprocess.run(["git", "clean", "-fd"], cwd=workspace_dir, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
