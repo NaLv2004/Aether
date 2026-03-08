@@ -131,7 +131,7 @@ class PaperWriterSystem():
         self.reference_path = os.path.join(self.paper_dir, "reference.bib")
         self.accumulated_latex = {} # 存储已生成的章节 latex
 
-    def do_literature_search(self, rounds=10):
+    def do_literature_search(self, rounds=6):
         logger.info("\n=== Starting Literature Search ===")
         agent = LLMAgent(model=self.model, temperature=0.5, log_file=os.path.join(self.paper_dir, "lit_search.log"))
         
@@ -155,6 +155,7 @@ class PaperWriterSystem():
                 "Your task is to select the most relevant papers (the selected paper must be very relevant to the idea, do not select the remotely related ones), generate BibTeX formatting for them, and propose new search keywords. "
                 "Return a valid JSON list. Each dictionary must have exactly these keys: "
                 "'title', 'reference' (containing the full BibTeX string, including the abstract), and 'new_keywords' (USE search logics such as AND, OR to find more relevant papers, for instance, \"Communications\" OR \"Wireless\""
+                "一定不要搜搜较长的关键词和完整论文标题！多使用逻辑词！"
             """
             )
             
@@ -181,13 +182,14 @@ class PaperWriterSystem():
         
         sys_prompt = (
             "You are the Lead Author Orchestrator for a communications research paper. "
-            "Based on the provided PreviousSummary and ExecutionHistory, generate a comprehensive paper outline. "
+            "Based on the provided PreviousSummary and ExecutionHistory, generate a comprehensive paper outline for a paper to be submitted to IEEE TCOM. "
             "You MUST output a JSON list where each element represents a section. "
             "Each element MUST have the keys: "
             "'name' (Must be EXACTLY one of: abstract, introduction, system model, Proposed Method, Numerical Results, Conclusion), "
-            "'plan' (Detailed paragraph-by-paragraph instructions for the writer agent), "
+            "'plan' (Detailed paragraph-by-paragraph instructions for the writer agent)(abstract and conclusion must have only one paragraph), "
             "'figure' (Instructions for any figures needed in this section using pgfplots. If none, leave empty. "
-            "For Numerical Results, mandate at least 2-3 specific pgfplot performance/complexity comparison figures)."
+            "For Numerical Results, mandate at least 4-5 specific pgfplot performance/complexity comparison figures)."
+            "With your plan, you must tell a good story and differentiate your paper from competing works in the field. "
         )
         
         msg = f"PreviousSummary (File D):\n{self.file_D}\n\nExecute_history (Results and data):\n{self.file_E}\n"
@@ -232,11 +234,12 @@ class PaperWriterSystem():
         sys_prompt_specific = f"""\n
         Depending on the specific section you are assigned to write, you must strictly adhere to the following TCOM-standard guidelines:
         If you are asked to write the Abstract, you should write a highly concise summary (150–250 words) containing absolutely no citations, footnotes, or mathematical equations if possible. You must immediately state the core communication problem being addressed, briefly define the proposed system or algorithmic methodology, and explicitly highlight the most significant quantitative results (e.g., specific percentage improvements in spectral efficiency, bit error rate, or computational complexity) derived from the execute history.
-        If you are asked to write the Introduction, you should construct a logical "funnel". Begin by establishing the broad motivation and practical importance of the specific wireless/communication scenario. Next, comprehensively review the provided literature, explicitly identifying the technical gaps or limitations in existing works. Follow this by clearly stating the motivation of this paper to bridge that gap. You must then provide a clear, bulleted list of the paper's explicit novel contributions. Finally, end with a standard paragraph outlining the organization of the remainder of the paper. You should cite at least 10 literatures from the reference.bib provided. You should never make up literatures on your own.
+        If you are asked to write the Introduction, you should construct a logical "funnel". You must be good at story telling (consider what really differentiates our work with previous works, especially potentially competitive literatures provided in the reference.bib)Begin by establishing the broad motivation and practical importance of the specific wireless/communication scenario. Next, comprehensively review the provided literature, explicitly identifying the technical gaps or limitations in existing works. Follow this by clearly stating the motivation of this paper to bridge that gap. You must then provide a clear, bulleted list of the paper's explicit novel contributions. Finally, end with a standard paragraph outlining the organization of the remainder of the paper. You should cite at least 10 literatures from the reference.bib provided. You should never make up literatures on your own.
         If you are asked to write the System Model, you should rigorously and systematically define the physical communication environment, network topology, transceiver architecture, and signal models. Use standard IEEE LaTeX math formatting (e.g., bold lowercase for vectors, bold uppercase for matrices). You must explicitly state and justify all mathematical assumptions (e.g., fading channel distributions, AWGN variances, perfect/imperfect CSI). Define every mathematical variable immediately upon its first use. You should conclude this section by formally defining the overarching mathematical problem the paper aims to solve (e.g., a specific optimization formulation like sum-rate maximization or transmit power minimization).
-        If you are asked to write the Proposed Method, you should provide a logical, step-by-step detailing of the algorithm, mathematical derivations, or analytical framework used to solve the problem formulated in the System Model. You must objectively justify your design choices and clearly explain the physical or mathematical rationale behind each step. You should include a rigorous theoretical analysis of the proposed method, which must include a computational complexity analysis (using Big-O notation) and, if applicable, convergence guarantees. Ensure smooth, readable transitions between inline/display equations and the explanatory text.
+        If you are asked to write the Proposed Method, you should provide a logical, step-by-step detailing of the algorithm, mathematical derivations, or analytical framework used to solve the problem formulated in the System Model. You must objectively justify your design choices and clearly explain the physical or mathematical rationale behind each step. You should include a rigorous theoretical analysis of the proposed method, which must include a computational complexity analysis (using Big-O notation) and, if applicable, convergence guarantees. Ensure smooth, readable transitions between inline/display equations and the explanatory text. 
         If you are asked to write the Numerical Results, you should first clearly define the simulation setup, listing all key system parameters, channel conditions, and baseline schemes used for comparison. You MUST generate the LaTeX code for 2 to 3 pgfplots figures that plot performance, convergence, or complexity tradeoffs against the baselines. In the accompanying text, you must systematically reference these figures and deeply analyze the physical meaning behind the trends (e.g., why a curve saturates at high SNR). You must maintain absolute scientific objectivity: if the proposed method underperforms or exhibits unfavorable results in specific regimes, you must report this honestly and provide a scientifically rigorous explanation for why the degradation occurs.
         If you are asked to write the Conclusion, you should concisely summarize the paper’s original objectives, the proposed methodology, and the core engineering/physical insights obtained from the numerical results. You must not simply copy and paste the Abstract. Do not include any equations, cross-references to figures, or citations in this section. Conclude with one or two sentences suggesting highly specific and realistic directions for future research based on the limitations of the current work.
+        其他注意事项：尽可能公式化。即，可以用公式写出的过程，不仅要用平实的文字描述，还要用准确的公式表示，不能遗漏任何中间数学过程（例如，某个变量通过transformer，不能只用文字说，要写出对应的数学过程）。语言必须客观、平实，不能用很很虚或者夸张的词语。Write in english.
         """
         sys_prompt += sys_prompt_specific
         # 组装 msg 依赖
@@ -274,8 +277,9 @@ class PaperWriterSystem():
             logger.info(f"[*] Refining {section_name} (Round {i+1}/{refine_times})...")
             refine_sys = (
                 "You are an expert editor reviewing the LaTeX code for this section. "
-                "Improve academic tone, ensure absolute objectivity, fix any LaTeX syntax errors (especially pgfplots), "
+                "Improve academic tone, ensure absolute objectivity, fix any LaTeX syntax errors (especially pgfplots), also, fix errors like unincluded figures "
                 "and ensure smooth transitions. Return the full updated LaTeX code in the EXACT SAME JSON list format as requested originally."
+                "Include all key elements included in the input. Do not return a shorter version. "
             )
             refine_msg = f"Original Output to fix:\n{output}\n\nPlease output the fully corrected JSON list."
             output, _ = agent.get_response_stream(refine_msg, refine_sys)

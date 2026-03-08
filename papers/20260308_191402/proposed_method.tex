@@ -1,0 +1,42 @@
+\section{Proposed IB-CellFree-GNN Architecture}
+
+In this section, we detail the proposed Task-Oriented Resource-Inference Graph Neural Network (IB-CellFree-GNN). The architecture is designed to jointly optimize the discrete bit-width allocation at distributed APs and the signal reconstruction at the CPU. As illustrated in Fig. \ref{fig:architecture}, the framework consists of three cascaded modules: (1) a local \textit{Resource-Inference Module} at the APs that determines the quantization precision; (2) a \textit{Differentiable Quantization Interface} that executes the compression; and (3) a central \textit{Bit-Aware GNN} that aggregates the compressed signals for final detection.
+
+\subsection{Architecture Overview}
+The processing pipeline begins at the $l$-th AP, which obtains a local estimate $\hat{\mathbf{s}}_l$ via LMMSE processing. Unlike conventional schemes that quantize $\hat{\mathbf{s}}_l$ with a fixed bit-width, our method employs a lightweight policy network $\pi_{\theta}$ to analyze the local reliability of the signal. The policy network outputs a decision vector governing the bit-width $b_{lk} \in \{0, 2, 4\}$ for each user $k$. The quantized signals $\tilde{\mathbf{s}}_l$, along with the selected bit-widths, are transmitted over the fronthaul to the CPU. The CPU employs a GNN $\mathcal{G}_{\phi}$ that utilizes the bit-width information to weight the incoming signals, effectively performing spatial maximum ratio combining (MRC) that accounts for quantization noise variance.
+
+\subsection{AP-Side Resource Inference via Gumbel-Softmax}
+The core challenge in dynamic fronthaul compression is that the selection of bit-widths is a discrete operation, which is non-differentiable and thus incompatible with standard backpropagation. To address this, we employ the Gumbel-Softmax relaxation technique.
+
+For each user $k$ and AP $l$, we construct a feature vector $\mathbf{x}_{lk} = [\text{Re}(\hat{s}_{lk}), \text{Im}(\hat{s}_{lk}), \gamma_{lk}]^T$, where $\gamma_{lk}$ is the local post-processing SNR. This vector is fed into a Multi-Layer Perceptron (MLP) policy network, which outputs the unnormalized log-probabilities (logits) $\mathbf{z}_{lk} \in \mathbb{R}^{|\mathcal{B}|}$ corresponding to the discrete bit choices $\mathcal{B} = \{0, 2, 4\}$.
+
+During training, instead of selecting the bit-width with the maximum probability (argmax), we sample from the Gumbel-Softmax distribution to generate a soft decision vector $\mathbf{w}_{lk} \in [0, 1]^{|\mathcal{B}|}$. The $i$-th element of $\mathbf{w}_{lk}$ is given by:
+\begin{equation}
+    w_{lk, i} = \frac{\exp((\log z_{lk, i} + g_{lk, i}) / \tau)}{\sum_{j=1}^{|\mathcal{B}|} \exp((\log z_{lk, j} + g_{lk, j}) / \tau)},
+\end{equation}
+where $g_{lk, i} \sim \text{Gumbel}(0, 1)$ are i.i.d. samples drawn from the Gumbel distribution, and $\tau > 0$ is the temperature parameter. As $\tau \to 0$, the distribution approaches a categorical distribution (one-hot vector), effectively simulating discrete selection. This relaxation allows gradients to flow from the quantization module back to the policy network, enabling end-to-end optimization.
+
+\subsection{Differentiable Successive Refinement Quantization}
+Based on the soft decision vector $\mathbf{w}_{lk}$, the system performs a differentiable quantization operation. We adopt the Learned Step Size Quantization (LSQ) framework, where the step size $\Delta$ is a trainable parameter. Let $Q_b(x)$ denote the quantization function for bit-width $b$. The effective quantized signal $\tilde{s}_{lk}$ is a weighted sum of the outputs from the candidate quantizers:
+\begin{equation}
+    \tilde{s}_{lk} = w_{lk, 0} \cdot 0 + w_{lk, 2} \cdot Q_2(\hat{s}_{lk}) + w_{lk, 4} \cdot Q_4(\hat{s}_{lk}).
+\end{equation}
+Here, $Q_b(\cdot)$ employs the Straight-Through Estimator (STE) to approximate the gradients of the rounding operation as identity functions within the clipping range. Specifically, for an input $v$ and step size $\Delta$, the quantized value is $\hat{v} = \lfloor \text{clamp}(v/\Delta, v_{\min}, v_{\max}) \rceil \cdot \Delta$. The gradient is defined as $\partial \hat{v} / \partial v = 1$ if $v_{\min} \le v/\Delta \le v_{\max}$, and 0 otherwise. This formulation allows the network to learn not only the optimal bit allocation but also the optimal dynamic range for the quantizers.
+
+\subsection{CPU-Side Bit-Aware GNN}
+At the CPU, the received signals are aggregated using a Graph Neural Network. We construct a graph where APs and UEs are nodes. However, to reduce complexity, we adopt a simplified aggregation structure where the CPU acts as a central aggregator. The key innovation is the \textit{Bit-Aware Attention Mechanism}.
+
+The input to the GNN for the $l$-th AP and $k$-th user is the tuple $\mathbf{u}_{lk} = [\text{Re}(\tilde{s}_{lk}), \text{Im}(\tilde{s}_{lk}), \gamma_{lk}, b_{lk}]^T$. Notably, the selected bit-width $b_{lk}$ is explicitly embedded into the feature space. The GNN first lifts $\mathbf{u}_{lk}$ to a high-dimensional feature $\mathbf{h}_{lk}$ via an MLP. An attention mechanism then computes aggregation weights $\alpha_{lk}$:
+\begin{equation}
+    \alpha_{lk} = \text{softmax}_{l \in \mathcal{L}} \left( \text{MLP}_{attn}(\mathbf{h}_{lk}) \right).
+\end{equation}
+By including $b_{lk}$ in the input, the network learns to assign lower weights $\alpha_{lk}$ to signals with low bit-widths (high quantization noise) and higher weights to high-precision signals. The aggregated feature for user $k$ is $\mathbf{z}_k = \sum_{l=1}^L \alpha_{lk} \mathbf{h}_{lk}$. Finally, a Transformer-based module processes the aggregated features of all users $\{\mathbf{z}_k\}_{k=1}^K$ to mitigate inter-user interference and produce the final symbol estimates.
+
+\subsection{Training Strategy and Complexity Analysis}
+We train the entire architecture end-to-end by minimizing a compound loss function:
+\begin{equation}
+    \mathcal{L} = \frac{1}{K} \sum_{k=1}^K |s_k - \hat{s}_{k, CPU}|^2 + \lambda \left( \frac{1}{LK} \sum_{l,k} \mathbb{E}[b_{lk}] - C_{target} \right)^2,
+\end{equation}
+where the first term is the detection MSE and the second term is a penalty enforcing the average fronthaul rate constraint $C_{target}$. We employ a temperature annealing schedule for $\tau$, starting at $\tau=1.0$ for exploration and decaying to $\tau=0.1$ to approximate hard selection.
+
+\textit{Complexity Analysis:} The computational complexity of the proposed method is dominated by the initial LMMSE processing at the APs, which scales as $\mathcal{O}(N^3 + N^2 K)$. The Policy Network is a small MLP with negligible complexity $\mathcal{O}(1)$ per user-AP pair. The CPU-side GNN scales linearly with the number of APs, $\mathcal{O}(L K)$, and the Transformer module scales as $\mathcal{O}(K^2)$. Consequently, the total complexity is comparable to standard centralized processing, with the added benefit of significantly reduced fronthaul overhead.

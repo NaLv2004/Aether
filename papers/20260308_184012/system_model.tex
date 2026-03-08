@@ -1,0 +1,51 @@
+\section{System Model}
+
+\subsection{Network Topology and Channel Model}
+Consider an uplink cell-free massive MIMO system consisting of $L$ distributed access points (APs) and $K$ single-antenna user equipments (UEs) randomly dispersed over a wide geographical area. Each AP is equipped with an array of $N$ antennas and is connected to a central processing unit (CPU) via capacity-constrained fronthaul links. Let $\mathcal{L} = \{1, 2, \dots, L\}$ and $\mathcal{K} = \{1, 2, \dots, K\}$ denote the sets of APs and UEs, respectively. The channel vector between the $k$-th UE and the $l$-th AP is denoted by $\mathbf{h}_{lk} \in \mathbb{C}^{N \times 1}$. The channel is modeled as a combination of large-scale fading and small-scale fading, given by
+\begin{equation}
+    \mathbf{h}_{lk} = \sqrt{\beta_{lk}} \mathbf{g}_{lk},
+\end{equation}
+where $\beta_{lk}$ represents the large-scale fading coefficient, which incorporates both distance-dependent path loss and log-normal shadowing. In accordance with the 3GPP Dense Urban model, the shadowing is modeled as a zero-mean Gaussian random variable in the logarithmic scale. The term $\mathbf{g}_{lk} \sim \mathcal{CN}(\mathbf{0}, \mathbf{I}_N)$ represents the small-scale Rayleigh fading vector, where $\mathbf{I}_N$ is the $N \times N$ identity matrix. 
+
+In the uplink data transmission phase, all $K$ UEs transmit their data symbols simultaneously to the APs. Let $s_k \in \mathbb{C}$ denote the transmitted symbol from the $k$-th UE, satisfying the normalized power constraint $\mathbb{E}[|s_k|^2] = 1$. The received signal vector $\mathbf{y}_l \in \mathbb{C}^{N \times 1}$ at the $l$-th AP can be expressed as
+\begin{equation}
+    \mathbf{y}_l = \sum_{k=1}^{K} \sqrt{p_k} \mathbf{h}_{lk} s_k + \mathbf{z}_l = \mathbf{H}_l \mathbf{P}^{\frac{1}{2}} \mathbf{s} + \mathbf{z}_l,
+\end{equation}
+where $p_k$ is the transmit power of the $k$-th UE, $\mathbf{H}_l = [\mathbf{h}_{l1}, \mathbf{h}_{l2}, \dots, \mathbf{h}_{lK}] \in \mathbb{C}^{N \times K}$ is the aggregated channel matrix at the $l$-th AP, $\mathbf{P} = \text{diag}(p_1, p_2, \dots, p_K)$ is the transmit power matrix, $\mathbf{s} = [s_1, s_2, \dots, s_K]^T \in \mathbb{C}^{K \times 1}$ is the vector of transmitted symbols, and $\mathbf{z}_l \sim \mathcal{CN}(\mathbf{0}, \sigma^2 \mathbf{I}_N)$ is the additive white Gaussian noise (AWGN) vector with noise variance $\sigma^2$.
+
+\subsection{Local Signal Processing at APs}
+To alleviate the fronthaul burden and distribute the computational load, each AP performs local spatial processing before forwarding the signals to the CPU. Specifically, the $l$-th AP applies a local linear minimum mean square error (LMMSE) filter to its received signal $\mathbf{y}_l$ to obtain a soft estimate of the transmitted symbols. Assuming local channel state information (CSI) is available at the APs, the local LMMSE combining matrix $\mathbf{W}_l \in \mathbb{C}^{K \times N}$ is formulated as
+\begin{equation}
+    \mathbf{W}_l = \mathbf{P}^{\frac{1}{2}} \mathbf{H}_l^H \left( \mathbf{H}_l \mathbf{P} \mathbf{H}_l^H + \sigma^2 \mathbf{I}_N \right)^{-1},
+\end{equation}
+where $(\cdot)^H$ denotes the conjugate transpose operation. The soft estimated signal vector at the $l$-th AP, denoted by $\hat{\mathbf{s}}_l = [\hat{s}_{l1}, \hat{s}_{l2}, \dots, \hat{s}_{lK}]^T \in \mathbb{C}^{K \times 1}$, is then computed as
+\begin{equation}
+    \hat{\mathbf{s}}_l = \mathbf{W}_l \mathbf{y}_l.
+\end{equation}
+This local processing step effectively reduces the dimensionality of the received signal from $N$ antennas to $K$ users, thereby extracting the essential spatial features and significantly decreasing the volume of data that must be transmitted over the fronthaul links.
+
+\subsection{Fronthaul Quantization and Capacity Constraints}
+Due to the limited capacity of the fronthaul links connecting the APs to the CPU, the continuous-valued soft estimates $\hat{\mathbf{s}}_l$ must be quantized prior to transmission. Let $b_{lk}$ denote the number of bits allocated to quantize the real and imaginary parts of the soft estimate $\hat{s}_{lk}$ for the $k$-th UE at the $l$-th AP. To facilitate practical hardware implementation, the bit-width is restricted to a discrete set of options, i.e., $b_{lk} \in \mathcal{B} = \{0, 2, 4\}$. A bit-width of $b_{lk} = 0$ implies that the signal $\hat{s}_{lk}$ is entirely discarded, effectively executing a link dropout for severely faded signals to conserve bandwidth.
+
+The quantization process is represented by a function $\mathcal{Q}(\cdot, b_{lk})$, such that the quantized signal is given by
+\begin{equation}
+    \tilde{s}_{lk} = \mathcal{Q}(\hat{s}_{lk}, b_{lk}).
+\end{equation}
+The total number of bits transmitted by the $l$-th AP to the CPU is constrained by the instantaneous fronthaul capacity $C_l$. Therefore, the bit allocation must satisfy the following dynamic fronthaul capacity constraint:
+\begin{equation}
+    \sum_{k=1}^{K} 2 b_{lk} \leq C_l, \quad \forall l \in \mathcal{L},
+\end{equation}
+where the factor of $2$ accounts for the separate quantization of the real and imaginary components of the complex signal $\hat{s}_{lk}$.
+
+\subsection{Problem Formulation}
+At the CPU, the quantized signals $\tilde{\mathbf{s}}_l = [\tilde{s}_{l1}, \tilde{s}_{l2}, \dots, \tilde{s}_{lK}]^T$ collected from all $L$ APs are aggregated to perform global multi-user detection and spatial interference cancellation. Let $f_{\text{CPU}}(\cdot)$ denote the non-linear detection function executed at the CPU, which yields the final estimated symbol vector $\mathbf{s}_{\text{GNN}} = f_{\text{CPU}}(\tilde{\mathbf{s}}_1, \tilde{\mathbf{s}}_2, \dots, \tilde{\mathbf{s}}_L)$. 
+
+The primary objective is to design a joint quantization and detection framework that minimizes the end-to-end multi-user detection mean square error (MSE) while strictly adhering to the discrete fronthaul capacity constraints. Mathematically, the optimization problem is formulated as:
+\begin{subequations}
+\begin{align}
+    \min_{\{b_{lk}\}, f_{\text{CPU}}} \quad & \mathbb{E} \left[ \left\| \mathbf{s} - \mathbf{s}_{\text{GNN}} \right\|^2 \right] \\
+    \text{s.t.} \quad & \sum_{k=1}^{K} 2 b_{lk} \leq C_l, \quad \forall l \in \mathcal{L}, \\
+    & b_{lk} \in \{0, 2, 4\}, \quad \forall l \in \mathcal{L}, \forall k \in \mathcal{K}.
+\end{align}
+\end{subequations}
+Solving this problem using conventional mathematical programming techniques is inherently challenging. This difficulty arises from the mixed-integer nature of the discrete bit-width selection variables $b_{lk}$, coupled with the highly non-convex and non-differentiable quantization operations. Furthermore, the optimal bit allocation is tightly coupled with the non-linear detection process at the CPU, necessitating a task-oriented approach that jointly optimizes the distributed quantization policy and the centralized interference cancellation.

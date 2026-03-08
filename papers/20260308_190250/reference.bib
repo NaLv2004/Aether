@@ -1,0 +1,192 @@
+@article{he2020model,
+  title={Model-Driven Deep Learning for MIMO Detection},
+  author={He, Hengtao and Wen, Chao-Kai and Jin, Shi and Li, Geoffrey Ye},
+  journal={IEEE Transactions on Signal Processing},
+  year={2020},
+  abstract={In this paper, we investigate the model-driven deep learning (DL) for MIMO detection. In particular, the MIMO detector is specially designed by unfolding an iterative algorithm and adding some trainable parameters. Since the number of trainable parameters is much fewer than the data-driven DL based signal detector, the model-driven DL based MIMO detector can be rapidly trained with a much smaller data set. The proposed MIMO detector can be extended to soft-input soft-output detection easily. Furthermore, we investigate joint MIMO channel estimation and signal detection (JCESD), where the detector takes channel estimation error and channel statistics into consideration while channel estimation is refined by detected data and considers the detection error. Based on numerical results, the model-driven DL based MIMO detector significantly improves the performance of corresponding traditional iterative detector, outperforms other DL-based MIMO detectors and exhibits superior robustness to various mismatches.}
+}
+
+@article{wei2020learned,
+  title={Learned Conjugate Gradient Descent Network for Massive MIMO Detection},
+  author={Wei, Yi and Hong, Mingyi and Zhao, Minjian and Lei, Ming},
+  journal={IEEE Transactions on Signal Processing},
+  year={2020},
+  abstract={In this work, we consider the use of model-driven deep learning techniques for massive multiple-input multiple-output (MIMO) detection. Compared with conventional MIMO systems, massive MIMO promises improved spectral efficiency, coverage and range. Unfortunately, these benefits are at the expense of significantly increased computational complexity. To reduce the complexity of signal detection and guarantee the performance, we present a learned conjugate gradient descent network (LcgNet), which is constructed by unfolding the iterative conjugate gradient descent (CG) detector. In the proposed network, instead of calculating the exact values of the scalar step-sizes, we explicitly learn their universal values. Also, we can enhance the proposed network by augmenting the dimensions of these step-sizes. Furthermore, in order to reduce the memory costs, a novel quantized LcgNet is proposed, where a low-resolution nonuniform quantizer is used to quantize the learned parameters. The quantizer is based on a specially designed soft staircase function with learnable parameters to adjust its shape. Meanwhile, due to fact that the number of learnable parameters is limited, the proposed networks are relatively easy to train. Numerical results demonstrate that the proposed network can achieve promising performance with much lower complexity.}
+}
+
+@article{sun2020learning,
+  title={Learning to Search for MIMO Detection},
+  author={Sun, Jianyong and Zhang, Yiqing and Xue, Jiang and Xu, Zongben},
+  journal={IEEE Transactions on Wireless Communications},
+  year={2020},
+  abstract={This paper proposes a novel learning to learn method, called learning to learn iterative search algorithm (LISA), for signal detection in a multi-input multi-output (MIMO) system. The idea is to regard the signal detection problem as a decision making problem over tree. The goal is to learn the optimal decision policy. In LISA, deep neural networks are used as parameterized policy function. Through training, optimal parameters of the neural networks are learned and thus optimal policy can be approximated. Different neural network-based architectures are used for fixed and varying channel models, respectively. LISA provides soft decisions and does not require any information about the additive white Gaussian noise. Simulation results show that LISA 1) obtains near maximum likelihood detection performance in both fixed and varying channel models under QPSK modulation; 2) achieves significantly better bit error rate (BER) performance than classical detectors and recently proposed deep/machine learning based detectors at various modulations and signal to noise (SNR) ratios both under i.i.d and correlated Rayleigh fading channels in the simulation experiments; 3) is robust to MIMO detection problems with imperfect channel state information; and 4) generalizes very well against channel correlation and SNRs.}
+}
+
+@article{shlezinger2021deep,
+  title={Deep Task-Based Quantization},
+  author={Shlezinger, Nir and Eldar, Yonina C.},
+  journal={Entropy},
+  year={2021},
+  abstract={Quantizers play a critical role in digital signal processing systems. Recent works have shown that the performance of acquiring multiple analog signals using scalar analog-to-digital converters (ADCs) can be significantly improved by processing the signals prior to quantization. However, the design of such hybrid quantizers is quite complex, and their implementation requires complete knowledge of the statistical model of the analog signal. In this work we design data-driven task-oriented quantization systems with scalar ADCs, which determine their analog-to-digital mapping using deep learning tools. These mappings are designed to facilitate the task of recovering underlying information from the quantized signals. By using deep learning, we circumvent the need to explicitly recover the system model and to find the proper quantization rule for it. Our main target application is multiple-input multiple-output (MIMO) communication receivers, which simultaneously acquire a set of analog signals, and are commonly subject to constraints on the number of bits. Our results indicate that, in a MIMO channel estimation setup, the proposed deep task-bask quantizer is capable of approaching the optimal performance limits dictated by indirect rate-distortion theory, achievable using vector quantizers and requiring complete knowledge of the underlying statistical model. Furthermore, for a symbol detection scenario, it is demonstrated that the proposed approach can realize reliable bit-efficient hybrid MIMO receivers capable of setting their quantization rule in light of the task.}
+}
+
+@inproceedings{ma2022augmented,
+  title={Augmented Deep Unfolding for Downlink Beamforming in Multi-cell Massive MIMO With Limited Feedback},
+  author={Ma, Yifan and Yu, Xianghao and Zhang, Jun and Song, Shenghui and Letaief, Khaled B.},
+  booktitle={GLOBECOM 2022 - 2022 IEEE Global Communications Conference},
+  year={2022},
+  abstract={In limited feedback multi-user multiple-input multiple-output (MU-MIMO) cellular networks, users send quantized information about the channel conditions to the associated base station (BS) for downlink beamforming. However, channel quantization and beamforming have been treated as two separate tasks conventionally, which makes it difficult to achieve global system optimality. In this paper, we propose an augmented deep unfolding (ADU) approach that jointly optimizes the beamforming scheme at the BSs and the channel quantization scheme at the users. In particular, the classic WMMSE beamformer is unrolled and a deep neural network (DNN) is leveraged to preprocess its input to enhance the performance. The variational information bottleneck technique is adopted to further improve the performance when the feedback capacity is strictly restricted. Simulation results demonstrate that the proposed ADU method outperforms all the benchmark schemes in terms of the system average rate.}
+}
+
+@article{wang2020information,
+  title={Information-Optimum Approximate Message Passing for Quantized Massive MIMO Detection},
+  author={Wang, Liwen and Takahashi, Takumi and Ibi, Shinsuke and Sampei, Seiichi},
+  journal={IEEE Access},
+  year={2020},
+  abstract={We propose an information-optimum approximate message passing (AMP) for quantized massive multi-input multi-output (MIMO) signal detection. A well-known strategy for realizing low-complexity and high-accuracy massive multi-user detection (MUD) is AMP-based belief propagation (BP). However, when internal operations are conducted with double-precision arithmetic, large memory occupancy and severe processing delay are inevitable in the actual massive MIMO implementation. To address this issue, we replace all operations with a simple look-up table (LUT) search where all messages exchanged between each iteration process are unsigned integers. That is, the proposed signal detection is performed using only simple integer arithmetic. The LUT is designed offline using an information-bottleneck (IB) method, and the probability distribution of messages at each iteration step is required for determining the quantization threshold tracked by discrete density evolution (DDE). Computer simulations demonstrate the validity of the IB LUT-based AMP in terms of bit error rate (BER) performance and memory occupancy. The proposed method allows quantizing the AMP detector with fewer bits while maintaining similar performances, such as that of a typical AMP with double-precision.}
+}
+
+@inproceedings{cao2022information,
+  title={Information Bottleneck Based Joint Feedback and Channel Learning in FDD Massive MIMO Systems},
+  author={Cao, Jiaqi and Lian, Lixiang},
+  booktitle={GLOBECOM 2022 - 2022 IEEE Global Communications Conference},
+  year={2022},
+  abstract={Channel sate acquisition in frequency-division du-plexing (FDD) massive MIMO system is challenging due to the huge feedback overhead. Machine learning (ML) has emerged as a powerful technology to address this challenge. In this paper, we resort to information bottleneck (IB) theoretical principle to design a joint feedback compression, quantization and channel learning algorithm in FDD massive MIMO systems, called IBNet. Compared to the existing ML-based designs, the proposed IBNet can systematically seek for the optimal balance between the channel estimation accuracy and feedback overhead. To auto-matically learn the feedback compression, a sparsity inducing prior is utilized to sparsify the feature vector, thereby reducing the feedback overhead significantly. Furthermore, to improve the generality of proposed IBNet, we propose an adaptive IBNet, which can adapt to different channel conditions with one neural network. Simulation results show that the proposed scheme significantly reduces the feedback overhead, meanwhile improving the channel estimation accuracy.}
+}
+
+@article{xie2026meta,
+  title={Meta-Learning-Enhanced GNN Approach for Signal Compression in Uplink Cell-Free MIMO Networks},
+  author={Xie, Junyu and Guo, Jing and Wang, Siqiang and Yu, Hanxiao and Zheng, Zhong and Fei, Zesong},
+  journal={IEEE Transactions on Vehicular Technology},
+  year={2026},
+  abstract={In this work, we investigate the uplink signal compression problem for fronthaul-constrained cell-free (CF) multiple-input multiple-output (MIMO) networks. Considering the dynamic nature of wireless communications, e.g., the varying number of accessing users and the changing rate requirements, we propose a scalable and adaptive approach by integrating graph neural network (GNN) with meta-learning. In particular, the problem of maximizing the achievable uplink sum rate is formulated by optimizing the beamforming matrix of each access point (AP), while accounting for the requirement of user rate. To tackle this non-convex optimization problem, we develop a joint-Reptile-enhanced GNN approach. Therein, the uplink CF-MIMO network is modeled as a heterogeneous graph with cooperative node features, and the joint-Reptile approach is employed to obtain adaptive and generalizable meta-parameters, enabling rapid adaptation to dynamic CF-MIMO networks. Simulation results demonstrate that the proposed approach exhibits better adaptability compared to conventional initialization benchmarks. Moreover, it can achieve higher sum rate performance across various signal dimensions, while maintaining scalability.}
+}
+
+@article{pereira2025pixel,
+  title={Pixel-Based CF-mMIMO: Addressing the AP Cooperation Cluster Formation in Fronthaul-Limited O-RAN Architectures},
+  author={Pereira-Ruis{\'a}nchez, Dariel and Joham, Michael and Fresnedo, {\'O}scar and P{\'e}rez-Ad{\'a}n, Darian and Castedo, Luis and Utschick, Wolfgang},
+  journal={IEEE Transactions on Communications},
+  year={2025},
+  abstract={This paper investigates access point (AP) cooperation cluster formation in user-centric cell-free massive MIMO (CF-mMIMO) communication systems characterized by fronthaul links with capacity restrictions. Specifically, we consider an open radio access network (O-RAN) architecture that, although it favors the deployment of ultra-dense networks, is constrained in the number of APs that can be active simultaneously. In this context, we propose an innovative framework termed pixel-based CF-mMIMO, which enables efficient control of both the AP activation and cooperation cluster formation. Recognizing the parallels with pixel-based reconfigurable antennas, the proposed framework allows dynamic reconfiguration of the network coverage map with reasonably low computational cost. The high scalability and performance of the framework are mainly supported by a learning model based on graph neural networks (GNNs) that effectively exploits the existing graph-like structures in CF-mMIMO systems. Extensive simulation experiments demonstrate that the proposed approach achieves competitive spectral efficiency (SE) in challenging scenarios with dense AP deployments and numerous user equipments (UEs).}
+}
+
+@article{dai2025two,
+  title={Two-Stage GNN-Based Scalable Access Mode Selection and Power Control for Cell-Free and D2D Heterogeneous Networks},
+  author={Dai, Yanpeng and Yan, Dewen and Lyu, Ling and Ge, Yunpeng and Cheng, Nan and Sheng, Min and Liu, Junyu and Shen, Xuemin},
+  journal={IEEE Transactions on Cognitive Communications and Networking},
+  year={2025},
+  abstract={Cell-free and device-to-device (D2D) heterogeneous networks provide a promising architecture for seamless and high-capacity coverage through dense deployment while reducing fronthaul load. However, spectrum reuse among heterogeneous transmission links would cause severe interference that restricts network capacity and coverage improvement. The dense deployment further challenges efficient interference coordination due to increased computational cost. To this end, this paper proposes a two-stage graph neural network (GNN) structure for access mode selection and power control in cell-free and D2D heterogeneous networks to achieve effective interference coordination with high computational efficiency. First, we derive closed-form expressions for achievable rates of both cell-free and D2D links under limited fronthaul capacity. Then, we represent the network as a heterogeneous graph and design a two-stage GNN based algorithm. The first stage of our proposed algorithm utilizes edge attention mechanism to optimize access mode selection, and its second stage exploits edge message passing to determine power control. To ensure solution feasibility and algorithm convergence, we introduce modified output layers, binary variable regression, and a penalty-based loss function. Simulation results show that our proposed algorithm can improve network capacity and converge to a near-optimal solution across different network scales, compositions, and key parameters, exhibiting well scalability and generalization.}
+}
+
+@article{feys2025learning,
+  title={Learning to Quantize and Precode in Massive MIMO Systems for Energy Reduction: A Graph Neural Network Approach},
+  author={Feys, Thomas and Van der Perre, Liesbet and Rottenberg, Fran{\c{c}}ois},
+  journal={IEEE Journal of Selected Topics in Signal Processing},
+  year={2025},
+  abstract={Massive MIMO systems are moving toward increased numbers of radio frequency chains, higher carrier frequencies and larger bandwidths. As such, digital-to-analog converters (DACs) are becoming a bottleneck in terms of hardware complexity and power consumption. In this work, non-linear precoding for coarsely quantized downlink massive MIMO is studied. Given the NP-hard nature of this problem, a graph neural network (GNN) is proposed that directly outputs the precoded quantized vector based on the channel matrix and the intended transmit symbols. The model is trained in a self-supervised manner, by directly maximizing the achievable rate. To overcome the non-differentiability of the objective function, introduced due to the non-differentiable DAC functions, a straight-through Gumbel-softmax estimation of the gradient is proposed. The proposed method achieves a significant increase in achievable sum rate under coarse quantization. For instance, in the single-user case, the proposed method can achieve the same sum rate as maximum ratio transmission (MRT) by using one-bit DACs as compared to 3 bits for MRT. This reduces the DAC's power consumption by a factor 4-7 and 3 for baseband and RF DACs respectively. This, however, comes at the cost of increased digital signal processing power consumption. When accounting for this, the reduction in overall power consumption holds for a system bandwidth up to 3.5 MHz for baseband DACs, while the RF DACs can maintain a power reduction of 2.9 for higher bandwidths. Notably, indirect effects, which further reduce the power consumption, such as a reduced fronthaul consumption and reductions in other components, are not considered in this analysis.}
+}
+
+@inproceedings{ma2022augmented,
+  title={Augmented Deep Unfolding for Downlink Beamforming in Multi-cell Massive MIMO With Limited Feedback},
+  author={Ma, Yifan and Yu, Xianghao and Zhang, Jun and Song, Shenghui and Letaief, Khaled B.},
+  booktitle={GLOBECOM 2022 - 2022 IEEE Global Communications Conference},
+  year={2022},
+  abstract={In limited feedback multi-user multiple-input multiple-output (MU-MIMO) cellular networks, users send quantized information about the channel conditions to the associated base station (BS) for downlink beamforming. However, channel quantization and beamforming have been treated as two separate tasks conventionally, which makes it difficult to achieve global system optimality. In this paper, we propose an augmented deep unfolding (ADU) approach that jointly optimizes the beamforming scheme at the BSs and the channel quantization scheme at the users. In particular, the classic WMMSE beamformer is unrolled and a deep neural network (DNN) is leveraged to preprocess its input to enhance the performance. The variational information bottleneck technique is adopted to further improve the performance when the feedback capacity is strictly restricted. Simulation results demonstrate that the proposed ADU method outperforms all the benchmark schemes in terms of the system average rate.}
+}
+
+@inproceedings{cao2022information,
+  title={Information Bottleneck Based Joint Feedback and Channel Learning in FDD Massive MIMO Systems},
+  author={Cao, Jiaqi and Lian, Lixiang},
+  booktitle={GLOBECOM 2022 - 2022 IEEE Global Communications Conference},
+  year={2022},
+  abstract={Channel sate acquisition in frequency-division du-plexing (FDD) massive MIMO system is challenging due to the huge feedback overhead. Machine learning (ML) has emerged as a powerful technology to address this challenge. In this paper, we resort to information bottleneck (IB) theoretical principle to design a joint feedback compression, quantization and channel learning algorithm in FDD massive MIMO systems, called IBNet. Compared to the existing ML-based designs, the proposed IBNet can systematically seek for the optimal balance between the channel estimation accuracy and feedback overhead. To auto-matically learn the feedback compression, a sparsity inducing prior is utilized to sparsify the feature vector, thereby reducing the feedback overhead significantly. Furthermore, to improve the generality of proposed IBNet, we propose an adaptive IBNet, which can adapt to different channel conditions with one neural network. Simulation results show that the proposed scheme significantly reduces the feedback overhead, meanwhile improving the channel estimation accuracy.}
+}
+
+@article{arvinte2020eq,
+  title={EQ-Net: A Unified Deep Learning Framework for Log-Likelihood Ratio Estimation and Quantization},
+  author={Arvinte, Marius and Tewfik, Ahmed H. and Vishwanath, Sriram},
+  journal={arXiv preprint arXiv:2008.08735},
+  year={2020},
+  abstract={In this work, we introduce EQ-Net: the first holistic framework that solves both the tasks of log-likelihood ratio (LLR) estimation and quantization using a data-driven method. We motivate our approach with theoretical insights on two practical estimation algorithms at the ends of the complexity spectrum and reveal a connection between the complexity of an algorithm and the information bottleneck method: simpler algorithms admit smaller bottlenecks when representing their solution. This motivates us to propose a two-stage algorithm that uses LLR compression as a pretext task for estimation and is focused on low-latency, high-performance implementations via deep neural networks. We carry out extensive experimental evaluation and demonstrate that our single architecture achieves state-of-the-art results on both tasks when compared to previous methods, with gains in quantization efficiency as high as $20\%$ and reduced estimation latency by up to $60\%$ when measured on general purpose and graphical processing units (GPU). In particular, our approach reduces the GPU inference latency by more than two times in several multiple-input multiple-output (MIMO) configurations. Finally, we demonstrate that our scheme is robust to distributional shifts and retains a significant part of its performance when evaluated on 5G channel models, as well as channel estimation errors.}
+}
+
+@article{shlezinger2021deep,
+  title={Deep Task-Based Quantization},
+  author={Shlezinger, Nir and Eldar, Yonina C.},
+  journal={Entropy},
+  year={2021},
+  abstract={Quantizers play a critical role in digital signal processing systems. Recent works have shown that the performance of acquiring multiple analog signals using scalar analog-to-digital converters (ADCs) can be significantly improved by processing the signals prior to quantization. However, the design of such hybrid quantizers is quite complex, and their implementation requires complete knowledge of the statistical model of the analog signal. In this work we design data-driven task-oriented quantization systems with scalar ADCs, which determine their analog-to-digital mapping using deep learning tools. These mappings are designed to facilitate the task of recovering underlying information from the quantized signals. By using deep learning, we circumvent the need to explicitly recover the system model and to find the proper quantization rule for it. Our main target application is multiple-input multiple-output (MIMO) communication receivers, which simultaneously acquire a set of analog signals, and are commonly subject to constraints on the number of bits. Our results indicate that, in a MIMO channel estimation setup, the proposed deep task-bask quantizer is capable of approaching the optimal performance limits dictated by indirect rate-distortion theory, achievable using vector quantizers and requiring complete knowledge of the underlying statistical model. Furthermore, for a symbol detection scenario, it is demonstrated that the proposed approach can realize reliable bit-efficient hybrid MIMO receivers capable of setting their quantization rule in light of the task.}
+}
+
+@article{zou2022goal,
+  title={Goal-Oriented Quantization: Analysis, Design, and Application to Resource Allocation},
+  author={Zou, Hang and Zhang, Chao and Lasaulce, Samson and Saludjian, Lucas and Poor, H. Vincent},
+  journal={IEEE Journal on Selected Areas in Communications},
+  year={2022},
+  abstract={In this paper, the situation in which a receiver has to execute a task from a quantized version of the information source of interest is considered. The task is modeled by the minimization problem of a general goal function $f(x;g)$ for which the decision $x$ has to be taken from a quantized version of the parameters $g$. This problem is relevant in many applications, e.g., for radio resource allocation (RA), high spectral efficiency communications, controlled systems, or data clustering in the smart grid. By resorting to high resolution (HR) analysis, it is shown how to design a quantizer that minimizes the gap between the minimum of $f$ (which would be reached by knowing $g$ perfectly) and what is effectively reached with a quantized $g$. The conducted formal analysis both provides quantization strategies in the HR regime and insights for the general regime and allows a practical algorithm to be designed. The analysis also allows one to provide some elements to the new and fundamental problem of the relationship between the goal function regularity properties and the hardness to quantize its parameters. The derived results are discussed and supported by a rich numerical performance analysis in which known RA goal functions are studied and allows one to exhibit very significant improvements by tailoring the quantization operation to the final task.}
+}
+
+@article{mostaani2022task,
+  title={Task-Oriented Data Compression for Multi-Agent Communications Over Bit-Budgeted Channels},
+  author={Mostaani, Arsham and Vu, Thang X. and Chatzinotas, Symeon and Ottersten, Bj{\"o}rn},
+  journal={IEEE Open Journal of the Communications Society},
+  year={2022},
+  abstract={Various applications for inter-machine communications are on the rise. Whether it is for autonomous driving vehicles or the internet of everything, machines are more connected than ever to improve their performance in fulfilling a given task. While in traditional communications the goal has often been to reconstruct the underlying message, under the emerging task-oriented paradigm, the goal of communication is to enable the receiving end to make more informed decisions or more precise estimates/computations. Motivated by these recent developments, in this paper, we perform an indirect design of the communications in a multi-agent system (MAS) in which agents cooperate to maximize the averaged sum of discounted one-stage rewards of a collaborative task. Due to the bit-budgeted communications between the agents, each agent should efficiently represent its local observation and communicate an abstracted version of the observations to improve the collaborative task performance. We first show that this problem can be approximated as a form of data-quantization problem which we call task-oriented data compression (TODC). We then introduce the state-aggregation for information compression algorithm (SAIC) to solve the formulated TODC problem. It is shown that SAIC is able to achieve near-optimal performance in terms of the achieved sum of discounted rewards. The proposed algorithm is applied to a geometric consensus problem and its performance is compared with several benchmarks. Numerical experiments confirm the promise of this indirect design approach for task-oriented multi-agent communications.}
+}
+
+@article{gao2020resource,
+  title={Resource Allocation via Graph Neural Networks in Free Space Optical Fronthaul Networks},
+  author={Gao, Zhan and Eisen, Mark and Ribeiro, Alejandro},
+  journal={arXiv preprint arXiv:2012.02324},
+  year={2020},
+  abstract={This paper investigates the optimal resource allocation in free space optical (FSO) fronthaul networks. The optimal allocation maximizes an average weighted sum-capacity subject to power limitation and data congestion constraints. Both adaptive power assignment and node selection are considered based on the instantaneous channel state information (CSI) of the links. By parameterizing the resource allocation policy, we formulate the problem as an unsupervised statistical learning problem. We consider the graph neural network (GNN) for the policy parameterization to exploit the FSO network structure with small-scale training parameters. The GNN is shown to retain the permutation equivariance that matches with the permutation equivariance of resource allocation policy in networks. The primal-dual learning algorithm is developed to train the GNN in a model-free manner, where the knowledge of system models is not required. Numerical simulations present the strong performance of the GNN relative to a baseline policy with equal power assignment and random node selection.}
+}
+
+@article{syahran2026solving,
+  title={Solving Integrated Access Backhaul Frequency Allocation Problem with Graph-Based Deep Reinforcement Learning},
+  author={Syahran, Raihan Muhammad and Ro, Wonwoo and Choi, Kae-Won},
+  journal={The Journal of Korean Institute of Communications and Information Sciences},
+  year={2026},
+  abstract={We present a novel deep reinforcement learning (DRL) framework for ultra-dense integrated access and backhaul (IAB) frequency allocation, formulated as a combinatorial optimization problem. Our approach leverages graph neural networks (GNNs) to model the network as a graph optimization task, capturing intricate spatial dependencies. To further enhance learning, we integrate a transformer-based attention mechanism that dynamically prioritizes critical factors such as channel states, interference patterns, and resource allocation states. Unlike conventional time-based DRL optimization methods, our framework employs an iterative optimization approach that allocates one resource per step, thereby effectively addressing the curse of dimensionality in DRL.}
+}
+
+@article{danaee2024relevance,
+  title={Relevance-Based Information Processing for Fronthaul Rate Reduction in Cell-Free MIMO Systems},
+  author={Danaee, Alireza and Hassanpour, Shayan and W{\"u}bben, Dirk and Dekorsy, Armin},
+  journal={Unknown},
+  year={2024},
+  abstract={Consider a user equipment in a Cell-Free massive Multiple-Input Multiple-Output (CF-mMIMO) system that is served by several Radio Access Points (RAPs). In the uplink of this setup, these RAPs receive noisy observations of the user/source signal and must locally compress their signals before forwarding them to the Central Processing Unit (CPU) through multiple rate-limited fronthaul channels. To retrieve the source signal at CPU, we are interested in maximizing the Mutual Information (MI) between the received signals at CPU and the user/source signal, and purposefully choose the Information Bottleneck (IB)-based compression techniques to design the quantizers at RAPs. We consider both separate and joint designs of the local compressors by establishing basic trade-offs between the informativity and compactness of the outcomes. For the joint design, two different schemes are presented, based on whether to leverage the side-information at CPU. Finally, the effectiveness of both compression schemes will be shown as well by means of numerical investigations over typical digital data transmission scenarios.}
+}
+
+@article{danaee2025relevance,
+  title={Relevance-Based Multi-User Data Compression for Fronthaul Rate Reduction in Cell-Free Massive MIMO Systems},
+  author={Danaee, Alireza and Hassanpour, Shayan and W{\"u}bben, Dirk and Dekorsy, Armin},
+  journal={Unknown},
+  year={2025},
+  abstract={In the Cell-Free massive Multiple-Input MultipleOutput (CF-mMIMO) systems, a large number of distributed users are simultaneously served by multiple Radio Access Points (RAPs). In the uplink, each RAP receives noisy observations from several users and must locally compress these signals before forwarding them to the corresponding Central Processing Unit (CPU) via multiple fronthaul channels, each subject to a rate limitation. The challenge is to design the compressed signals at the RAPs such that the received signals at the CPU retain as much information as possible about the users (to be retrieved). To address this, we adopt compression techniques based on the Information Bottleneck (IB) principle to design local quantizers at the RAPs by ensuring an efficient balance between the informativity and compactness of the compressed signals. We discuss here two different compression schemes: one that processes the signals independently across fronthaul links and another that leverages the side information from previously retrieved signals at the CPU. By using side information, the latter generally provides a better tradeoff between the compression efficiency and performance, albeit with an increased complexity. Through numerical simulations, we demonstrate the effectiveness of both IB-based schemes compared to the conventional compression methods, showing their potential for improving fronthaul rate efficiency and overall system performance in typical digital transmission scenarios.}
+}
+
+@article{feys2025learning,
+  title={Learning to Quantize and Precode in Massive MIMO Systems for Energy Reduction: A Graph Neural Network Approach},
+  author={Feys, Thomas and Van der Perre, Liesbet and Rottenberg, Fran{\c{c}}ois},
+  journal={IEEE Journal of Selected Topics in Signal Processing},
+  year={2025},
+  abstract={Massive MIMO systems are moving toward increased numbers of radio frequency chains, higher carrier frequencies and larger bandwidths. As such, digital-to-analog converters (DACs) are becoming a bottleneck in terms of hardware complexity and power consumption. In this work, non-linear precoding for coarsely quantized downlink massive MIMO is studied. Given the NP-hard nature of this problem, a graph neural network (GNN) is proposed that directly outputs the precoded quantized vector based on the channel matrix and the intended transmit symbols. The model is trained in a self-supervised manner, by directly maximizing the achievable rate. To overcome the non-differentiability of the objective function, introduced due to the non-differentiable DAC functions, a straight-through Gumbel-softmax estimation of the gradient is proposed. The proposed method achieves a significant increase in achievable sum rate under coarse quantization. For instance, in the single-user case, the proposed method can achieve the same sum rate as maximum ratio transmission (MRT) by using one-bit DACs as compared to 3 bits for MRT. This reduces the DAC's power consumption by a factor 4-7 and 3 for baseband and RF DACs respectively. This, however, comes at the cost of increased digital signal processing power consumption. When accounting for this, the reduction in overall power consumption holds for a system bandwidth up to 3.5 MHz for baseband DACs, while the RF DACs can maintain a power reduction of 2.9 for higher bandwidths. Notably, indirect effects, which further reduce the power consumption, such as a reduced fronthaul consumption and reductions in other components, are not considered in this analysis.}
+}
+
+@article{xie2026meta,
+  title={Meta-Learning-Enhanced GNN Approach for Signal Compression in Uplink Cell-Free MIMO Networks},
+  author={Xie, Junyu and Guo, Jing and Wang, Siqiang and Yu, Hanxiao and Zheng, Zhong and Fei, Zesong},
+  journal={IEEE Transactions on Vehicular Technology},
+  year={2026},
+  abstract={In this work, we investigate the uplink signal compression problem for fronthaul-constrained cell-free (CF) multiple-input multiple-output (MIMO) networks. Considering the dynamic nature of wireless communications, e.g., the varying number of accessing users and the changing rate requirements, we propose a scalable and adaptive approach by integrating graph neural network (GNN) with meta-learning. In particular, the problem of maximizing the achievable uplink sum rate is formulated by optimizing the beamforming matrix of each access point (AP), while accounting for the requirement of user rate. To tackle this non-convex optimization problem, we develop a joint-Reptile-enhanced GNN approach. Therein, the uplink CF-MIMO network is modeled as a heterogeneous graph with cooperative node features, and the joint-Reptile approach is employed to obtain adaptive and generalizable meta-parameters, enabling rapid adaptation to dynamic CF-MIMO networks. Simulation results demonstrate that the proposed approach exhibits better adaptability compared to conventional initialization benchmarks. Moreover, it can achieve higher sum rate performance across various signal dimensions, while maintaining scalability.}
+}
+
+@article{guo2026cell,
+  title={Cell-free massive MIMO signal detector fused with multi-head attention by graph neural network},
+  author={Guo, Shihao and Zhang, Xiaohui and Zhang, Gaoyuan},
+  journal={Physical Communication},
+  year={2026},
+  abstract={}
+}
+

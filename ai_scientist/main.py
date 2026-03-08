@@ -13,7 +13,7 @@ logger = setup_logger("experiment_run.log")
 def main():
     # =========================================Parameter Configurations==============================================
     # Parameters for idea generation
-    MODEL = 'gemini-3-flash-preview'
+    MODEL = 'gemini-3-pro-preview'
     THEME_FILE_PATH = 'theme_idea_gen.txt'
     N_PARALLEL_IDEA_GENERATOR = 3
     MAX_STUDENT_ITERS = 2
@@ -121,7 +121,7 @@ def main():
     # generate and execute detailed experiment plans
     # run experiment
     logger.info(f"Starting Experiment Execution...")
-    plan_and_execute_experiments(parser_experiment.parse_args())
+    # plan_and_execute_experiments(parser_experiment.parse_args())
     logger.info(f"Experiment Execution Finished.")
     logger.info(f"Starting Writeup Generation...")
     parser_writeup = argparse.ArgumentParser(description="生成科研文章")

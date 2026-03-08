@@ -1,0 +1,292 @@
+@article{He2020ModelDriven, 
+  title={Model-Driven Deep Learning for MIMO Detection}, 
+  author={Hengtao He and Chao-Kai Wen and Shi Jin and Geoffrey Ye Li}, 
+  journal={IEEE Transactions on Signal Processing}, 
+  year={2020}, 
+  volume={68}, 
+  pages={1702-1715}, 
+  publisher={IEEE}, 
+  abstract={In this paper, we investigate the model-driven deep learning (DL) for MIMO detection. In particular, the MIMO detector is specially designed by unfolding an iterative algorithm and adding some trainable parameters. Since the number of trainable parameters is much fewer than the data-driven DL based signal detector, the model-driven DL based MIMO detector can be rapidly trained with a much smaller data set. The proposed MIMO detector can be extended to soft-input soft-output detection easily. Furthermore, we investigate joint MIMO channel estimation and signal detection (JCESD), where the detector takes channel estimation error and channel statistics into consideration while channel estimation is refined by detected data and considers the detection error. Based on numerical results, the model-driven DL based MIMO detector significantly improves the performance of corresponding traditional iterative detector, outperforms other DL-based MIMO detectors and exhibits superior robustness to various mismatches.}
+}
+
+@article{Wei2020LearnedCG, 
+  title={Learned Conjugate Gradient Descent Network for Massive MIMO Detection}, 
+  author={Yi Wei and Mingyi Hong and Minjian Zhao and Ming Lei}, 
+  journal={IEEE Transactions on Signal Processing}, 
+  year={2020}, 
+  volume={68}, 
+  pages={6336-6349}, 
+  publisher={IEEE}, 
+  abstract={In this work, we consider the use of model-driven deep learning techniques for massive multiple-input multiple-output (MIMO) detection. Compared with conventional MIMO systems, massive MIMO promises improved spectral efficiency, coverage and range. Unfortunately, these benefits are at the expense of significantly increased computational complexity. To reduce the complexity of signal detection and guarantee the performance, we present a learned conjugate gradient descent network (LcgNet), which is constructed by unfolding the iterative conjugate gradient descent (CG) detector. In the proposed network, instead of calculating the exact values of the scalar step-sizes, we explicitly learn their universal values. Also, we can enhance the proposed network by augmenting the dimensions of these step-sizes. Furthermore, in order to reduce the memory costs, a novel quantized LcgNet is proposed, where a low-resolution nonuniform quantizer is used to quantize the learned parameters. The quantizer is based on a specially designed soft staircase function with learnable parameters to adjust its shape. Meanwhile, due to fact that the number of learnable parameters is limited, the proposed networks are relatively easy to train. Numerical results demonstrate that the proposed network can achieve promising performance with much lower complexity.}
+}
+
+@article{Sun2020LearningToSearch, 
+  title={Learning to Search for MIMO Detection}, 
+  author={Jianyong Sun and Yiqing Zhang and Jiang Xue and Zongben Xu}, 
+  journal={IEEE Transactions on Wireless Communications}, 
+  year={2020}, 
+  volume={19}, 
+  number={11}, 
+  pages={7371-7384}, 
+  publisher={IEEE}, 
+  abstract={This paper proposes a novel learning to learn method, called learning to learn iterative search algorithm (LISA), for signal detection in a multi-input multi-output (MIMO) system. The idea is to regard the signal detection problem as a decision making problem over tree. The goal is to learn the optimal decision policy. In LISA, deep neural networks are used as parameterized policy function. Through training, optimal parameters of the neural networks are learned and thus optimal policy can be approximated. Different neural network-based architectures are used for fixed and varying channel models, respectively. LISA provides soft decisions and does not require any information about the additive white Gaussian noise. Simulation results show that LISA 1) obtains near maximum likelihood detection performance in both fixed and varying channel models under QPSK modulation; 2) achieves significantly better bit error rate (BER) performance than classical detectors and recently proposed deep/machine learning based detectors at various modulations and signal to noise (SNR) ratios both under i.i.d and correlated Rayleigh fading channels in the simulation experiments; 3) is robust to MIMO detection problems with imperfect channel state information; and 4) generalizes very well against channel correlation and SNRs.}
+}
+
+@article{Shao2022Multidevice, 
+  title={Task-Oriented Communication for Multidevice Cooperative Edge Inference}, 
+  author={Jiawei Shao and Yuyi Mao and Jun Zhang}, 
+  journal={IEEE Transactions on Wireless Communications}, 
+  year={2022}, 
+  volume={21}, 
+  number={9}, 
+  pages={7358-7371}, 
+  publisher={IEEE}, 
+  abstract={This paper investigates task-oriented communication for multi-device cooperative edge inference, where a group of distributed low-end edge devices transmit the extracted features of local samples to a powerful edge server for inference. While cooperative edge inference can overcome the limited sensing capability of a single device, it substantially increases the communication overhead and may incur excessive latency. To enable low-latency cooperative inference, we propose a learning-based communication scheme that optimizes local feature extraction and distributed feature encoding in a task-oriented manner, i.e., to remove data redundancy and transmit information that is essential for the downstream inference task rather than reconstructing the data samples at the edge server. Specifically, we leverage Tishby’s information bottleneck (IB) principle to extract the task-relevant feature at each edge device, and adopt the distributed information bottleneck (DIB) framework to formalize a single-letter characterization of the optimal rate-relevance tradeoff for distributed feature encoding. To admit flexible control of the communication overhead, we extend the DIB framework to a distributed deterministic information bottleneck (DDIB) objective that explicitly incorporates the representational costs of the encoded features. As the IB-based objectives are computationally prohibitive for high-dimensional data, we adopt variational approximations to make the optimization problems tractable. To compensate for the potential performance loss due to the variational approximations, we also develop a selective retransmission (SR) mechanism to identify the redundancy in the encoded features among multiple edge devices to attain additional communication overhead reduction. Extensive experiments on multi-view image classification and multi-view object recognition tasks evidence that the proposed task-oriented communication scheme achieves a better rate-relevance tradeoff than existing methods.}
+}
+
+@article{Shao2021IBApproach, 
+  title={Learning Task-Oriented Communication for Edge Inference: An Information Bottleneck Approach}, 
+  author={Jiawei Shao and Yuyi Mao and Jun Zhang}, 
+  journal={IEEE Journal on Selected Areas in Communications}, 
+  year={2021}, 
+  volume={39}, 
+  number={11}, 
+  pages={3468-3482}, 
+  publisher={IEEE}, 
+  abstract={This paper investigates task-oriented communication for edge inference, where a low-end edge device transmits the extracted feature vector of a local data sample to a powerful edge server for processing. It is critical to encode the data into an informative and compact representation for low-latency inference given the limited bandwidth. We propose a learning-based communication scheme that jointly optimizes feature extraction, source coding, and channel coding in a task-oriented manner, i.e., targeting the downstream inference task rather than data reconstruction. Specifically, we leverage an information bottleneck (IB) framework to formalize a rate-distortion tradeoff between the informativeness of the encoded feature and the inference performance. As the IB optimization is computationally prohibitive for the high-dimensional data, we adopt a variational approximation, namely the variational information bottleneck (VIB), to build a tractable upper bound. To reduce the communication overhead, we leverage a sparsity-inducing distribution as the variational prior for the VIB framework to sparsify the encoded feature vector. Furthermore, considering dynamic channel conditions in practical communication systems, we propose a variable-length feature encoding scheme based on dynamic neural networks to adaptively adjust the activated dimensions of the encoded feature to different channel conditions. Extensive experiments evidence that the proposed task-oriented communication system achieves a better rate-distortion tradeoff than baseline methods and significantly reduces the feature transmission latency in dynamic channel conditions.}
+}
+
+@article{Wen2023Integration, 
+  title={Task-Oriented Sensing, Computation, and Communication Integration for Multi-Device Edge AI}, 
+  author={Dingzhu Wen and Peixi Liu and Guangxu Zhu and Yuanming Shi and Jie Xu and Yonina C. Eldar and Shuguang Cui}, 
+  journal={IEEE Transactions on Wireless Communications}, 
+  year={2023}, 
+  volume={23}, 
+  number={1}, 
+  pages={1-16}, 
+  publisher={IEEE}, 
+  abstract={This paper studies a new multi-device edge artificial-intelligent (AI) system, which jointly exploits the AI model split inference and integrated sensing and communication (ISAC) to enable low-latency intelligent services at the network edge. In this system, multiple ISAC devices perform radar sensing to obtain multi-view data, and then offload the quantized version of extracted features to a centralized edge server, which conducts model inference based on the cascaded feature vectors. Under this setup and by considering classification tasks, we measure the inference accuracy by adopting an approximate but tractable metric, namely discriminant gain, which is defined as the distance of two classes in the Euclidean feature space under normalized covariance. To maximize the discriminant gain, we first quantify the influence of the sensing, computation, and communication processes on it with a derived closed-form expression. Then, an end-to-end task-oriented resource management approach is developed by integrating the three processes into a joint design. This integrated sensing, computation, and communication (ISCC) design approach, however, leads to a challenging non-convex optimization problem, due to the complicated form of discriminant gain and the device heterogeneity in terms of channel gain, quantization level, and generated feature subsets. Remarkably, the considered non-convex problem can be optimally solved based on the sum-of-ratios method. This gives the optimal ISCC scheme, that jointly determines the transmit power and time allocation at multiple devices for sensing and communication, as well as their quantization bits allocation for computation distortion control. By using human motions recognition as a concrete AI inference task, extensive experiments are conducted to verify the performance of our derived optimal ISCC scheme.}
+}
+
+@article{Rajapaksha2023Unsupervised, 
+  title={Unsupervised Learning-Based Joint Power Control and Fronthaul Capacity Allocation in Cell-Free Massive MIMO With Hardware Impairments}, 
+  author={Nuwanthika Rajapaksha and K. B. Shashika Manosha and Nandana Rajatheva and Matti Latva-aho}, 
+  journal={IEEE Wireless Communications Letters}, 
+  year={2023}, 
+  volume={12}, 
+  number={3}, 
+  pages={1-5}, 
+  publisher={IEEE}, 
+  abstract={A deep learning-based resource allocation algorithm that maximizes the sum rate of a limited fronthaul cell-free massive MIMO network with transceiver hardware impairments is proposed in this paper. The sum rate maximization problem with user power constraints and total fronthaul capacity constraints for channel state information (CSI) and data transmission is considered. The deep neural network (DNN) PowerNet is proposed to learn solutions to the joint power control and capacity allocation problem in a low-complex, flexible, and scalable way. An unsupervised learning approach is used which eliminates the need of knowing the optimal resource allocation vectors during model training, hence having a simpler and more flexible model training stage. Numerical simulations show that PowerNet achieves close sum rate performance compared to the existing optimization-based approach, with a significantly lower time complexity which does not exponentially scale with the number of users and access points (APs) in the network. Furthermore, the addition of the online learning stage resulted in a better sum rate than the optimization-based method.}
+}
+
+@article{Puligheddu2023SEMORAN, 
+  title={SEM-O-RAN: Semantic O-RAN Slicing for Mobile Edge Offloading of Computer Vision Tasks}, 
+  author={Corrado Puligheddu and Jonathan Ashdown and Carla Fabiana Chiasserini and Francesco Restuccia}, 
+  journal={IEEE Transactions on Mobile Computing}, 
+  year={2023}, 
+  publisher={IEEE}, 
+  abstract={The next generation of mobile networks (NextG) will require careful resource management to support edge offloading of resource-intensive deep learning (DL) tasks. Current slicing frameworks treat all DL tasks equally without adjusting to their high-level objectives, resulting in sub-optimal performance. To overcome this, we propose SEM-O-RAN, a semantic and flexible slicing framework for computer vision task offloading in NextG Open RANs. Our framework accounts for the semantic nature of object classes as well as the level of data quality to optimally tailor data compression and minimize the usage of networking and computing resources. In fact, we show that different object classes tolerate different levels of image compression while preserving detection accuracy. To address the above issues, we first present the mathematical formulation of the Semantic Flexible Edge Slicing Problem (SF-ESP), which turns out to be NP-hard. We thus define a greedy algorithm to solve it efficiently, which is also able to always select the resource allocation that yields the best resource utilization, whenever multiple allocations satisfy the DL task requirements. We evaluate SEM-O-RAN's performance through extensive numerical analysis and real-world experiments on the Colosseum testbed, considering state-of-the-art computer-vision tasks and DL models. The obtained results demonstrate that SEM-O-RAN allocates up to 169% more tasks and obtains 52% higher revenues than the state of the art.}
+}
+
+@article{Polese2023Understanding, 
+  title={Understanding O-RAN: Architecture, Interfaces, Algorithms, Security, and Research Challenges}, 
+  author={Michele Polese and Leonardo Bonati and Salvatore D’Oro and Stefano Basagni and Tommaso Melodia}, 
+  journal={IEEE Communications Surveys & Tutorials}, 
+  year={2023}, 
+  publisher={IEEE}, 
+  abstract={The Open Radio Access Network (RAN) and its embodiment through the O-RAN Alliance specifications are poised to revolutionize the telecom ecosystem. O-RAN promotes virtualized RANs where disaggregated components are connected via open interfaces and optimized by intelligent controllers. The result is a new paradigm for the RAN design, deployment, and operations: O-RAN networks can be built with multivendor, interoperable components, and can be programmatically optimized through a centralized abstraction layer and datadriven closed-loop control. Therefore, understanding O-RAN, its architecture, its interfaces, and workflows is key for researchers and practitioners in the wireless community. In this article, we present the first detailed tutorial on O-RAN. We also discuss the main research challenges and review early research results. We provide a deep dive of the O-RAN specifications, describing its architecture, design principles, and the O-RAN interfaces. We then describe how the O-RAN RAN Intelligent Controllers (RICs) can be used to effectively control and manage 3GPP-defined RANs. Based on this, we discuss innovations and challenges of O-RAN networks, including the Artificial Intelligence (AI) and Machine Learning (ML) workflows that the architecture and interfaces enable, security, and standardization issues. Finally, we review experimental research platforms that can be used to design and test O-RAN networks, along with recent research results, and we outline future directions for O-RAN development.}
+}
+
+@article{Shlezinger2021DeepTask, 
+  title={Deep Task-Based Quantization}, 
+  author={Nir Shlezinger and Yonina C. Eldar}, 
+  journal={Entropy}, 
+  year={2021}, 
+  volume={23}, 
+  number={1}, 
+  pages={104}, 
+  publisher={MDPI}, 
+  abstract={Quantizers play a critical role in digital signal processing systems. Recent works have shown that the performance of acquiring multiple analog signals using scalar analog-to-digital converters (ADCs) can be significantly improved by processing the signals prior to quantization. However, the design of such hybrid quantizers is quite complex, and their implementation requires complete knowledge of the statistical model of the analog signal. In this work we design data-driven task-oriented quantization systems with scalar ADCs, which determine their analog-to-digital mapping using deep learning tools. These mappings are designed to facilitate the task of recovering underlying information from the quantized signals. By using deep learning, we circumvent the need to explicitly recover the system model and to find the proper quantization rule for it. Our main target application is multiple-input multiple-output (MIMO) communication receivers, which simultaneously acquire a set of analog signals, and are commonly subject to constraints on the number of bits. Our results indicate that, in a MIMO channel estimation setup, the proposed deep task-bask quantizer is capable of approaching the optimal performance limits dictated by indirect rate-distortion theory, achievable using vector quantizers and requiring complete knowledge of the underlying statistical model. Furthermore, for a symbol detection scenario, it is demonstrated that the proposed approach can realize reliable bit-efficient hybrid MIMO receivers capable of setting their quantization rule in light of the task.}
+}
+
+@article{Zou2022GoalOriented, 
+  title={Goal-Oriented Quantization: Analysis, Design, and Application to Resource Allocation}, 
+  author={Hang Zou and Chao Zhang and Samson Lasaulce and Lucas Saludjian and H. Vincent Poor}, 
+  journal={IEEE Journal on Selected Areas in Communications}, 
+  year={2022}, 
+  volume={40}, 
+  number={1}, 
+  pages={1-16}, 
+  publisher={IEEE}, 
+  abstract={In this paper, the situation in which a receiver has to execute a task from a quantized version of the information source of interest is considered. The task is modeled by the minimization problem of a general goal function for which the decision has to be taken from a quantized version of the parameters. This problem is relevant in many applications, e.g., for radio resource allocation (RA), high spectral efficiency communications, controlled systems, or data clustering in the smart grid. By resorting to high resolution (HR) analysis, it is shown how to design a quantizer that minimizes the gap between the minimum of the goal function (which would be reached by knowing the parameters perfectly) and what is effectively reached with a quantized version. The conducted formal analysis both provides quantization strategies in the HR regime and insights for the general regime and allows a practical algorithm to be designed. The analysis also allows one to provide some elements to the new and fundamental problem of the relationship between the goal function regularity properties and the hardness to quantize its parameters. The derived results are discussed and supported by a rich numerical performance analysis in which known RA goal functions are studied and allows one to exhibit very significant improvements by tailoring the quantization operation to the final task.}
+}
+
+@article{Lan2021SemanticComm, 
+  title={What is Semantic Communication? A View on Conveying Meaning in the Era of Machine Intelligence}, 
+  author={Qiao Lan and Dingzhu Wen and Zezhong Zhang and Qunsong Zeng and Xu Chen and Petar Popovski and Kaibin Huang}, 
+  journal={Journal of Communications and Information Networks}, 
+  year={2021}, 
+  volume={6}, 
+  number={4}, 
+  pages={336-371}, 
+  publisher={PTP}, 
+  abstract={In the 1940s, Claude Shannon developed the information theory focusing on quantifying the maximum data rate that can be supported by a communication channel. Guided by this fundamental work, the main theme of wireless system design up until the fifth generation (5G) was the data rate maximization. In Shannon's theory, the semantic aspect and meaning of messages were treated as largely irrelevant to communication. The classic theory started to reveal its limitations in the modern era of machine intelligence, consisting of the synergy between Internet-of-things (IoT) and artificial intelligence (AI). By broadening the scope of the classic communication-theoretic framework, in this article, we present a view of semantic communication (SemCom) and conveying meaning through the communication systems. We address three communication modalities: human-to-human (H2H), human-to-machine (H2M), and machine-to-machine (M2M) communications. The latter two represent the paradigm shift in communication and computing, and define the main theme of this article. H2M SemCom refers to semantic techniques for conveying meanings understandable not only by humans but also by machines so that they can have interaction and dialogue. On the other hand, M2M SemCom refers to effective techniques for efficiently connecting multiple machines such that they can effectively execute a specific computation task in a wireless network. The first part of this article focuses on introducing the SemCom principles including encoding, layered system architecture, and two design approaches: 1) layer-coupling design; and 2) end-to-end design using a neural network. The second part focuses on the discussion of specific techniques for different application areas of H2M SemCom and M2M SemCom (including distributed learning, split inference, distributed consensus, and machine-vision cameras). Finally, we discuss the approach for designing SemCom systems based on knowledge graphs.}
+}
+
+@article{Shlezinger2021DeepTask, 
+  title={Deep Task-Based Quantization}, 
+  author={Nir Shlezinger and Yonina C. Eldar}, 
+  journal={Entropy}, 
+  year={2021}, 
+  volume={23}, 
+  number={1}, 
+  pages={104}, 
+  publisher={MDPI}, 
+  abstract={Quantizers play a critical role in digital signal processing systems. Recent works have shown that the performance of acquiring multiple analog signals using scalar analog-to-digital converters (ADCs) can be significantly improved by processing the signals prior to quantization. However, the design of such hybrid quantizers is quite complex, and their implementation requires complete knowledge of the statistical model of the analog signal. In this work we design data-driven task-oriented quantization systems with scalar ADCs, which determine their analog-to-digital mapping using deep learning tools. These mappings are designed to facilitate the task of recovering underlying information from the quantized signals. By using deep learning, we circumvent the need to explicitly recover the system model and to find the proper quantization rule for it. Our main target application is multiple-input multiple-output (MIMO) communication receivers, which simultaneously acquire a set of analog signals, and are commonly subject to constraints on the number of bits. Our results indicate that, in a MIMO channel estimation setup, the proposed deep task-bask quantizer is capable of approaching the optimal performance limits dictated by indirect rate-distortion theory, achievable using vector quantizers and requiring complete knowledge of the underlying statistical model. Furthermore, for a symbol detection scenario, it is demonstrated that the proposed approach can realize reliable bit-efficient hybrid MIMO receivers capable of setting their quantization rule in light of the task.}
+}
+
+@article{Zou2022GoalOriented, 
+  title={Goal-Oriented Quantization: Analysis, Design, and Application to Resource Allocation}, 
+  author={Hang Zou and Chao Zhang and Samson Lasaulce and Lucas Saludjian and H. Vincent Poor}, 
+  journal={IEEE Journal on Selected Areas in Communications}, 
+  year={2022}, 
+  volume={40}, 
+  number={1}, 
+  pages={1-16}, 
+  publisher={IEEE}, 
+  abstract={In this paper, the situation in which a receiver has to execute a task from a quantized version of the information source of interest is considered. The task is modeled by the minimization problem of a general goal function for which the decision has to be taken from a quantized version of the parameters. This problem is relevant in many applications, e.g., for radio resource allocation (RA), high spectral efficiency communications, controlled systems, or data clustering in the smart grid. By resorting to high resolution (HR) analysis, it is shown how to design a quantizer that minimizes the gap between the minimum of the goal function (which would be reached by knowing the parameters perfectly) and what is effectively reached with a quantized version. The conducted formal analysis both provides quantization strategies in the HR regime and insights for the general regime and allows a practical algorithm to be designed. The analysis also allows one to provide some elements to the new and fundamental problem of the relationship between the goal function regularity properties and the hardness to quantize its parameters. The derived results are discussed and supported by a rich numerical performance analysis in which known RA goal functions are studied and allows one to exhibit very significant improvements by tailoring the quantization operation to the final task.}
+}
+
+@article{Lan2021SemanticComm, 
+  title={What is Semantic Communication? A View on Conveying Meaning in the Era of Machine Intelligence}, 
+  author={Qiao Lan and Dingzhu Wen and Zezhong Zhang and Qunsong Zeng and Xu Chen and Petar Popovski and Kaibin Huang}, 
+  journal={Journal of Communications and Information Networks}, 
+  year={2021}, 
+  volume={6}, 
+  number={4}, 
+  pages={336-371}, 
+  publisher={PTP}, 
+  abstract={In the 1940s, Claude Shannon developed the information theory focusing on quantifying the maximum data rate that can be supported by a communication channel. Guided by this fundamental work, the main theme of wireless system design up until the fifth generation (5G) was the data rate maximization. In Shannon's theory, the semantic aspect and meaning of messages were treated as largely irrelevant to communication. The classic theory started to reveal its limitations in the modern era of machine intelligence, consisting of the synergy between Internet-of-things (IoT) and artificial intelligence (AI). By broadening the scope of the classic communication-theoretic framework, in this article, we present a view of semantic communication (SemCom) and conveying meaning through the communication systems. We address three communication modalities: human-to-human (H2H), human-to-machine (H2M), and machine-to-machine (M2M) communications. The latter two represent the paradigm shift in communication and computing, and define the main theme of this article. H2M SemCom refers to semantic techniques for conveying meanings understandable not only by humans but also by machines so that they can have interaction and dialogue. On the other hand, M2M SemCom refers to effective techniques for efficiently connecting multiple machines such that they can effectively execute a specific computation task in a wireless network. The first part of this article focuses on introducing the SemCom principles including encoding, layered system architecture, and two design approaches: 1) layer-coupling design; and 2) end-to-end design using a neural network. The second part focuses on the discussion of specific techniques for different application areas of H2M SemCom and M2M SemCom (including distributed learning, split inference, distributed consensus, and machine-vision cameras). Finally, we discuss the approach for designing SemCom systems based on knowledge graphs.}
+}
+
+@article{Fishel2025RemoteInference, 
+  title={Remote Inference Over Dynamic Links via Adaptive Rate Deep Task-Oriented Vector Quantization}, 
+  author={Eyal Fishel and May Malka and Shai Ginzach and Nir Shlezinger}, 
+  journal={IEEE Transactions on Signal Processing}, 
+  year={2025}, 
+  publisher={IEEE}, 
+  abstract={A broad range of technologies rely on remote inference, wherein data acquired is conveyed over a communication channel for inference in a remote server. Communication between the participating entities is often carried out over rate-limited channels, necessitating data compression for reducing latency. While deep learning facilitates joint design of the compression mapping along with encoding and inference rules, existing learned compression mechanisms are static, and struggle in adapting their resolution to changes in channel conditions and to dynamic links. To address this, we propose Adaptive Rate Task-Oriented Vector Quantization (ARTOVeQ), a learned compression mechanism that is tailored for remote inference over dynamic links. ARTOVeQ is based on designing nested codebooks along with a learning algorithm employing progressive learning. We show that ARTOVeQ extends to support low-latency inference that is gradually refined via successive refinement principles, and that it enables the simultaneous usage of multiple resolutions when conveying high-dimensional data. Numerical results demonstrate that the proposed scheme yields remote deep inference that operates with multiple rates, supports a broad range of bit budgets, and facilitates rapid inference that gradually improves with more bits exchanged, while approaching the performance of single-rate deep quantization methods.}
+}
+
+@article{Zou2022GoalOriented, 
+  title={Goal-Oriented Quantization: Analysis, Design, and Application to Resource Allocation}, 
+  author={Hang Zou and Chao Zhang and Samson Lasaulce and Lucas Saludjian and H. Vincent Poor}, 
+  journal={IEEE Journal on Selected Areas in Communications}, 
+  year={2022}, 
+  volume={40}, 
+  number={1}, 
+  pages={1-16}, 
+  publisher={IEEE}, 
+  abstract={In this paper, the situation in which a receiver has to execute a task from a quantized version of the information source of interest is considered. The task is modeled by the minimization problem of a general goal function for which the decision has to be taken from a quantized version of the parameters. This problem is relevant in many applications, e.g., for radio resource allocation (RA), high spectral efficiency communications, controlled systems, or data clustering in the smart grid. By resorting to high resolution (HR) analysis, it is shown how to design a quantizer that minimizes the gap between the minimum of the goal function (which would be reached by knowing the parameters perfectly) and what is effectively reached with a quantized version. The conducted formal analysis both provides quantization strategies in the HR regime and insights for the general regime and allows a practical algorithm to be designed. The analysis also allows one to provide some elements to the new and fundamental problem of the relationship between the goal function regularity properties and the hardness to quantize its parameters. The derived results are discussed and supported by a rich numerical performance analysis in which known RA goal functions are studied and allows one to exhibit very significant improvements by tailoring the quantization operation to the final task.}
+}
+
+@article{Shlezinger2021DeepTask, 
+  title={Deep Task-Based Quantization}, 
+  author={Nir Shlezinger and Yonina C. Eldar}, 
+  journal={Entropy}, 
+  year={2021}, 
+  volume={23}, 
+  number={1}, 
+  pages={104}, 
+  publisher={MDPI}, 
+  abstract={Quantizers play a critical role in digital signal processing systems. Recent works have shown that the performance of acquiring multiple analog signals using scalar analog-to-digital converters (ADCs) can be significantly improved by processing the signals prior to quantization. However, the design of such hybrid quantizers is quite complex, and their implementation requires complete knowledge of the statistical model of the analog signal. In this work we design data-driven task-oriented quantization systems with scalar ADCs, which determine their analog-to-digital mapping using deep learning tools. These mappings are designed to facilitate the task of recovering underlying information from the quantized signals. By using deep learning, we circumvent the need to explicitly recover the system model and to find the proper quantization rule for it. Our main target application is multiple-input multiple-output (MIMO) communication receivers, which simultaneously acquire a set of analog signals, and are commonly subject to constraints on the number of bits. Our results indicate that, in a MIMO channel estimation setup, the proposed deep task-bask quantizer is capable of approaching the optimal performance limits dictated by indirect rate-distortion theory, achievable using vector quantizers and requiring complete knowledge of the underlying statistical model. Furthermore, for a symbol detection scenario, it is demonstrated that the proposed approach can realize reliable bit-efficient hybrid MIMO receivers capable of setting their quantization rule in light of the task.}
+}
+
+@article{Feys2025LearningToQuantize, 
+  title={Learning to Quantize and Precode in Massive MIMO Systems for Energy Reduction: A Graph Neural Network Approach}, 
+  author={Thomas Feys and Liesbet Van der Perre and Fran\c{c}ois Rottenberg}, 
+  journal={IEEE Journal of Selected Topics in Signal Processing}, 
+  year={2025}, 
+  publisher={IEEE}, 
+  abstract={Massive MIMO systems are moving toward increased numbers of radio frequency chains, higher carrier frequencies and larger bandwidths. As such, digital-to-analog converters (DACs) are becoming a bottleneck in terms of hardware complexity and power consumption. In this work, non-linear precoding for coarsely quantized downlink massive MIMO is studied. Given the NP-hard nature of this problem, a graph neural network (GNN) is proposed that directly outputs the precoded quantized vector based on the channel matrix and the intended transmit symbols. The model is trained in a self-supervised manner, by directly maximizing the achievable rate. To overcome the non-differentiability of the objective function, introduced due to the non-differentiable DAC functions, a straight-through Gumbel-softmax estimation of the gradient is proposed. The proposed method achieves a significant increase in achievable sum rate under coarse quantization. For instance, in the single-user case, the proposed method can achieve the same sum rate as maximum ratio transmission (MRT) by using one-bit DACs as compared to 3 bits for MRT. This reduces the DAC's power consumption by a factor 4-7 and 3 for baseband and RF DACs respectively. This, however, comes at the cost of increased digital signal processing power consumption. When accounting for this, the reduction in overall power consumption holds for a system bandwidth up to 3.5 MHz for baseband DACs, while the RF DACs can maintain a power reduction of 2.9 for higher bandwidths. Notably, indirect effects, which further reduce the power consumption, such as a reduced fronthaul consumption and reductions in other components, are not considered in this analysis.}
+}
+
+@article{Danaee2024RelevanceBased, 
+  title={Relevance-Based Information Processing for Fronthaul Rate Reduction in Cell-Free MIMO Systems}, 
+  author={Alireza Danaee and Shayan Hassanpour and Dirk Wübben and Armin Dekorsy}, 
+  journal={IEEE Transactions on Communications (Early Access) / arXiv preprint}, 
+  year={2024}, 
+  publisher={IEEE}, 
+  abstract={Consider a user equipment in a Cell-Free massive Multiple-Input Multiple-Output (CF-mMIMO) system that is served by several Radio Access Points (RAPs). In the uplink of this setup, these RAPs receive noisy observations of the user/source signal and must locally compress their signals before forwarding them to the Central Processing Unit (CPU) through multiple rate-limited fronthaul channels. To retrieve the source signal at CPU, we are interested in maximizing the Mutual Information (MI) between the received signals at CPU and the user/source signal, and purposefully choose the Information Bottleneck (IB)-based compression techniques to design the quantizers at RAPs. We consider both separate and joint designs of the local compressors by establishing basic trade-offs between the informativity and compactness of the outcomes. For the joint design, two different schemes are presented, based on whether to leverage the side-information at CPU. Finally, the effectiveness of both compression schemes will be shown as well by means of numerical investigations over typical digital data transmission scenarios.}
+}
+
+@article{Fishel2025RemoteInference, 
+  title={Remote Inference Over Dynamic Links via Adaptive Rate Deep Task-Oriented Vector Quantization}, 
+  author={Eyal Fishel and May Malka and Shai Ginzach and Nir Shlezinger}, 
+  journal={IEEE Transactions on Signal Processing}, 
+  year={2025}, 
+  publisher={IEEE}, 
+  abstract={A broad range of technologies rely on remote inference, wherein data acquired is conveyed over a communication channel for inference in a remote server. Communication between the participating entities is often carried out over rate-limited channels, necessitating data compression for reducing latency. While deep learning facilitates joint design of the compression mapping along with encoding and inference rules, existing learned compression mechanisms are static, and struggle in adapting their resolution to changes in channel conditions and to dynamic links. To address this, we propose Adaptive Rate Task-Oriented Vector Quantization (ARTOVeQ), a learned compression mechanism that is tailored for remote inference over dynamic links. ARTOVeQ is based on designing nested codebooks along with a learning algorithm employing progressive learning. We show that ARTOVeQ extends to support low-latency inference that is gradually refined via successive refinement principles, and that it enables the simultaneous usage of multiple resolutions when conveying high-dimensional data. Numerical results demonstrate that the proposed scheme yields remote deep inference that operates with multiple rates, supports a broad range of bit budgets, and facilitates rapid inference that gradually improves with more bits exchanged, while approaching the performance of single-rate deep quantization methods.}
+}
+
+@article{Feys2025LearningToQuantize, 
+  title={Learning to Quantize and Precode in Massive MIMO Systems for Energy Reduction: A Graph Neural Network Approach}, 
+  author={Thomas Feys and Liesbet Van der Perre and François Rottenberg}, 
+  journal={IEEE Journal of Selected Topics in Signal Processing}, 
+  year={2025}, 
+  publisher={IEEE}, 
+  abstract={Massive MIMO systems are moving toward increased numbers of radio frequency chains, higher carrier frequencies and larger bandwidths. As such, digital-to-analog converters (DACs) are becoming a bottleneck in terms of hardware complexity and power consumption. In this work, non-linear precoding for coarsely quantized downlink massive MIMO is studied. Given the NP-hard nature of this problem, a graph neural network (GNN) is proposed that directly outputs the precoded quantized vector based on the channel matrix and the intended transmit symbols. The model is trained in a self-supervised manner, by directly maximizing the achievable rate. To overcome the non-differentiability of the objective function, introduced due to the non-differentiable DAC functions, a straight-through Gumbel-softmax estimation of the gradient is proposed. The proposed method achieves a significant increase in achievable sum rate under coarse quantization. For instance, in the single-user case, the proposed method can achieve the same sum rate as maximum ratio transmission (MRT) by using one-bit DACs as compared to 3 bits for MRT. This reduces the DAC's power consumption by a factor 4-7 and 3 for baseband and RF DACs respectively. This, however, comes at the cost of increased digital signal processing power consumption. When accounting for this, the reduction in overall power consumption holds for a system bandwidth up to 3.5 MHz for baseband DACs, while the RF DACs can maintain a power reduction of 2.9 for higher bandwidths. Notably, indirect effects, which further reduce the power consumption, such as a reduced fronthaul consumption and reductions in other components, are not considered in this analysis.}
+}
+
+@article{Zou2022GoalOriented, 
+  title={Goal-Oriented Quantization: Analysis, Design, and Application to Resource Allocation}, 
+  author={Hang Zou and Chao Zhang and Samson Lasaulce and Lucas Saludjian and H. Vincent Poor}, 
+  journal={IEEE Journal on Selected Areas in Communications}, 
+  year={2022}, 
+  volume={40}, 
+  number={1}, 
+  pages={1-16}, 
+  publisher={IEEE}, 
+  abstract={In this paper, the situation in which a receiver has to execute a task from a quantized version of the information source of interest is considered. The task is modeled by the minimization problem of a general goal function for which the decision has to be taken from a quantized version of the parameters. This problem is relevant in many applications, e.g., for radio resource allocation (RA), high spectral efficiency communications, controlled systems, or data clustering in the smart grid. By resorting to high resolution (HR) analysis, it is shown how to design a quantizer that minimizes the gap between the minimum of the goal function (which would be reached by knowing the parameters perfectly) and what is effectively reached with a quantized version. The conducted formal analysis both provides quantization strategies in the HR regime and insights for the general regime and allows a practical algorithm to be designed. The analysis also allows one to provide some elements to the new and fundamental problem of the relationship between the goal function regularity properties and the hardness to quantize its parameters. The derived results are discussed and supported by a rich numerical performance analysis in which known RA goal functions are studied and allows one to exhibit very significant improvements by tailoring the quantization operation to the final task.}
+}
+
+@article{Shlezinger2021DeepTask, 
+  title={Deep Task-Based Quantization}, 
+  author={Nir Shlezinger and Yonina C. Eldar}, 
+  journal={Entropy}, 
+  year={2021}, 
+  volume={23}, 
+  number={1}, 
+  pages={104}, 
+  publisher={MDPI}, 
+  abstract={Quantizers play a critical role in digital signal processing systems. Recent works have shown that the performance of acquiring multiple analog signals using scalar analog-to-digital converters (ADCs) can be significantly improved by processing the signals prior to quantization. However, the design of such hybrid quantizers is quite complex, and their implementation requires complete knowledge of the statistical model of the analog signal. In this work we design data-driven task-oriented quantization systems with scalar ADCs, which determine their analog-to-digital mapping using deep learning tools. These mappings are designed to facilitate the task of recovering underlying information from the quantized signals. By using deep learning, we circumvent the need to explicitly recover the system model and to find the proper quantization rule for it. Our main target application is multiple-input multiple-output (MIMO) communication receivers, which simultaneously acquire a set of analog signals, and are commonly subject to constraints on the number of bits. Our results indicate that, in a MIMO channel estimation setup, the proposed deep task-bask quantizer is capable of approaching the optimal performance limits dictated by indirect rate-distortion theory, achievable using vector quantizers and requiring complete knowledge of the underlying statistical model. Furthermore, for a symbol detection scenario, it is demonstrated that the proposed approach can realize reliable bit-efficient hybrid MIMO receivers capable of setting their quantization rule in light of the task.}
+}
+
+@article{Danaee2024RelevanceBased, 
+  title={Relevance-Based Information Processing for Fronthaul Rate Reduction in Cell-Free MIMO Systems}, 
+  author={Alireza Danaee and Shayan Hassanpour and Dirk Wübben and Armin Dekorsy}, 
+  journal={IEEE Transactions on Communications (Early Access) / arXiv preprint}, 
+  year={2024}, 
+  publisher={IEEE}, 
+  abstract={Consider a user equipment in a Cell-Free massive Multiple-Input Multiple-Output (CF-mMIMO) system that is served by several Radio Access Points (RAPs). In the uplink of this setup, these RAPs receive noisy observations of the user/source signal and must locally compress their signals before forwarding them to the Central Processing Unit (CPU) through multiple rate-limited fronthaul channels. To retrieve the source signal at CPU, we are interested in maximizing the Mutual Information (MI) between the received signals at CPU and the user/source signal, and purposefully choose the Information Bottleneck (IB)-based compression techniques to design the quantizers at RAPs. We consider both separate and joint designs of the local compressors by establishing basic trade-offs between the informativity and compactness of the outcomes. For the joint design, two different schemes are presented, based on whether to leverage the side-information at CPU. Finally, the effectiveness of both compression schemes will be shown as well by means of numerical investigations over typical digital data transmission scenarios.}
+}
+
+@article{Danaee2025RelevanceBasedMultiUser, 
+  title={Relevance-Based Multi-User Data Compression for Fronthaul Rate Reduction in Cell-Free Massive MIMO Systems}, 
+  author={Alireza Danaee and Shayan Hassanpour and Dirk Wübben and Armin Dekorsy}, 
+  journal={arXiv preprint}, 
+  year={2025}, 
+  publisher={arXiv}, 
+  abstract={In the Cell-Free massive Multiple-Input MultipleOutput (CF-mMIMO) systems, a large number of distributed users are simultaneously served by multiple Radio Access Points (RAPs). In the uplink, each RAP receives noisy observations from several users and must locally compress these signals before forwarding them to the corresponding Central Processing Unit (CPU) via multiple fronthaul channels, each subject to a rate limitation. The challenge is to design the compressed signals at the RAPs such that the received signals at the CPU retain as much information as possible about the users (to be retrieved). To address this, we adopt compression techniques based on the Information Bottleneck (IB) principle to design local quantizers at the RAPs by ensuring an efficient balance between the informativity and compactness of the compressed signals. We discuss here two different compression schemes: one that processes the signals independently across fronthaul links and another that leverages the side information from previously retrieved signals at the CPU. By using side information, the latter generally provides a better tradeoff between the compression efficiency and performance, albeit with an increased complexity. Through numerical simulations, we demonstrate the effectiveness of both IB-based schemes compared to the conventional compression methods, showing their potential for improving fronthaul rate efficiency and overall system performance in typical digital transmission scenarios.}
+}
+
+@article{Liu2024OFDMSemantic, 
+  title={OFDM-Based Digital Semantic Communication with Importance Awareness}, 
+  author={Chuanhong Liu and Caili Guo and Yang Yang and Wanli Ni and Tony Q. S. Quek}, 
+  journal={arXiv preprint}, 
+  year={2024}, 
+  publisher={arXiv}, 
+  abstract={Semantic communication (SemCom) has received considerable attention for its ability to reduce data transmission size while maintaining task performance. However, existing works mainly focus on analog SemCom with simple channel models, which may limit its practical application. To reduce this gap, we propose an orthogonal frequency division multiplexing (OFDM)-based SemCom system that is compatible with existing digital communication infrastructures. In the considered system, the extracted semantics is quantized by scalar quantizers, transformed into OFDM signal, and then transmitted over the frequency-selective channel. Moreover, we propose a semantic importance measurement method to build the relationship between target task and semantic features. Based on semantic importance, we formulate a sub-carrier and bit allocation problem to maximize communication performance. However, the optimization objective function cannot be accurately characterized using a mathematical expression due to the neural network-based semantic codec. Given the complex nature of the problem, we first propose a low-complexity sub-carrier allocation method that assigns sub-carriers with better channel conditions to more critical semantics. Then, we propose a deep reinforcement learning-based bit allocation algorithm with dynamic action space. Simulation results demonstrate that the proposed system achieves 9.7% and 28.7% performance gains compared to analog SemCom and conventional bit-based communication systems, respectively.}
+}
+

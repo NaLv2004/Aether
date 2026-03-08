@@ -1,0 +1,32 @@
+[
+    {
+        "name": "abstract",
+        "plan": "Paragraph 1: Introduce the context of 6G Cell-Free MIMO and the critical bottleneck of backhaul/fronthaul bandwidth fluctuations. Paragraph 2: Highlight the limitations of traditional uniform quantization and the need for task-oriented resource allocation. Paragraph 3: Briefly describe the proposed IB-CellFree-GNN framework, featuring a successive refinement quantizer and a Gumbel-Softmax-based bit-width policy network. Paragraph 4: Summarize key results, including the achievement of near-full-precision performance with only 2.5 bits on average and superior robustness against AP dropouts.",
+        "figure": ""
+    },
+    {
+        "name": "introduction",
+        "plan": "Paragraph 1: Discuss the evolution toward Cell-Free MIMO in 6G and the O-RAN architecture. Paragraph 2: Elaborate on the backhaul constraint problem, where dynamic CSI and bandwidth limits make fixed quantization inefficient. Paragraph 3: Review related work in deep learning-based MIMO detection and quantization (e.g., LSQ, VIB) and identify the gap in joint 'inference-resource' optimization. Paragraph 4: State the contributions: (i) A task-oriented successive refinement quantization scheme; (ii) A differentiable bit-width policy network; (iii) A bit-aware GNN for robust aggregation. Paragraph 5: Outline the paper structure.",
+        "figure": ""
+    },
+    {
+        "name": "system model",
+        "plan": "Paragraph 1: Define the uplink Cell-Free MIMO system with L APs and K users. Describe the channel model including large-scale fading (3GPP Dense Urban) and small-scale Rayleigh fading. Paragraph 2: Detail the AP-side processing: Local LMMSE detection to obtain soft estimates. Paragraph 3: Formulate the backhaul constraint: Each AP l transmits signals with bit-width b_l, subject to a total sum-rate constraint. Paragraph 4: Define the optimization objective as minimizing the end-to-end Mean Squared Error (MSE) of user signal reconstruction at the CPU.",
+        "figure": ""
+    },
+    {
+        "name": "Proposed Method",
+        "plan": "Paragraph 1: Overview of the IB-CellFree-GNN architecture, explaining the interaction between the AP-side policy network and the CPU-side GNN. Paragraph 2: Detail the Successive Refinement Quantizer using Learned Step Size Quantization (LSQ) and the STE for gradient estimation. Paragraph 3: Describe the Bit-width Policy Network. Explain how it uses local SNR and signal features to output bit-width probabilities and how Gumbel-Softmax enables differentiable hard-selection (0, 2, 4 bits). Paragraph 4: Detail the Bit-Aware GNN Aggregator. Explain the attention mechanism that weighs AP contributions based on their reported bit-depths and local SNR. Paragraph 5: Describe the Joint Quantization-Aware Training (QAT) strategy, including the composite loss function (MSE + bit penalty) and the temperature annealing process for Gumbel-Softmax.",
+        "figure": ""
+    },
+    {
+        "name": "Numerical Results",
+        "plan": "Paragraph 1: Describe the simulation setup (16 APs, 8 Users, 1km area) and baseline algorithms (C-MMSE, Dist-Full, Dist-Q2, Dist-Q4). Paragraph 2: Analyze the BER vs. SNR performance, highlighting that QAT-GNN (2.5 bits) matches Dist-Full (32 bits) at low-to-mid SNR. Paragraph 3: Discuss robustness to AP dropouts, showing QAT-GNN's survival capability at 50% failure rate. Paragraph 4: Evaluate scalability regarding user load (K=4 vs K=12) and antenna scaling (N=2 vs N=8). Paragraph 5: Analyze the impact of coverage area (0.5km to 2km) and the policy network's adaptive behavior in sparse scenarios. Paragraph 6: Present the complexity analysis, proving the policy network adds minimal overhead (approx. 26%) compared to LMMSE.",
+        "figure": "Figure 1: BER vs Transmit Power (dBm). Plot curves for 'C-MMSE', 'Dist-Full', 'Dist-Q2', 'Dist-Q4', and 'QAT-GNN (Proposed)'. Data: At 0dBm, QAT-GNN should be near 3.8% while Dist-Q2 is near 6.2%. Use pgfplots with a log scale for y-axis (BER).\n\nFigure 2: Robustness to AP Dropout. Plot BER vs Transmit Power for 'QAT-GNN (0% Drop)', 'QAT-GNN (25% Drop)', and 'QAT-GNN (50% Drop)'. Data from Execution History: At 20dBm, 0% drop is 0.3%, 25% drop is 0.7%, 50% drop is 2.1%. Use pgfplots.\n\nFigure 3: User Load Scalability. Compare BER for K=4 and K=12. Show two sets of curves (Dist-Full vs QAT-GNN) for each K. Highlight the 67.3% gain over Dist-Q2 in the K=12 scenario at 0dBm. Use pgfplots.\n\nFigure 4: Complexity vs Antenna Number (N). Bar chart showing FLOPs for 'LMMSE' and 'Policy Network' for N=2, 4, 8. Show that Policy Network complexity remains constant at 384 FLOPs while LMMSE grows from 421 to 6037. Use pgfplots.\n\nFigure 5: Area Sensitivity and Bit-width Adaptation. Plot Average Bits vs Transmit Power for Area=0.5km, 1.0km, and 2.0km. Show how the network reduces bits (towards 2.18) in the 2.0km sparse scenario to discard weak signals. Use pgfplots."
+    },
+    {
+        "name": "Conclusion",
+        "plan": "Paragraph 1: Summarize the proposed task-oriented GNN framework and its effectiveness in backhaul-constrained Cell-Free MIMO. Paragraph 2: Reiterate the key findings: near-optimal performance with 2.5 bits, extreme robustness to link failures, and low computational overhead. Paragraph 3: Suggest future research directions, such as multi-agent reinforcement learning for inter-AP coordination and extension to wideband OFDM systems.",
+        "figure": ""
+    }
+]
