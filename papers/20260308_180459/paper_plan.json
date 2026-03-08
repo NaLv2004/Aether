@@ -1,0 +1,32 @@
+[
+    {
+        "name": "abstract",
+        "plan": "Paragraph 1: Introduce the 6G Cell-Free MIMO architecture and identify the limited fronthaul/midhaul bandwidth as a critical bottleneck. Paragraph 2: Briefly describe the proposed IB-CellFree-GNN framework, which utilizes a task-oriented successive refinement approach. Mention the integration of Variational Information Bottleneck (VIB) and Gumbel-Softmax for differentiable bit-width allocation. Paragraph 3: Summarize key findings: the system achieves near-full-precision performance with an average of only 2.5 bits per sample and demonstrates extreme robustness, maintaining communication viability even with 50% AP failure rates. Paragraph 4: State the significance of the work for resource-constrained distributed 6G networks.",
+        "figure": ""
+    },
+    {
+        "name": "introduction",
+        "plan": "Paragraph 1: Discuss the transition from cellular to Cell-Free MIMO in 6G and the advantages of spatial diversity. Paragraph 2: Elaborate on the 'fronthaul bottleneck' problem where traditional quantization (e.g., Lloyd-Max) fails to adapt to dynamic channel states and task requirements. Paragraph 3: Review related work in GNN-based detection and deep joint source-channel coding (DJSCC), noting the lack of adaptive bit-allocation for distributed detection. Paragraph 4: Outline the contributions: (1) A successive refinement quantizer based on LSQ; (2) A Gumbel-Softmax policy network for 'resource-inference'; (3) A bit-aware GNN that compensates for quantization noise via spatial attention. Paragraph 5: Provide the roadmap for the rest of the paper.",
+        "figure": ""
+    },
+    {
+        "name": "system model",
+        "plan": "Paragraph 1: Define the uplink Cell-Free MIMO system with $L$ multi-antenna APs and $K$ single-antenna users. Paragraph 2: Mathematical formulation of the received signal at AP $l$ and the 3GPP Dense Urban channel model (path loss and shadowing). Paragraph 3: Describe the local processing at the AP, specifically the Local LMMSE detection to generate soft estimates $\\hat{s}_{lk}$. Paragraph 4: Define the backhaul constraint $\\sum b_{lk} \\le C_{total}$ and the objective of minimizing the end-to-end Mean Square Error (MSE) of user symbols.",
+        "figure": ""
+    },
+    {
+        "name": "Proposed Method",
+        "plan": "Paragraph 1: Present the overall architecture of IB-CellFree-GNN, highlighting the split between AP-side encoding and CPU-side GNN aggregation. Paragraph 2: Detail the Differentiable LSQ Quantizer, explaining the Straight-Through Estimator (STE) and the learnable step size $s$. Paragraph 3: Describe the Bit-width Policy Network. Explain how Gumbel-Softmax enables discrete bit-width selection (0, 2, 4 bits) while maintaining end-to-end differentiability. Paragraph 4: Introduce the Bit-Aware GNN at the CPU. Explain the attention mechanism where edge weights are conditioned on the reported bit-depth $b_{lk}$ to prioritize high-precision APs. Paragraph 5: Detail the Joint Quantization-Aware Training (QAT) process, including the composite loss function (MSE + bit penalty) and the temperature annealing strategy for $\\tau$.",
+        "figure": ""
+    },
+    {
+        "name": "Numerical Results",
+        "plan": "Paragraph 1: Specify simulation parameters: 1km x 1km area, $L=16, N=4, K=8$, QPSK modulation, and 3GPP channel settings. Paragraph 2: Analyze the BER vs. Transmit Power ($P_{tx}$) performance. Compare QAT-GNN (avg 2.5 bits) against Dist-Full (32-bit) and Dist-Q2 (fixed 2-bit). Use data from Execution History (Step 1/2). Paragraph 3: Discuss robustness to AP failure. Present results for 0%, 25%, and 50% dropout rates, showing that QAT-GNN maintains $BER < 5\\%$ even at 50% loss. Paragraph 4: Evaluate scalability and complexity. Compare $N=2$ vs $N=8$ scenarios and show that the policy network adds only ~26% overhead to LMMSE while being independent of $N$. Paragraph 5: Discuss sensitivity to path loss by comparing 0.5km, 1km, and 2km area sizes, highlighting the policy network's tendency to drop weak signals (0-bit) in sparse scenarios.",
+        "figure": "Figure 1: BER vs. Transmit Power (dBm). Plot lines for 'Centralized MMSE (Upper Bound)', 'Distributed Full-Precision', 'Fixed 2-bit Quantization', and 'Proposed QAT-GNN (Avg 2.5-bit)'. Use data: P_tx=[-10, 0, 10, 20], QAT-GNN BER=[7.0, 3.8, 0.98, 0.2]%. \nFigure 2: Robustness to AP Dropout. Plot BER vs. P_tx for QAT-GNN with '0% Drop', '25% Drop', and '50% Drop'. Use data: P_tx=20dBm, BERs=[0.30, 0.70, 2.10]%. \nFigure 3: Adaptive Bit Allocation. A bar chart or stacked area plot showing the percentage of 0-bit, 2-bit, and 4-bit selections across Low SNR (<0dB), Mid SNR (0-10dB), and High SNR (>10dB) regimes. Data: Low SNR bits ~0.8, High SNR bits ~1.8."
+    },
+    {
+        "name": "Conclusion",
+        "plan": "Paragraph 1: Summarize the key contributions of the IB-CellFree-GNN framework. Paragraph 2: Reiterate the main findings regarding the efficiency of task-oriented bit allocation and the spatial compensation capability of the GNN. Paragraph 3: Suggest future research directions, such as extending the model to handle user mobility or multi-cell interference coordination in O-RAN architectures.",
+        "figure": ""
+    }
+]

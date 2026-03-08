@@ -669,6 +669,7 @@ def run_experiment(plan_file, experiment_dir, log_dir, model_orchestrator, model
                 
             action = action_json.get("Action")
             params = action_json.get("Action_Params", {})
+            thoughts_curr = action_json.get("Thoughts", "")
             
             if action == "PASS_STEP":
                 summary = params.get("summary", f"步骤 {step_idx + 1} 已成功完成。")

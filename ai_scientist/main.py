@@ -13,7 +13,7 @@ logger = setup_logger("experiment_run.log")
 def main():
     # =========================================Parameter Configurations==============================================
     # Parameters for idea generation
-    MODEL = 'gemini-3.1-pro-preview'
+    MODEL = 'gemini-3-flash-preview'
     THEME_FILE_PATH = 'theme_idea_gen.txt'
     N_PARALLEL_IDEA_GENERATOR = 3
     MAX_STUDENT_ITERS = 2
