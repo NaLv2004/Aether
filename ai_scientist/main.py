@@ -6,7 +6,9 @@ from generate_plan import generate_plan
 from generate_code import generate_code
 from perform_experiments import generate_readme, plan_and_execute_experiments
 from perform_writeup import perform_writeup
+from update_from_reviews import update_from_reviews
 from utils import setup_logger
+import shutil
 
 logger = setup_logger("experiment_run.log")
 
@@ -30,7 +32,7 @@ def main():
     LOG_ROOT_DIR = 'logs'
     LOG_DIR = os.path.join(LOG_ROOT_DIR, timestamp)
     os.makedirs(LOG_DIR, exist_ok=True)
-    LOG_DIR_SUB = ['idea_gen','plan_gen','code_gen','perform_experiments','perform_writeup']
+    LOG_DIR_SUB = ['idea_gen','plan_gen','code_gen','perform_experiments','perform_writeup','rebuttal']
     for sub_dir in LOG_DIR_SUB:
         os.makedirs(os.path.join(LOG_DIR, sub_dir), exist_ok=True)
     LOG_PATH_SUB = dict()
@@ -89,6 +91,14 @@ def main():
     parser_experiment.add_argument("--model", type=str, default=MODEL, help="使用的模型")
     parser_experiment.add_argument("--conda_env_name", type=str, default="AutoGenOld", help="使用的Conda环境名称")
     
+    parser_review_update = argparse.ArgumentParser(description="AI Scientist - Update review")
+    parser_review_update.add_argument("--orchestrator", type=str, default=MODEL, help="Orchestrator 使用的模型")
+    parser_review_update.add_argument("--coder", type=str, default=MODEL, help="Coder 使用的模型")
+    parser_review_update.add_argument("--experiment_log_dir", type=str, default=LOG_PATH_SUB['code_gen'], help="实验log的输出目录")
+    parser_review_update.add_argument("--experiment_dir", type=str, default=OUTPUT_PATH_SUB['code_gen'], help="实验log的输出目录")
+    parser_review_update.add_argument("--include_all_files", type=bool, default=False, help="Orchestrator的context中是否包含所有文件")
+    parser_review_update.add_argument("--repo_url", type=str, default=None, help="Orchestrator的context中是否包含所有文件")
+    
         
     logger.info(f"Starting Research. Experiment Run Log Dir: {LOG_DIR}")
     # ========================================Research Starts=========================================================
@@ -125,6 +135,24 @@ def main():
     logger.info(f"Experiment Execution Finished.")
     logger.info(f"Starting Writeup Generation...")
     parser_writeup = argparse.ArgumentParser(description="生成科研文章")
+   
+    
     logger.info(f"Writeup Generation Finished.")
-    perform_writeup(exp_dir=OUTPUT_PATH_SUB['code_gen'],paper_dir=OUTPUT_PATH_SUB['perform_writeup'],model=MODEL,idea_path=output_ideas_path,plan_path=plan_file_path)
+    # perform_writeup(exp_dir=OUTPUT_PATH_SUB['code_gen'],paper_dir=OUTPUT_PATH_SUB['perform_writeup'],model=MODEL,idea_path=output_ideas_path,plan_path=plan_file_path)
+    
+    papers_path =  r"papers\\20260308_194954"
+    logger.info(f"Starting Rebuttal Generation...")
+    # copy all files in paper path to OUTPUT_PATH_SUB['rebuttal']
+    for file in os.listdir(papers_path):
+        if file.endswith(".tex"):
+            if os.path.isfile(os.path.join(papers_path, file)):
+                try:
+                    shutil.copy2(os.path.join(papers_path, file), os.path.join(OUTPUT_PATH_SUB['rebuttal'], file))
+                    logger.info(f"Copied {file} to {OUTPUT_PATH_SUB['rebuttal']}")
+                except:
+                    logger.error(f"Failed to copy {file} to {OUTPUT_PATH_SUB['rebuttal']}")
+    
+    parser_review_update.add_argument("--plan_file", type=str, default=plan_file_path, help="之前生成的包含计划的JSON文件路径")
+    update_from_reviews(parser_review_update.parse_args())
+    logger.info(f"Rebuttal Generation Finished.")
 main()
