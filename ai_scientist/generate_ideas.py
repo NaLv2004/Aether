@@ -321,7 +321,7 @@ def format_search_results_and_update_map(queries, doi_url_map, engine="openalex"
     return results_str
 
 
-def process_papers_to_read(papers_to_read, doi_url_map, kb_txt_path):
+def process_papers_to_read(papers_to_read, doi_url_map, kb_txt_path, pdf_reader_prompt = PDFReader_PROMPT):
     """处理下载并阅读 PDF 的逻辑"""
     if not papers_to_read:
         return
@@ -335,7 +335,7 @@ def process_papers_to_read(papers_to_read, doi_url_map, kb_txt_path):
     # 初始化用于阅读长文的 Reader Agent (每次阅读用全新实例，防止上下文污染)
     pdf_reader = PDFReader(
         api_key=gemini_api_key,
-        system_prompt=PDFReader_PROMPT,
+        system_prompt=pdf_reader_prompt,
         context_window_size=1
     )
 

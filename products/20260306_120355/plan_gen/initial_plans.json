@@ -14,7 +14,7 @@
             {
                 "idx": 1,
                 "name": "局部信息驱动的系统建模 (Local-CSI Based System Modeling)",
-                "content": "构建 $L$ 个AP和 $K$ 个用户的Cell-Free MIMO上行链路。AP $l$ 仅利用局部信道 $\\mathbf{h}_{lk}$ 进行 LMMSE 处理。定义每个 AP 的传输负载为 $B_l = \\sum_k b_{lk}$，其中 $b_{lk} \\in \\{0, 2, 4, 8\\}$。目标函数为端到端检测误差 $\\mathcal{L}_{task} = \\mathbb{E}[\\|\\mathbf{s} - \\mathbf{s}_{GNN}\\|^2]$，并受限于回传约束。",
+                "content": "构建 $L$ 个AP和 $K$ 个用户的Cell-Free MIMO上行链路。AP $l$ 仅利用局部信道 $\\mathbf{h}_{lk}$ 进行 LMMSE 检测（注意我们研究的是MIMO检测，不是信道估计！！）。定义每个 AP 的传输负载为 $B_l = \\sum_k b_{lk}$，其中 $b_{lk} \\in \\{0, 2, 4, 8\\}$。目标函数为端到端检测误差 $\\mathcal{L}_{task} = \\mathbb{E}[\\|\\mathbf{s} - \\mathbf{s}_{GNN}\\|^2]$，并受限于回传约束。",
                 "expected_outcome": "确立含大尺度衰落的数据集，定义 $b_{lk}$ 对应的离散位宽集合与回传带宽代价函数。"
             },
             {

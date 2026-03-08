@@ -101,14 +101,16 @@ def read_python_codes(exp_dir):
 # =====================================================================
 # 主 Agent 流程类
 # =====================================================================
-class PaperWriterSystem:
-    def __init__(self, exp_dir, model="gemini-3.1-pro-high"):
+class PaperWriterSystem():
+    def __init__(self, exp_dir, idea_path=None, plan_path= None, paper_dir=None, model="gemini-3.1-pro-high"):
         self.exp_dir = exp_dir
         self.model = model
         
         # 文件路径映射
-        self.file_A_path = os.path.join(exp_dir, "idea.txt")
-        self.file_B_path = os.path.join(exp_dir, "plan.txt")
+        # self.file_A_path = os.path.join(exp_dir, "idea.txt")
+        # self.file_B_path = os.path.join(exp_dir, "plan.txt")
+        self.file_A_path = idea_path
+        self.file_B_path = plan_path
         self.file_D_path = os.path.join(exp_dir, "PreviousSummary.txt")
         self.file_E_path = os.path.join(exp_dir, "execute_history.txt")
         
@@ -121,9 +123,10 @@ class PaperWriterSystem:
         
         # 创建论文输出目录
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.paper_dir = os.path.join("papers", timestamp)
-        os.makedirs(self.paper_dir, exist_ok=True)
-        logger.info(f"[*] Created paper directory: {self.paper_dir}")
+        if paper_dir is not None:
+            self.paper_dir = os.path.join("papers", timestamp)
+            os.makedirs(self.paper_dir, exist_ok=True)
+            logger.info(f"[*] Created paper directory: {self.paper_dir}")
         
         self.reference_path = os.path.join(self.paper_dir, "reference.bib")
         self.accumulated_latex = {} # 存储已生成的章节 latex
@@ -379,12 +382,12 @@ class PaperWriterSystem:
 # =====================================================================
 # 启动入口
 # =====================================================================
-def perform_writeup(exp_dir):
+def perform_writeup(exp_dir,paper_dir,idea_path,plan_path,model):
     """
     暴露给外部调用的主接口
     """
     # 这里选择使用的 LLM 模型，推荐使用 o1 或者 claude-3-5-sonnet，这里用 gpt-4o 作为示例
-    system = PaperWriterSystem(exp_dir=exp_dir, model="gemini-3.1-pro-high")
+    system = PaperWriterSystem(exp_dir=exp_dir, model=model,paper_dir=paper_dir,idea_path=idea_path,plan_path=plan_path)
     
     # 1. 生成引用文献库
     system.do_literature_search(rounds=10)
@@ -408,11 +411,11 @@ def perform_writeup(exp_dir):
     # 4. 汇总生成 main.tex
     system.generate_main_tex(plan)
 
-if __name__ == "__main__":
-    # 测试运行（请确保当前目录下有名为 'experiment_data' 的文件夹并包含了所需的文件）
-    test_dir = "experiments\\20260301_211831"
-    if not os.path.exists(test_dir):
-        os.makedirs(test_dir, exist_ok=True)
-        logger.info(f"Created dummy directory {test_dir}. Please populate it with files (idea.txt, plan.txt, etc.) before full run.")
-    else:
-        perform_writeup(test_dir)
+# if __name__ == "__main__":
+#     # 测试运行（请确保当前目录下有名为 'experiment_data' 的文件夹并包含了所需的文件）
+#     test_dir = "experiments\\20260301_211831"
+#     if not os.path.exists(test_dir):
+#         os.makedirs(test_dir, exist_ok=True)
+#         logger.info(f"Created dummy directory {test_dir}. Please populate it with files (idea.txt, plan.txt, etc.) before full run.")
+#     else:
+#         perform_writeup(test_dir)

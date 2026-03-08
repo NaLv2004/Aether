@@ -180,7 +180,7 @@ def generate_readme(args):
         all_summaries.append(formatted_summary)
 
     # 5. 生成最终汇总文档并保存
-    final_txt_path = os.path.join(work_dir, "Comprehensive_Project_README.txt")
+    final_txt_path = os.path.join(work_dir, "PreviousSummary.txt")
     
     with open(final_txt_path, 'w', encoding='utf-8') as f:
         f.write("# 通信科研项目综合总结与说明文档\n\n")
@@ -450,9 +450,10 @@ def plan_and_execute_experiments(args):
 
     # 5. 逐点执行计划
     for step_item in plan:
+        executor_agent.clear_history()
         step_idx = step_item.get("idx")
-        if (step_idx == 1 or step_idx == 2 or step_idx == 3) :
-            continue
+        # if (step_idx == 1 or step_idx == 2 or step_idx == 3) :
+        #     continue
         step_content = step_item.get("content")
         logger.info(f"\n=============================================")
         logger.info(f" 开始执行计划步骤 {step_idx}: {step_content}")
@@ -499,7 +500,7 @@ python main_simulation.py --algo A --antennas 16x8
 6. 每步可以包含多点仿真（不仅仅是SNR变化，还可以是SNR变化的同时其他参数变化）。要保证实验数据尽可能充足。
 """
             logger.info(f"\n[System] 步骤 {step_idx} (尝试 {attempt_count}): 正在生成 run.bat 脚本...")
-            bat_response, _ = executor_agent.get_response_stream(action_prompt, "你是一个严谨的命令行仿真执行脚本编写专家。")
+            bat_response, _ = executor_agent.get_response_stream(action_prompt, "请按照要求编写或者修改脚本")
             
             # 提取 bat 内容
             bat_match = re.search(r"```bat(.*?)```", bat_response, re.DOTALL | re.IGNORECASE)
@@ -541,7 +542,7 @@ python main_simulation.py --algo A --antennas 16x8
 请仔细阅读报错和 Python 代码内容。不要修改 Python 代码。
 调整 run.bat 中的命令行调用参数来修复这个问题，并将修复后的完整脚本放在 ```bat 和 ``` 之间返回。
 """    
-                executor_agent.clear_history()
+                # executor_agent.clear_history()
                 fix_resp, _ = executor_agent.get_response_stream(fix_prompt, "你是 Debug 专家，请根据报错和源码调整命令行参数。")
                 
                 # 更新 bat 内容供下一次尝试
@@ -580,6 +581,7 @@ python main_simulation.py --algo A --antennas 16x8
     "status": "PASS",  // 或者是 "RETRY"
     "extracted_data": "你提取的对论文撰写有用的数据。（先根据你看到的执行结果，以列表形式返回完整的，可以直接在论文中被做成图表的数据（loss等中间结果不需要）,再对数据作简要解释。重点是返回的数据列表清晰完整）",
     "reason": "你做出上述判断的理由"
+    
 }}
 """
                 executor_agent.clear_history()
