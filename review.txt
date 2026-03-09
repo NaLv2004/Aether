@@ -1,0 +1,46 @@
+
+### **Review Report**
+
+**Journal:** IEEE Transactions on Vehicular Technology (TVT)
+**Title:** Joint Optimization of Signal Quantization and Detection in Cell-free MIMO: A Quantization-Aware GNN Approach
+**Recommendation:** **Reject**
+
+#### **1. Brief Summary**
+The manuscript proposes a joint quantization-aware training (QAT) framework for uplink Cell-Free Massive MIMO systems under limited fronthaul capacity. The framework deploys a lightweight multi-layer perceptron (MLP) at each Access Point (AP) to infer quantization bit-widths (0, 2, or 4 bits) using Gumbel-Softmax relaxation. Subsequently, the Central Processing Unit (CPU) aggregates the quantized signals via a "Bit-Aware Graph Neural Network (GNN)" to detect the user symbols. 
+
+While the concept of task-oriented joint optimization for fronthaul-constrained CF-MIMO is relevant to the scope of IEEE TVT and holds practical significance, **the current manuscript suffers from severe fundamental flaws in its system model assumptions, mathematical rigor, evaluation methodology, and overall manuscript completeness.** Therefore, I recommend rejecting the paper in its current form.
+
+#### **2. Major Comments (Critical Flaws)**
+
+**2.1. Unrealistic System Model Assumptions (Perfect CSI and LMMSE at AP)**
+The local LMMSE processing described in Eq. (4) assumes that each AP $l$ has perfect local Channel State Information (CSI) for *all* $K$ users ($\mathbf{h}_{li}$). 
+*   In practical CF-MIMO systems, obtaining perfect CSI is impossible due to pilot contamination and channel estimation errors. 
+*   More importantly, computing Eq. (4) requires the AP to invert a matrix that depends on the instantaneous channel vectors of all users. The paper completely ignores the pilot training overhead and the severe impact of channel estimation errors ($\hat{\mathbf{h}}$ vs $\mathbf{h}$). Evaluating a deep learning-based detector without incorporating imperfect CSI renders the results practically meaningless for vehicular/wireless implementations.
+
+**2.2. "Black Box" Methodology and Lack of Mathematical Rigor**
+For an IEEE Transactions paper, the core algorithmic contribution must be mathematically rigorous. The description of the "Bit-Aware GNN Detector" (Section III-C) is unacceptably vague.
+*   The authors merely present a Softmax attention equation (Eq. 9) and verbally mention a "Transformer-based encoder". 
+*   There is no mathematical formulation of the graph structure ($\mathcal{G} = (\mathcal{V}, \mathcal{E})$). What are the edges? Are they fully connected? How are the message-passing (MPNN) updates formulated? 
+*   How does the Transformer handle the permutation equivariance of the APs? The lack of these formulations makes the paper unreproducible and reads like a high-level technical blog rather than a rigorous scientific paper.
+
+**2.3. Insufficient and Unfair Baselines**
+The performance evaluation in Section IV is deeply flawed due to the choice of baselines. 
+*   The authors compare their deeply optimized, joint-trained neural network ("QAT-GNN") against a naive, static 2-bit Lloyd-Max quantizer ("Dist-Q2"). This is a "strawman" comparison.
+*   To prove the superiority of the proposed scheme, the authors **must** compare it against state-of-the-art dynamic bit-allocation algorithms (e.g., water-filling based capacity allocation) and existing deep unfolding methods for MIMO detection under quantization (e.g., ADMM-Net, OAMP-Net).
+*   Furthermore, the "Dist-Full" baseline uses linear LMMSE. It is well known that GNN/Transformer architectures can capture non-linearities and outperform linear LMMSE even without quantization. The performance gain shown in Fig. 1 might entirely come from the non-linear GNN detection rather than the "Quantization-Aware" aspect. An ablation study (e.g., QAT with linear CPU detection, or fixed-quantization with GNN CPU detection) is mandatory.
+
+**2.4. Discrepancy between Training and Deployment (Eq. 8 vs. Eq. 10)**
+The loss function (Eq. 10) penalizes the *expected* bit-width $\bar{b}_{lk}$. During training, the soft quantization (Eq. 8) is used. However, during actual deployment (inference), the Gumbel-Softmax becomes a hard selection (argmax). The paper fails to provide an evaluation of the system under the *hard constraint* of average fronthaul capacity. Does the system strictly respect the $C_{avg} = 2.5$ limit in the test phase? The transition from continuous relaxation to discrete deployment usually causes a performance drop, which is not analyzed here.
+
+#### **3. Minor Comments and Formatting Issues**
+
+*   **Missing Section:** The paper text ends abruptly at Section IV. **Section V (Conclusion) is completely missing.** This is unacceptable for peer review.
+*   **Unresolved Cross-References:** In Section III, paragraph 1, there is a missing figure reference: *"As illustrated in Fig. ??, the architecture..."*. 
+*   **Reference Formatting:** The bibliography is poorly formatted and contains placeholder text. 
+    *   Reference [2] and [3] list the venue as *"Unknown, 2015/2010"*. 
+    *   Reference [12] is cited as an arXiv preprint from *"Jan 2025"*, which is highly irregular.
+*   **Dimensionality mismatch in Text:** In Section III-A, the input feature is defined as $\mathbf{x}_{lk} = [\Re(\hat{s}_{lk}), \Im(\hat{s}_{lk}), \gamma_{lk}]^T \in \mathbb{R}^3$. However, $\hat{s}_{lk}$ is supposed to be the user symbol estimate. Are the authors treating QAM constellations as continuous real/imaginary values? How does the quantization step size $\Delta_b$ adapt to different QAM orders (e.g., 16-QAM vs 64-QAM)?
+*   **Simulation Parameters:** Important simulation parameters are missing. What is the modulation scheme used for $s_k$? (BPSK? QPSK? 16-QAM?) The BER performance (Fig 1) is highly dependent on the modulation order, but it is never specified in the text.
+
+**Conclusion for the Editor:**
+The manuscript appears to be a draft lacking essential mathematical formulations, rigorous baselines, and complete sections. It relies on unrealistic physical layer assumptions. A complete rewrite with proper mathematical modeling of the GNN, realistic channel estimation errors, and comparison against SOTA algorithms would be required before it could be considered for IEEE TVT.

@@ -6,7 +6,7 @@ from generate_plan import generate_plan
 from generate_code import generate_code
 from perform_experiments import generate_readme, plan_and_execute_experiments
 from perform_writeup import perform_writeup
-from update_from_reviews import update_from_reviews
+from update_from_reviews import update_from_review
 from utils import setup_logger
 import shutil
 
@@ -94,8 +94,8 @@ def main():
     parser_review_update = argparse.ArgumentParser(description="AI Scientist - Update review")
     parser_review_update.add_argument("--orchestrator", type=str, default=MODEL, help="Orchestrator 使用的模型")
     parser_review_update.add_argument("--coder", type=str, default=MODEL, help="Coder 使用的模型")
-    parser_review_update.add_argument("--experiment_log_dir", type=str, default=LOG_PATH_SUB['code_gen'], help="实验log的输出目录")
-    parser_review_update.add_argument("--experiment_dir", type=str, default=OUTPUT_PATH_SUB['code_gen'], help="实验log的输出目录")
+    parser_review_update.add_argument("--experiment_log_dir", type=str, default=LOG_PATH_SUB['rebuttal'], help="实验log的输出目录")
+    parser_review_update.add_argument("--experiment_dir", type=str, default=OUTPUT_PATH_SUB['rebuttal'], help="实验log的输出目录")
     parser_review_update.add_argument("--include_all_files", type=bool, default=False, help="Orchestrator的context中是否包含所有文件")
     parser_review_update.add_argument("--repo_url", type=str, default=None, help="Orchestrator的context中是否包含所有文件")
     
@@ -151,8 +151,19 @@ def main():
                     logger.info(f"Copied {file} to {OUTPUT_PATH_SUB['rebuttal']}")
                 except:
                     logger.error(f"Failed to copy {file} to {OUTPUT_PATH_SUB['rebuttal']}")
-    
+    code_gen_path = OUTPUT_PATH_SUB['code_gen']             
+    for file in os.listdir(code_gen_path):
+            if os.path.isfile(os.path.join(code_gen_path, file)):
+                try:
+                    shutil.copy2(os.path.join(code_gen_path, file), os.path.join(OUTPUT_PATH_SUB['rebuttal'], file))
+                    logger.info(f"Copied {file} to {OUTPUT_PATH_SUB['rebuttal']}")
+                except:
+                    logger.error(f"Failed to copy {file} to {OUTPUT_PATH_SUB['rebuttal']}")
+    shutil.copy2("review.txt", os.path.join(OUTPUT_PATH_SUB['rebuttal'], "review.txt"))
     parser_review_update.add_argument("--plan_file", type=str, default=plan_file_path, help="之前生成的包含计划的JSON文件路径")
-    update_from_reviews(parser_review_update.parse_args())
+    update_from_review(parser_review_update.parse_args())
     logger.info(f"Rebuttal Generation Finished.")
+
 main()
+
+
