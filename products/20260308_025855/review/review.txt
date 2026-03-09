@@ -1,0 +1,108 @@
+====================================================
+             STAGE 1: PDF 初审意见 (PDF Commentator)  
+====================================================
+
+这份审稿意见参照 **IEEE Transactions on Vehicular Technology (TVT)** 的标准格式与评审要求编写。IEEE TVT 侧重于移动通信、车载网络和系统架构的实用性、严谨性及创新性。
+
+---
+
+### **IEEE TVT Review Report**
+
+**Manuscript ID:** TVT-202X-XXXX  
+**Title:** Automated Communications Research Paper (Note: Placeholder title)  
+**Authors:** Automated LLM Agent System (Note: Placeholder author names)
+
+---
+
+#### **1. Overall Summary**
+本文针对无小区大规模 MIMO（Cell-Free Massive MIMO）系统中的前传链路（Fronthaul）容量受限问题，提出了一种端到端的联合量化设计框架。核心创新点在于结合了任务导向通信（Task-Oriented Communication）理念，通过策略网络（Policy Network）动态分配量化比特数（0, 2, 4 bits），并利用 Gumbel-Softmax 弛豫解决离散选择的不可导问题。后端采用比特感知的图神经网络（Bit-Aware GNN）进行信号检测。仿真结果表明，该系统在低比特开销下接近全精度性能，并表现出极强的鲁棒性。
+
+#### **2. Specific Comments**
+
+**A. 动机与创新性 (Motivation and Originality)**
+*   **优点：** 论文动机非常明确且贴合 6G 通信痛点。将量化权重的决策从“最小化量化误差”转向“优化下游检测性能（Task-Oriented）”，这一思路符合当前学术界主流趋势。
+*   **不足：** 虽然将 Gumbel-Softmax 用于比特分配在计算机视觉领域已有先例，但在无小区 MIMO 场景下的结合具有一定新意，但文章未能充分讨论与传统动态比特分配算法（如基于强化学习或启发式注水法）的性能/复杂度对比。
+
+**B. 数学严谨性 (Mathematical Rigor)**
+*   **公式 4：** LMMSE 合并矢量的定义标准且准确。
+*   **公式 5 & 10：** 优化目标函数的严谨性有待商榷。在公式 (10) 中，惩罚项采用了平方形式 $(1/LK \sum b_{lk} - C_{avg})^2$。通常在拉格朗日乘数法中，约束项多为线性。作者应解释为何选择平方项（是为了平滑梯度还是防止过大波动？）。
+*   **符号一致性：** 符号定义清晰。但建议在变量定义处增加复数域 $\mathbb{C}$ 与实数域 $\mathbb{R}$ 的明确标注，特别是量化器处理实/虚部时的细节。
+*   **CSI 假设：** 文章假设 AP 端拥有局部完美 CSI。在 Cell-Free 系统中，导频污染（Pilot Contamination）和信道估计误差对量化性能影响极大，模型若能引入估计误差下的鲁棒性分析会更具说服力。
+
+**C. 算法细节 (Technical Details)**
+*   **GNN 架构：** 文章提到了“Transformer-based encoder”，但缺乏具体的模型参数说明（如层数、多头注意力的头数、隐藏层维度）。
+*   **比特感知的注意力机制：** 将期望比特数 $\bar{b}_{lk}$ 作为特征输入（公式 9 之后）是一个亮点，这证明了模型确实在利用“质量信息”进行加权聚合。
+
+**D. 实验与图表呈现 (Figures and Tables)**
+*   **优点：** 图表非常专业，实验维度全面（性能、鲁棒性、可扩展性、复杂度、任务导向分析）。
+    *   **图 5 (Complexity)：** 证明了策略网络的低开销，这是 TVT 读者非常关注的实用性指标。
+    *   **图 6 (Task-Oriented Allocation)：** 直观展示了 SNR 越高比特分配越多的逻辑，证明了学习机制的有效性。
+*   **不足：**
+    *   **基准对比：** 目前仅对比了固定比特量化（Dist-Q2）。建议增加“均匀比特分配（但在相同平均比特预算下，如 2.5 bits）”的对比，以体现“动态分配”带来的增益，而非仅仅是“量化算法”的优化。
+    *   **图 3：** 50% AP 掉线下的 BER 曲线非常惊艳，但应补充说明此时的平均比特开销是否发生了变化。
+
+**E. 结构与逻辑 (Structure and Logic)**
+*   **逻辑流：** 论文结构严谨，从物理层建模到量化决策，再到接收端检测，逻辑环环相扣。
+*   **语言表达：** 表达高度学术化，术语规范。
+*   **致命缺陷：** **标题与作者栏**显然是 AI 生成时的占位符（Placeholder），正式投稿必须修改为具有学术辨识度的标题（例如："Joint Dynamic Bit-Allocation and Signal Detection for Cell-Free MIMO via Bit-Aware Graph Neural Networks"）。
+
+---
+
+#### **3. Reviewer Recommendation**
+
+**Major Revision (大修)**
+
+**理由：**
+1.  **题目与作者：** 必须修正占位符信息，提供真实的学术标题。
+2.  **基准实验：** 需补充在相同平均比特预算下的动态分配 vs. 静态分配对比实验。
+3.  **技术细节：** 补充 GNN 具体超参数配置。
+4.  **讨论：** 增加对非理想 CSI 情况下的性能讨论，增强文章在车载及复杂无线环境下的实用参考价值。
+
+---
+
+### **总结（非正式评价）**
+这篇由 AI 生成的论文在**逻辑结构、绘图美观度、前沿技术结合**上已经达到了 IEEE TVT 等顶级期刊的准入门槛。其数学公式的使用非常克制且精准，避开了 AI 常见的符号混乱问题。唯一的“马脚”在于标题和作者信息的疏忽，以及在实验对比深度上稍显单一（缺乏对同类自适应算法的横向对比）。如果这是一个人类作者的初稿，稍加修饰即可投稿。
+
+====================================================
+      STAGE 2: 深度代码与文本审查 (Comprehensive Reviewer)
+====================================================
+
+### IEEE Transactions on Vehicular Technology - Final Review Report
+
+**Manuscript Title:** Automated Communications Research Paper (Placeholder - Correction Required)
+**Recommendation:** Major Revision
+
+---
+
+### 1. Overall Summary
+The paper presents an end-to-end framework for joint quantization and signal detection in Cell-Free Massive MIMO systems. The innovation lies in using a Gumbel-Softmax based Policy Network for dynamic bit allocation (0, 2, 4 bits) and a Bit-Aware GNN for centralized detection. After a thorough cross-examination of the LaTeX source and the Python implementation, I find the technical implementation to be solid and consistent with the proposed methodology. However, several critical issues regarding experimental fairness, hyperparameter transparency, and the physical justification of certain mathematical choices must be addressed before publication.
+
+### 2. Major Comments (Technical & Implementation Consistency)
+
+**A. Fairness of Baselines and Experimental Rigor:**
+- **Missing Competitive Baseline:** The current results (Fig. 1 and `baselines.py`) compare the proposed QAT-GNN ($C_{avg}=2.5$) against fixed 2-bit (Dist-Q2) and full-precision (Dist-Full) systems. To truly prove the benefit of "Dynamic Allocation," the authors must include a baseline with **fixed uniform allocation but the same average bit budget** (e.g., a hybrid of 2-bit and 3-bit or 4-bit across APs to average 2.5 bits). Without this, it's unclear if the gain comes from the *learned bit-allocation* or simply having *more bits on average* than the 2-bit baseline.
+- **Discrepancy in Optimizer Justification:** In `proposed_method.tex` (Eq. 10) and `joint_qat.py` (Line 120), the bit-rate constraint is implemented as a square penalty: $\lambda (\frac{1}{LK} \sum \bar{b}_{lk} - C_{avg})^2$. Standard Lagrangian methods use a linear penalty. The authors should justify why a square penalty was chosen (e.g., to prevent the bit-rate from oscillating during training). In code, $\lambda$ is hardcoded as 0.1; its sensitivity should be discussed.
+
+**B. Technical Transparency & Reproducibility:**
+- **Transformer Hyperparameters:** The PDF Commentator correctly noted the lack of GNN details. Looking at `gnn_detector.py` (Line 92) and `joint_qat.py` (Line 30), the Transformer uses `nhead=4`, `dim_feedforward=128`, and `num_layers=2`. These specific parameters are missing in `proposed_method.tex` and are crucial for evaluating the complexity claims in Section IV-D.
+- **Quantization Detail:** The paper mentions Learned Step Size Quantization (LSQ). The implementation in `lsq_quantizer.py` uses a Straight-Through Estimator (STE) for gradients. This detail (STE) is mentioned in text but the specific initialization of the scale parameter $s$ (code uses `init_s=1.0`) should be stated in the paper as it significantly affects convergence.
+
+**C. Signal Model & CSI Assumptions:**
+- **Non-Ideal CSI:** Both the paper and the code (`system_model.py`, Line 103) assume perfect local CSI for the LMMSE combiner. In Cell-Free systems, pilot contamination and estimation error are the primary bottlenecks. A discussion or a small-scale experiment (e.g., using `H_est = H + Noise`) would significantly strengthen the paper’s relevance to IEEE TVT’s practical scope.
+
+### 3. Minor Comments (Formatting & Notation)
+
+**A. Critical Branding Issues:**
+- **Placeholders:** The title and author list are currently AI-generated placeholders ("Automated Communications Research Paper"). This is unacceptable for a formal submission. A title like *"Task-Oriented Dynamic Bit Allocation and Bit-Aware GNN Detection for Fronthaul-Constrained Cell-Free MIMO"* is recommended.
+
+**B. Complexity Calculation:**
+- **FLOPs Analysis:** In `evaluation.py`, complex operations are assumed to be 4x real FLOPs. While standard, the paper should explicitly state this conversion factor when discussing Fig. 4 results to avoid ambiguity.
+
+**C. Notation Consistency:**
+- In `system_model.tex`, $b_{lk}$ is defined as a discrete choice, while `proposed_method.tex` introduces $\bar{b}_{lk}$ as the soft/expected bit-width. The transition from soft selection (training) to hard selection (inference) via Gumbel-Softmax temperature annealing is well-handled in `joint_qat.py` (Line 104) but should be more clearly mapped to the transition from Eq. (8) to Eq. (10) in the text.
+
+### 4. Required Action Items for Revision
+1. **Modify `baselines.py` and `numerical_results.tex`:** Add a baseline comparing QAT-GNN to a static allocation with the same average bit budget.
+2. **Update `proposed_method.tex`:** Include the Transformer layer/head counts and the STE gradient formulation.
+3. **Revise `main.tex`:** Provide a proper title and author affiliation.
+4. **Add Discussion:** Include a paragraph in Section IV on the impact of imperfect CSI, as observed in the code's simplification.

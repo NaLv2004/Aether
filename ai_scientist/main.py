@@ -151,7 +151,7 @@ def main():
     # copy all files in paper path to OUTPUT_PATH_SUB['rebuttal']
     remove_file(OUTPUT_PATH_SUB['rebuttal'])
     move_files(papers_path, OUTPUT_PATH_SUB['rebuttal'])
-    move_files(OUTPUT_PATH_SUB['code_gen'], os.path.join(OUTPUT_PATH_SUB['rebuttal'], "experiment_summary.txt"))
+    move_files(OUTPUT_PATH_SUB['code_gen'],OUTPUT_PATH_SUB['rebuttal'])
     parser_review_update.add_argument("--plan_file", type=str, default=plan_file_path, help="之前生成的包含计划的JSON文件路径")
 
     
@@ -159,17 +159,14 @@ def main():
         logger.info(f"Starting Rebuttal Round {i+1}...")
         # clear all files in rebuttal path
         remove_file(OUTPUT_PATH_SUB['review'])
-        move_files(OUTPUT_PATH_SUB['rebuttal'], OUTPUT_PATH_SUB['review'])
-        if i == 0:
-            pdf_path = papers_path
-        else:
-            pdf_path = OUTPUT_PATH_SUB['rebuttal']
+        pdf_path = OUTPUT_PATH_SUB['rebuttal']
         try:
            compile_latex_project(pdf_path, "main.tex")    
-           logger.Info(f"pdf compiled generated successfully")     
+           logger.info(f"pdf compiled generated successfully")     
         except Exception as e:
            logger.error(f"Failed to compile pdf: {e}")
         logger.info(f"Starting Rebuttal Review {i+1}/MAX_REBUTTAL_TURNS...")
+        move_files(OUTPUT_PATH_SUB['rebuttal'], OUTPUT_PATH_SUB['review'])
         run_review_workflow(workspace_dir=OUTPUT_PATH_SUB['review'], pdf_api_key=os.environ['JIANYI_API_KEY'],model_comprehensive=MODEL )
         logger.info(f"Rebuttal Review {i+1}/MAX_REBUTTAL_TURNS Finished.")
         logger.info(f"Starting Rebuttal Update {i+1}/MAX_REBUTTAL_TURNS...")

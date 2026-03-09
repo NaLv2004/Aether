@@ -1,0 +1,16 @@
+\begin{tikzpicture}
+\begin{axis}[
+    ybar,
+    xlabel={SNR Regime},
+    ylabel={Average Allocated Bits},
+    symbolic x coords={Low SNR, Mid SNR, High SNR},
+    xtick=data,
+    ymin=0, ymax=2.5,
+    grid=major,
+    width=0.85\linewidth,
+    height=0.65\linewidth,
+    nodes near coords
+]
+\addplot[fill=blue!30] coordinates {(Low SNR, 0.85) (Mid SNR, 1.55) (High SNR, 1.78)};
+\end{axis}
+\end{tikzpicture}

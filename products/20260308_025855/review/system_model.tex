@@ -1,0 +1,43 @@
+\section{System Model and Problem Formulation}
+
+We consider the uplink of a Cell-Free Massive MIMO system comprising $L$ distributed Access Points (APs), indexed by the set $\mathcal{L} = \{1, \dots, L\}$, and $K$ single-antenna User Equipments (UEs), indexed by $\mathcal{K} = \{1, \dots, K\}$. Each AP is equipped with $N$ antennas and is connected to a Central Processing Unit (CPU) via a capacity-constrained fronthaul link. The APs cooperate to serve the users in the same time-frequency resource block. We assume a block-fading channel model where channel statistics remain constant within a coherence block.
+
+\subsection{Physical Layer Channel Model}
+Let $\mathbf{h}_{lk} \in \mathbb{C}^{N \times 1}$ denote the channel vector between the $k$-th user and the $l$-th AP. The channel models large-scale fading (including path loss and shadowing) and small-scale fading, expressed as:
+\begin{equation}
+    \mathbf{h}_{lk} = \sqrt{\beta_{lk}} \mathbf{g}_{lk},
+\end{equation}
+where $\beta_{lk} \in \mathbb{R}_{+}$ represents the large-scale fading coefficient, which is assumed to be known at the CPU and the $l$-th AP due to its slow-varying nature. The vector $\mathbf{g}_{lk} \sim \mathcal{CN}(\mathbf{0}, \mathbf{I}_N)$ represents the small-scale Rayleigh fading component. 
+
+During the uplink data transmission phase, all $K$ users simultaneously transmit their data symbols $s_k \in \mathbb{C}$ to the APs, where $\mathbb{E}[|s_k|^2] = 1$. The received signal $\mathbf{y}_l \in \mathbb{C}^{N \times 1}$ at the $l$-th AP is given by:
+\begin{equation}
+    \mathbf{y}_l = \sum_{k=1}^{K} \sqrt{p_k} \mathbf{h}_{lk} s_k + \mathbf{n}_l,
+\end{equation}
+where $p_k$ denotes the transmit power of the $k$-th user, and $\mathbf{n}_l \sim \mathcal{CN}(\mathbf{0}, \sigma^2 \mathbf{I}_N)$ is the additive white Gaussian noise (AWGN) vector at the $l$-th AP with noise power $\sigma^2$.
+
+\subsection{Local Processing and Quantization}
+To alleviate the fronthaul burden, each AP performs local processing to extract user-specific features before transmission to the CPU. Instead of forwarding the high-dimensional raw signal $\mathbf{y}_l$, the $l$-th AP computes a local linear minimum mean square error (LMMSE) estimate for each user $k$. The local estimate $\hat{s}_{lk}$ is obtained as:
+\begin{equation}
+    \hat{s}_{lk} = \mathbf{w}_{lk}^H \mathbf{y}_l,
+\end{equation}
+where $\mathbf{w}_{lk} \in \mathbb{C}^{N \times 1}$ is the local combining vector. Assuming the AP has access to local Channel State Information (CSI), the optimal LMMSE combiner is given by:
+\begin{equation}
+    \mathbf{w}_{lk} = p_k \left( \sum_{i=1}^{K} p_i \mathbf{h}_{li} \mathbf{h}_{li}^H + \sigma^2 \mathbf{I}_N \right)^{-1} \mathbf{h}_{lk}.
+\end{equation}
+This local estimation reduces the data dimensionality from $N$ antennas to $K$ scalar estimates per AP. However, transmitting these continuous-valued complex scalars $\hat{s}_{lk}$ still requires infinite precision. In practical limited-backhaul scenarios, these estimates must be quantized.
+
+We define a discrete set of admissible bit-widths $\mathcal{B} = \{0, 2, 4\}$ bits per complex symbol. The choice of $b_{lk} \in \mathcal{B}$ determines the fidelity of the signal transmitted from AP $l$ for user $k$. Specifically:
+\begin{itemize}
+    \item If $b_{lk} = 0$, the AP discards the signal for user $k$, consuming zero bandwidth.
+    \item If $b_{lk} \in \{2, 4\}$, the AP applies a quantization function $\mathcal{Q}(\cdot; b_{lk})$ to $\hat{s}_{lk}$, generating a quantized message $\dot{s}_{lk}$.
+\end{itemize}
+The quantization process introduces a distortion term $q_{lk}$, such that the signal received at the CPU is $\dot{s}_{lk} = \hat{s}_{lk} + q_{lk}$. The statistical properties of $q_{lk}$ depend on the chosen bit-width $b_{lk}$ and the dynamic range of the input signal.
+
+\subsection{Problem Formulation}
+The CPU aggregates the quantized signals $\mathbf{\dot{s}} = \{\dot{s}_{lk} \mid l \in \mathcal{L}, k \in \mathcal{K}\}$ to detect the transmitted symbol vector $\mathbf{s} = [s_1, \dots, s_K]^T$. Let $f_{\Theta}(\cdot)$ denote the centralized detection function parameterized by $\Theta$ (e.g., a neural network), which produces the final estimate $\hat{\mathbf{s}} = f_{\Theta}(\mathbf{\dot{s}})$.
+
+The core challenge is to jointly optimize the bit-width allocation $\mathbf{B} = \{b_{lk}\}$ and the detection parameters $\Theta$ to maximize detection accuracy subject to a constraint on the average fronthaul load. We formulate this as a mean squared error (MSE) minimization problem with a bit-budget penalty:
+\begin{equation}
+    \min_{\Theta, \{b_{lk}\}} \quad \mathbb{E} \left[ \| \mathbf{s} - f_{\Theta}(\mathbf{\dot{s}}) \|^2 \right] \quad \text{s.t.} \quad \mathbb{E} \left[ \frac{1}{K} \sum_{l=1}^{L} \sum_{k=1}^{K} b_{lk} \right] \leq C_{\text{avg}},
+\end{equation}
+where the expectation is taken over the channel realizations and noise statistics, and $C_{\text{avg}}$ represents the target average bits per user per channel use. This formulation implies a task-oriented design: the quantization bit-widths $b_{lk}$ should be dynamically adapted based on the instantaneous local CSI to prioritize users and APs that contribute most significantly to the global detection task, rather than simply minimizing local reconstruction errors.
