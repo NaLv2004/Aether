@@ -1,0 +1,53 @@
+\relax 
+\citation{Lewandowsky2021GeneticAT}
+\citation{Jeon2015OptimalityOL,Som2010ImprovedLD}
+\citation{He2020ModelDriven,Wei2020LearnedCG,Sun2020LearningTS}
+\citation{Shao2021TaskOrientedCF,Shao2021TaskOriented}
+\citation{Beck2023SemanticIR}
+\citation{Li2024TaskOriented}
+\citation{He2022LearningTO}
+\citation{Hou2025Scalable}
+\@writefile{toc}{\contentsline {section}{\numberline {I}Introduction}{1}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {II}System Model and Problem Formulation}{2}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-A}}Physical Layer Channel Model}{2}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-B}}Local Processing and Quantization}{2}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-C}}Problem Formulation}{2}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {III}Proposed Joint Quantization-Aware Training Framework}{3}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces The proposed Joint Quantization-Aware Training (QAT) framework. Each AP locally infers the optimal bit-width based on instantaneous channel conditions, while the CPU aggregates quantized signals using a bit-aware attention mechanism to compensate for quantization noise.}}{3}{}\protected@file@percent }
+\newlabel{fig:framework}{{1}{3}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-A}}AP-Side Resource Inference Module}{3}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-B}}Differentiable LSQ Quantizer}{3}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-C}}CPU-Side Bit-Aware GNN Detector}{3}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-D}}Training Strategy and Complexity}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {IV}Numerical Results}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-A}}Simulation Setup}{4}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Bit Error Rate (BER) versus Transmit Power ($P_{tx}$) for $L=16, N=4, K=8$. The proposed QAT-GNN achieves performance comparable to the full-precision baseline while significantly reducing fronthaul overhead.}}{4}{}\protected@file@percent }
+\newlabel{fig:ber_snr}{{2}{4}{}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Robustness to AP Dropout at $P_{tx}=20$ dBm. The QAT-GNN maintains operational BER levels even when $50\%$ of APs are disconnected, demonstrating superior resilience compared to fixed quantization.}}{4}{}\protected@file@percent }
+\newlabel{fig:dropout}{{3}{4}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-B}}Detection Performance Analysis}{4}{}\protected@file@percent }
+\bibstyle{IEEEtran}
+\bibdata{reference}
+\bibcite{Lewandowsky2021GeneticAT}{1}
+\bibcite{Jeon2015OptimalityOL}{2}
+\bibcite{Som2010ImprovedLD}{3}
+\bibcite{He2020ModelDriven}{4}
+\bibcite{Wei2020LearnedCG}{5}
+\bibcite{Sun2020LearningTS}{6}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Impact of User Load on BER performance. The proposed method scales effectively from light load ($K=4$) to heavy load ($K=12$), maintaining low error rates even in interference-limited regimes.}}{5}{}\protected@file@percent }
+\newlabel{fig:scalability}{{4}{5}{}{}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-C}}Robustness to Infrastructure Failures}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-D}}Scalability and Complexity}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-E}}Task-Oriented Resource Allocation}{5}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Computational Complexity Analysis (FLOPs per AP) versus number of antennas $N$. The proposed Policy Network adds negligible overhead compared to the cubic scaling of LMMSE detection.}}{5}{}\protected@file@percent }
+\newlabel{fig:complexity}{{5}{5}{}{}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Task-Oriented Bit Allocation: Average bits allocated per symbol across different SNR regimes. The network autonomously reduces bit consumption in low SNR conditions to conserve bandwidth.}}{5}{}\protected@file@percent }
+\newlabel{fig:bits}{{6}{5}{}{}{}}
+\@writefile{toc}{\contentsline {section}{References}{5}{}\protected@file@percent }
+\bibcite{Shao2021TaskOrientedCF}{7}
+\bibcite{Shao2021TaskOriented}{8}
+\bibcite{Beck2023SemanticIR}{9}
+\bibcite{Li2024TaskOriented}{10}
+\bibcite{He2022LearningTO}{11}
+\bibcite{Hou2025Scalable}{12}
+\gdef \@abspage@last{6}

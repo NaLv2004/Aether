@@ -8,14 +8,19 @@ from perform_experiments import generate_readme, plan_and_execute_experiments
 from perform_writeup import perform_writeup
 from update_from_reviews import update_from_review
 from utils import setup_logger
+from utils import PDFReader
+from review import run_review_workflow
 import shutil
+from utils import remove_file
+from utils import move_files
+from utils import compile_latex_project
 
 logger = setup_logger("experiment_run.log")
 
 def main():
     # =========================================Parameter Configurations==============================================
     # Parameters for idea generation
-    MODEL = 'gemini-3-pro-preview'
+    MODEL = 'gemini-3-flash-preview'
     THEME_FILE_PATH = 'theme_idea_gen.txt'
     N_PARALLEL_IDEA_GENERATOR = 3
     MAX_STUDENT_ITERS = 2
@@ -27,12 +32,13 @@ def main():
     N_PARALLEL_PLAN_GENERATOR = 3
     N_GENERATOR_PER_IDEA = 2
     REPO_URL = "https://github.com/NaLv2004/aether-products-v1.git"
+    MAX_REBUTTAL_TURNS = 10
     # timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     timestamp = "20260308_025855"
     LOG_ROOT_DIR = 'logs'
     LOG_DIR = os.path.join(LOG_ROOT_DIR, timestamp)
     os.makedirs(LOG_DIR, exist_ok=True)
-    LOG_DIR_SUB = ['idea_gen','plan_gen','code_gen','perform_experiments','perform_writeup','rebuttal']
+    LOG_DIR_SUB = ['idea_gen','plan_gen','code_gen','perform_experiments','perform_writeup','rebuttal','review']
     for sub_dir in LOG_DIR_SUB:
         os.makedirs(os.path.join(LOG_DIR, sub_dir), exist_ok=True)
     LOG_PATH_SUB = dict()
@@ -143,26 +149,34 @@ def main():
     papers_path =  r"papers\\20260308_194954"
     logger.info(f"Starting Rebuttal Generation...")
     # copy all files in paper path to OUTPUT_PATH_SUB['rebuttal']
-    for file in os.listdir(papers_path):
-        if file.endswith(".tex"):
-            if os.path.isfile(os.path.join(papers_path, file)):
-                try:
-                    shutil.copy2(os.path.join(papers_path, file), os.path.join(OUTPUT_PATH_SUB['rebuttal'], file))
-                    logger.info(f"Copied {file} to {OUTPUT_PATH_SUB['rebuttal']}")
-                except:
-                    logger.error(f"Failed to copy {file} to {OUTPUT_PATH_SUB['rebuttal']}")
-    code_gen_path = OUTPUT_PATH_SUB['code_gen']             
-    for file in os.listdir(code_gen_path):
-            if os.path.isfile(os.path.join(code_gen_path, file)):
-                try:
-                    shutil.copy2(os.path.join(code_gen_path, file), os.path.join(OUTPUT_PATH_SUB['rebuttal'], file))
-                    logger.info(f"Copied {file} to {OUTPUT_PATH_SUB['rebuttal']}")
-                except:
-                    logger.error(f"Failed to copy {file} to {OUTPUT_PATH_SUB['rebuttal']}")
-    shutil.copy2("review.txt", os.path.join(OUTPUT_PATH_SUB['rebuttal'], "review.txt"))
+    remove_file(OUTPUT_PATH_SUB['rebuttal'])
+    move_files(papers_path, OUTPUT_PATH_SUB['rebuttal'])
+    move_files(OUTPUT_PATH_SUB['code_gen'], os.path.join(OUTPUT_PATH_SUB['rebuttal'], "experiment_summary.txt"))
     parser_review_update.add_argument("--plan_file", type=str, default=plan_file_path, help="之前生成的包含计划的JSON文件路径")
-    update_from_review(parser_review_update.parse_args())
-    logger.info(f"Rebuttal Generation Finished.")
+
+    
+    for i in range(MAX_REBUTTAL_TURNS):
+        logger.info(f"Starting Rebuttal Round {i+1}...")
+        # clear all files in rebuttal path
+        remove_file(OUTPUT_PATH_SUB['review'])
+        move_files(OUTPUT_PATH_SUB['rebuttal'], OUTPUT_PATH_SUB['review'])
+        if i == 0:
+            pdf_path = papers_path
+        else:
+            pdf_path = OUTPUT_PATH_SUB['rebuttal']
+        try:
+           compile_latex_project(pdf_path, "main.tex")    
+           logger.Info(f"pdf compiled generated successfully")     
+        except Exception as e:
+           logger.error(f"Failed to compile pdf: {e}")
+        logger.info(f"Starting Rebuttal Review {i+1}/MAX_REBUTTAL_TURNS...")
+        run_review_workflow(workspace_dir=OUTPUT_PATH_SUB['review'], pdf_api_key=os.environ['JIANYI_API_KEY'],model_comprehensive=MODEL )
+        logger.info(f"Rebuttal Review {i+1}/MAX_REBUTTAL_TURNS Finished.")
+        logger.info(f"Starting Rebuttal Update {i+1}/MAX_REBUTTAL_TURNS...")
+        shutil.copy2(os.path.join(OUTPUT_PATH_SUB['review'], "review.txt"), os.path.join(OUTPUT_PATH_SUB['rebuttal'], "review.txt"))
+        update_from_review(parser_review_update.parse_args())
+        logger.info(f"Rebuttal Update {i+1}/MAX_REBUTTAL_TURNS Finished.")
+        pass
 
 main()
 

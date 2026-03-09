@@ -1,7 +1,7 @@
 import logging
 import colorlog
 import os
-
+import shutil
 def setup_logger(log_file_path):
     """
     初始化全局 Logger，同时输出到控制台(带颜色)和文件(纯文本)
@@ -33,7 +33,7 @@ def setup_logger(log_file_path):
 
     return logger
     
-    
+logger = setup_logger("experiment_run.log")
 import http.client
 import json
 import base64
@@ -170,34 +170,149 @@ class PDFReader:
             conn.close()
             
             
-if __name__ == "__main__":
-    # 1. 准备你的配置
-    YOUR_API_KEY = os.getenv("JIANYI_API_KEY") 
-    # YOUR_API_KEY = "sk-xxxxxxxxxxxxxxxxx" # 替换为你的真实 API Key / Token
-    SYS_PROMPT = "请总结以下论文。"
+# if __name__ == "__main__":
+#     # 1. 准备你的配置
+#     YOUR_API_KEY = os.getenv("JIANYI_API_KEY") 
+#     # YOUR_API_KEY = "sk-xxxxxxxxxxxxxxxxx" # 替换为你的真实 API Key / Token
+#     SYS_PROMPT = "请总结以下论文。"
     
-    # 2. 初始化类，上下文窗口设置为 2（记忆上一轮对话）
-    # host 默认是 jeniya.top，如果你用官方或其他代理，可以在此处修改 host="generativelanguage.googleapis.com"
-    reader = PDFReader(
-        api_key=YOUR_API_KEY, 
-        system_prompt=SYS_PROMPT, 
-        context_window_size=2
-    )
+#     # 2. 初始化类，上下文窗口设置为 2（记忆上一轮对话）
+#     # host 默认是 jeniya.top，如果你用官方或其他代理，可以在此处修改 host="generativelanguage.googleapis.com"
+#     reader = PDFReader(
+#         api_key=YOUR_API_KEY, 
+#         system_prompt=SYS_PROMPT, 
+#         context_window_size=2
+#     )
 
-    # 3. 第一次请求：要求总结
-    pdf_file = r"pdfs_ieee\\10.1109_TCCN.2017.2758370.pdf"      # 本地的 PDF 路径
-    output_file = "test.txt"   # 准备写入的文本文件路径
+#     # 3. 第一次请求：要求总结
+#     pdf_file = r"pdfs_ieee\\10.1109_TCCN.2017.2758370.pdf"      # 本地的 PDF 路径
+#     output_file = "test.txt"   # 准备写入的文本文件路径
     
-    reader.read_pdf(
-        pdf_path=pdf_file, 
-        output_txt_path=output_file, 
-        user_prompt="请帮详细总结这篇论文，并写出式（4）是什么。"
-    )
+#     reader.read_pdf(
+#         pdf_path=pdf_file, 
+#         output_txt_path=output_file, 
+#         user_prompt="请帮详细总结这篇论文，并写出式（4）是什么。"
+#     )
 
-    # 4. 第二次请求：基于上一次的记忆追问 (测试上下文)
-    # 此时因为 context_window_size 设定为 2，它会记得上一次它回答的那 3 个要点
-    # reader.read_pdf(
-    #     pdf_path=pdf_file, 
-    #     output_txt_path=output_file, 
-    #     user_prompt="针对你刚才列出的第2个要点，在这份文档中有什么具体的数据支撑吗？"
-    # )
+#     # 4. 第二次请求：基于上一次的记忆追问 (测试上下文)
+#     # 此时因为 context_window_size 设定为 2，它会记得上一次它回答的那 3 个要点
+#     # reader.read_pdf(
+#     #     pdf_path=pdf_file, 
+#     #     output_txt_path=output_file, 
+#     #     user_prompt="针对你刚才列出的第2个要点，在这份文档中有什么具体的数据支撑吗？"
+#     # )
+    
+
+# compile given latex project to pdf   
+import os
+import subprocess
+
+def compile_latex_project(directory, main_filename="main.tex", texlive_bin_dir=None):
+    """
+    强制编译 LaTeX 项目，并解决 MiKTeX / TeX Live 冲突问题。
+    
+    参数:
+        directory: 项目工作目录
+        main_filename: 主文件名
+        texlive_bin_dir: (可选) 强制指定 TeX Live 的 bin 目录绝对路径
+                         例如: r"C:\texlive\2023\bin\windows"
+    """
+    main_file_path = os.path.join(directory, main_filename)
+    if not os.path.exists(main_file_path):
+        print(f"❌ 错误: 找不到主文件 {os.path.abspath(main_file_path)}")
+        return False
+
+    base_name = os.path.splitext(main_filename)[0]
+
+    # ================= 核心修复：处理环境变量冲突 =================
+    # 复制当前系统的环境变量
+    custom_env = os.environ.copy()
+    
+    # 获取当前的 PATH 列表
+    current_paths = custom_env.get("PATH", "").split(os.pathsep)
+    
+    # 1. 自动过滤掉所有包含 "MiKTeX" 的路径，防止鸠占鹊巢
+    cleaned_paths = [p for p in current_paths if "miktex" not in p.lower()]
+    
+    # 2. 如果用户指定了 TeX Live 的路径，将其强行插入到 PATH 的最前面！
+    if texlive_bin_dir:
+        if os.path.exists(texlive_bin_dir):
+            cleaned_paths.insert(0, texlive_bin_dir)
+            print(f"🔧 已强制置顶 TeX Live 路径: {texlive_bin_dir}")
+        else:
+            print(f"⚠️  警告: 指定的 TeX Live 路径不存在: {texlive_bin_dir}")
+
+    # 将清洗后的 PATH 重新组装回环境变量中
+    custom_env["PATH"] = os.pathsep.join(cleaned_paths)
+    # =============================================================
+
+    steps = [
+        ["pdflatex", "-interaction=nonstopmode", "-file-line-error", main_filename],
+        ["bibtex", base_name],
+        ["pdflatex", "-interaction=nonstopmode", "-file-line-error", main_filename],
+        ["pdflatex", "-interaction=nonstopmode", "-file-line-error", main_filename]
+    ]
+
+    print(f"🚀 开始强制编译 [{directory}] 下的 {main_filename} ...\n")
+
+    for i, cmd in enumerate(steps, 1):
+        print(f"--- 正在执行步骤 {i}/{len(steps)}: {' '.join(cmd)} ---")
+        try:
+            # 注意这里传入了 env=custom_env
+            result = subprocess.run(
+                cmd, 
+                cwd=directory,
+                env=custom_env,          # <--- 关键参数：使用清洗过的环境变量
+                stdout=subprocess.PIPE, 
+                stderr=subprocess.PIPE, 
+                text=True,
+                encoding='utf-8',
+                errors='ignore'
+            )
+            
+            if result.returncode != 0:
+                print(f"⚠️  警告: 步骤 '{cmd[0]}' 遇到错误，强制继续！")
+                errors = [line for line in result.stdout.split('\n') if "Error" in line or "!" in line]
+                if errors:
+                    print("   捕获到的主要报错片段:")
+                    for err in errors[:3]: 
+                        print(f"     {err.strip()}")
+                print("   (忽略错误，继续...)\n")
+                
+        except FileNotFoundError:
+            print(f"❌ 致命错误: 找不到命令 '{cmd[0]}'。")
+            print("   说明系统 PATH 中找不到 TeX Live。请尝试使用 texlive_bin_dir 参数直接指定路径。")
+            return False
+
+    # 检查 PDF 是否生成
+    pdf_file_path = os.path.join(directory, f"{base_name}.pdf")
+    if os.path.exists(pdf_file_path):
+        print(f"\n✅ 强制编译完成！已生成 PDF: {os.path.abspath(pdf_file_path)}")
+        return True
+    else:
+        print("\n❌ 致命错误导致未能生成 PDF 文件。")
+        return False
+        
+        
+# compile_latex_project(directory=r"papers\\20260308_194954")
+def remove_file(file_path):
+    for file in os.listdir(file_path):
+            if os.path.isfile(os.path.join(file_path, file)):
+                try:
+                    os.remove(os.path.join(file_path, file))
+                    logger.info(f"Removed {file} from {file_path}")
+                except:
+                    logger.error(f"Failed to remove {file} from {file_path}")
+
+
+
+# use shutil to copy files
+def move_files(src, dst):
+    for file in os.listdir(src):
+        if os.path.isfile(os.path.join(src, file)):
+            try:
+                shutil.copy2(os.path.join(src, file), os.path.join(dst, file))
+                logger.info(f"Copied {file} from {src} to {dst}")
+            except:
+                logger.error(f"Failed to copy {file} from {src} to {dst}")
+    pass
