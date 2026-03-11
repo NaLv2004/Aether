@@ -20,7 +20,8 @@ logger = setup_logger("experiment_run.log")
 def main():
     # =========================================Parameter Configurations==============================================
     # Parameters for idea generation
-    MODEL = 'gemini-3-flash-preview'
+    MODEL = 'claude-opus-4-6'
+    # MODEL = 'claude-opus-4-6'
     THEME_FILE_PATH = 'theme_idea_gen.txt'
     N_PARALLEL_IDEA_GENERATOR = 3
     MAX_STUDENT_ITERS = 2
@@ -31,7 +32,7 @@ def main():
     MAX_STUDENT_SELF_REFINE_ITER = 4
     N_PARALLEL_PLAN_GENERATOR = 3
     N_GENERATOR_PER_IDEA = 2
-    REPO_URL = "https://github.com/NaLv2004/aether-products-v1.git"
+    REPO_URL = "https://github.com/NaLv2004/rebuttal.git"
     MAX_REBUTTAL_TURNS = 10
     # timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     timestamp = "20260308_025855"
@@ -103,7 +104,7 @@ def main():
     parser_review_update.add_argument("--experiment_log_dir", type=str, default=LOG_PATH_SUB['rebuttal'], help="实验log的输出目录")
     parser_review_update.add_argument("--experiment_dir", type=str, default=OUTPUT_PATH_SUB['rebuttal'], help="实验log的输出目录")
     parser_review_update.add_argument("--include_all_files", type=bool, default=False, help="Orchestrator的context中是否包含所有文件")
-    parser_review_update.add_argument("--repo_url", type=str, default=None, help="Orchestrator的context中是否包含所有文件")
+    parser_review_update.add_argument("--repo_url", type=str, default=REPO_URL, help="Orchestrator的context中是否包含所有文件")
     
         
     logger.info(f"Starting Research. Experiment Run Log Dir: {LOG_DIR}")
@@ -149,9 +150,9 @@ def main():
     papers_path =  r"papers\\20260308_194954"
     logger.info(f"Starting Rebuttal Generation...")
     # copy all files in paper path to OUTPUT_PATH_SUB['rebuttal']
-    remove_file(OUTPUT_PATH_SUB['rebuttal'])
-    move_files(papers_path, OUTPUT_PATH_SUB['rebuttal'])
-    move_files(OUTPUT_PATH_SUB['code_gen'],OUTPUT_PATH_SUB['rebuttal'])
+    # remove_file(OUTPUT_PATH_SUB['rebuttal'])
+    # move_files(papers_path, OUTPUT_PATH_SUB['rebuttal'])
+    # move_files(OUTPUT_PATH_SUB['code_gen'],OUTPUT_PATH_SUB['rebuttal'])
     parser_review_update.add_argument("--plan_file", type=str, default=plan_file_path, help="之前生成的包含计划的JSON文件路径")
 
     
@@ -165,12 +166,13 @@ def main():
            logger.info(f"pdf compiled generated successfully")     
         except Exception as e:
            logger.error(f"Failed to compile pdf: {e}")
-        logger.info(f"Starting Rebuttal Review {i+1}/MAX_REBUTTAL_TURNS...")
-        move_files(OUTPUT_PATH_SUB['rebuttal'], OUTPUT_PATH_SUB['review'])
-        run_review_workflow(workspace_dir=OUTPUT_PATH_SUB['review'], pdf_api_key=os.environ['JIANYI_API_KEY'],model_comprehensive=MODEL )
-        logger.info(f"Rebuttal Review {i+1}/MAX_REBUTTAL_TURNS Finished.")
-        logger.info(f"Starting Rebuttal Update {i+1}/MAX_REBUTTAL_TURNS...")
-        shutil.copy2(os.path.join(OUTPUT_PATH_SUB['review'], "review.txt"), os.path.join(OUTPUT_PATH_SUB['rebuttal'], "review.txt"))
+        if i>=1:
+            logger.info(f"Starting Rebuttal Review {i+1}/MAX_REBUTTAL_TURNS...")
+            move_files(OUTPUT_PATH_SUB['rebuttal'], OUTPUT_PATH_SUB['review'])
+            run_review_workflow(workspace_dir=OUTPUT_PATH_SUB['review'], pdf_api_key=os.environ['JIANYI_API_KEY'],model_comprehensive='claude-opus-4-6',model_read_pdf='gemini-3.1-pro-preview' )
+            logger.info(f"Rebuttal Review {i+1}/MAX_REBUTTAL_TURNS Finished.")
+            logger.info(f"Starting Rebuttal Update {i+1}/MAX_REBUTTAL_TURNS...")
+            shutil.copy2(os.path.join(OUTPUT_PATH_SUB['review'], "review.txt"), os.path.join(OUTPUT_PATH_SUB['rebuttal'], "review.txt"))
         update_from_review(parser_review_update.parse_args())
         logger.info(f"Rebuttal Update {i+1}/MAX_REBUTTAL_TURNS Finished.")
         pass

@@ -21,8 +21,7 @@ logger = setup_logger("review_run.log")
 
 # 针对 PDF 初审的 Prompt
 PDF_COMMENTATOR_PROMPT = (
-    "请以 IEEE TVT 的标准，给以下完全由 AI 生成的论文给出审稿意见（直接获取其全部回答，不需要结构化输出）。"
-    "重点关注论文的动机、贡献、图表呈现、数学公式的严谨性以及文章的整体结构与逻辑。"
+    "请以 IEEE TVT 的标准，对以下完全由 AI 生成的论文给出审稿意见"
 )
 
 # 针对深度全面审稿人的系统提示词
@@ -59,6 +58,8 @@ COMPREHENSIVE_REVIEWER_SYSTEM_PROMPT = """
 1. 每次只允许调用一个工具！如果对论文内容不清晰，务必先多次调用 `READ_CODE` 阅读具体的 tex 和 py 文件。
 2. 你是一个专业的审稿人，不需要对文件进行任何修改，只需给出详细的审稿意见文本。
 3. 请尽可能挖掘潜在的缺陷（包括：所提方法优势不明显，对比不公平，代码和论文讲述不匹配等）。
+4.论文的代码是分阶段实现的！你必须充分阅读整篇论文和所有对应代码之后，才给出最终的评审意见！
+5. 最终的review不要过于冗长。
 """
 
 # ==========================================
@@ -118,7 +119,7 @@ def get_separated_workspace_files(cwd):
 # ==========================================
 # 4. 主控工作流
 # ==========================================
-def run_review_workflow(workspace_dir, pdf_api_key, model_comprehensive):
+def run_review_workflow(workspace_dir, pdf_api_key, model_comprehensive, model_read_pdf):
     os.makedirs(workspace_dir, exist_ok=True)
     pdf_path = os.path.join(workspace_dir, "main.pdf")
     review_output_path = os.path.join(workspace_dir, "review.txt")
@@ -138,7 +139,8 @@ def run_review_workflow(workspace_dir, pdf_api_key, model_comprehensive):
             pdf_reader = PDFReader(
                 api_key=pdf_api_key,
                 system_prompt="你是一个严苛的学术审稿专家。",
-                context_window_size=1
+                context_window_size=1,
+                model = model_read_pdf
             )
             logger.info("正在使用 PDFReader 解析并获取意见...")
             pdf_reader.read_pdf(
@@ -166,7 +168,7 @@ def run_review_workflow(workspace_dir, pdf_api_key, model_comprehensive):
     tool_manager = ReviewToolManager(workspace_dir)
     
     tool_calls_history = []
-    MAX_ITERATIONS = 15
+    MAX_ITERATIONS = 50
     final_comprehensive_review = ""
     
     for attempt in range(MAX_ITERATIONS):
@@ -214,11 +216,18 @@ def run_review_workflow(workspace_dir, pdf_api_key, model_comprehensive):
             
         action_json = LLMAgent.robust_extract_json(resp)
         if not action_json:
-            tool_calls_history.append({"action": "PARSE_ERROR", "params": {}, "result": "无法解析 JSON，请严格遵守 JSON 格式输出。"})
-            continue
-            
-        action = action_json.get("Action")
-        params = action_json.get("Action_Params", {})
+            if len(resp)<1000:
+                tool_calls_history.append({"action": "PARSE_ERROR", "params": {}, "result": "无法解析 JSON，请严格遵守 JSON 格式输出。"})
+                continue
+            else:
+                logger.info("[Action] 综合审稿完毕，正在生成最终 review.txt ...")
+                final_comprehensive_review = resp
+                break
+        action = ""
+        params = {}
+        if action_json:      
+            action = action_json.get("Action")
+            params = action_json.get("Action_Params", {})
         
         if action == "READ_CODE":
             filename = params.get("filename", "")
@@ -232,14 +241,17 @@ def run_review_workflow(workspace_dir, pdf_api_key, model_comprehensive):
             res = tool_manager.search_literature(queries)
             tool_calls_history.append({"action": action, "params": params, "result": res})
             
-        elif action == "FINISH_REVIEW":
+        elif action == "FINISH_REVIEW" or len(resp)>1000:
             logger.info("[Action] 综合审稿完毕，正在生成最终 review.txt ...")
-            final_comprehensive_review = params.get("review_content", "未提取到 review_content。")
+            if action_json:
+               final_comprehensive_review = params.get("review_content", "未提取到 review_content。")
+            else: final_comprehensive_review = resp
             break
             
         else:
             logger.warning(f"未知 Action: {action}")
             tool_calls_history.append({"action": action, "params": params, "result": f"Unknown action: {action}"})
+        
             
     if not final_comprehensive_review:
         logger.warning("Comprehensive Reviewer 达到最大迭代次数，未能正常输出 FINISH_REVIEW。将使用最后一步的 Thoughts 替代。")
@@ -265,16 +277,16 @@ def run_review_workflow(workspace_dir, pdf_api_key, model_comprehensive):
     if os.path.exists(temp_pdf_review_path):
         os.remove(temp_pdf_review_path)
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Auto Paper Review Agent")
-    parser.add_argument("--workspace_dir", type=str, default="./", help="目标科研项目的工作目录")
-    parser.add_argument("--comprehensive_model", type=str, default="gpt-4o", help="Comprehensive Reviewer 使用的模型")
-    parser.add_argument("--pdf_api_key", type=str, default=os.getenv("GEMINI_API_KEY", "YOUR_GEMINI_KEY_HERE"), help="PDFReader 需要的 API 密钥")
-    args = parser.parse_args()
+# if __name__ == "__main__":
+#     parser = argparse.ArgumentParser(description="Auto Paper Review Agent")
+#     parser.add_argument("--workspace_dir", type=str, default="./", help="目标科研项目的工作目录")
+#     parser.add_argument("--comprehensive_model", type=str, default="gpt-4o", help="Comprehensive Reviewer 使用的模型")
+#     parser.add_argument("--pdf_api_key", type=str, default=os.getenv("GEMINI_API_KEY", "YOUR_GEMINI_KEY_HERE"), help="PDFReader 需要的 API 密钥")
+#     args = parser.parse_args()
 
-    run_review_workflow(
-        workspace_dir=args.workspace_dir,
-        pdf_api_key=args.pdf_api_key,
-        model_comprehensive=args.comprehensive_model
-    )
+#     run_review_workflow(
+#         workspace_dir=args.workspace_dir,
+#         pdf_api_key=args.pdf_api_key,
+#         model_comprehensive=args.comprehensive_model
+#     )
 

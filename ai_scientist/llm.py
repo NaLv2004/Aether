@@ -70,8 +70,12 @@ class LLMAgent:
     def _create_client(self, model):
         """根据模型名称创建对应的 API Client"""
         if model.startswith("claude-"):
-            print(f"Using Anthropic API with model {model}.")
-            return anthropic.Anthropic(), model
+            print(f"Using CLAUDE API with {model}.")
+            return openai.OpenAI(
+                api_key = os.environ.get("CLAUDE_API_KEY"),
+                #base_url="https://newapi.baosiapi.com/v1"
+                base_url = "https://jeniya.top/v1"
+            ), model
         elif model.startswith("bedrock") and "claude" in model:
             client_model = model.split("/")[-1]
             print(f"Using Amazon Bedrock with model {client_model}.")
@@ -116,7 +120,7 @@ class LLMAgent:
         self._log_interaction("SYSTEM MESSAGE", system_message)
         self._log_interaction("USER", msg)
 
-        if "claude" in self.client_model:
+        if "xxxxx" in self.client_model:
             self.msg_history.append({
                 "role": "user",
                 "content": [{"type": "text", "text": msg}]
@@ -227,6 +231,21 @@ class LLMAgent:
             )
             content = response.choices[0].message.content
             self.msg_history.append({"role": "assistant", "content": content})
+            
+        elif "claude" in self.client_model:
+            self.msg_history.append({"role": "user", "content": msg})
+            response = self.client.chat.completions.create(
+                model=self.client_model,
+                messages=[
+                    {"role": "system", "content": system_message},
+                    *self.msg_history,
+                ],
+                temperature=self.temperature,
+                max_tokens=MAX_NUM_TOKENS,
+                n=1,
+            )
+            content = response.choices[0].message.content
+            self.msg_history.append({"role": "assistant", "content": content})
 
         else:
             raise ValueError(f"Model {self.client_model} not supported.")
@@ -255,7 +274,7 @@ class LLMAgent:
         self._log_interaction("SYSTEM MESSAGE", system_message)
         self._log_interaction("USER", msg)
 
-        if "claude" in self.client_model:
+        if "xxxxx" in self.client_model:
             self.msg_history.append({
                 "role": "user",
                 "content": [{"type": "text", "text": msg}]
@@ -408,6 +427,31 @@ class LLMAgent:
             self.msg_history.append({"role": "assistant", "content": content})
 
         elif "gemini" in self.client_model:
+            self.msg_history.append({"role": "user", "content": msg})
+            response = self.client.chat.completions.create(
+                model=self.client_model,
+                messages=[
+                    {"role": "system", "content": system_message},
+                    *self.msg_history,
+                ],
+                temperature=self.temperature,
+                max_tokens=MAX_NUM_TOKENS,
+                n=1,
+                stream=True,
+                timeout=600.0
+            )
+            content = ""
+            for chunk in response:
+                if chunk.choices and len(chunk.choices) > 0:
+                    delta_content = chunk.choices[0].delta.content
+                    if delta_content:
+                        print(delta_content, end="", flush=True)
+                        content += delta_content
+            print()
+            self.msg_history.append({"role": "assistant", "content": content})
+            
+            
+        elif "claude" in self.client_model:
             self.msg_history.append({"role": "user", "content": msg})
             response = self.client.chat.completions.create(
                 model=self.client_model,
