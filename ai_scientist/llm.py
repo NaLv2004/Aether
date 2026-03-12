@@ -6,7 +6,7 @@ import datetime
 import anthropic
 import backoff
 import openai
-
+import json_repair
 MAX_NUM_TOKENS = 65000
 
 class LLMAgent:
@@ -486,7 +486,16 @@ class LLMAgent:
                 print(f'{j}, {m["role"]}: {m["content"]}')
             print(content)
             print("*" * 21 + " LLM END " + "*" * 21 + "\n")
-
+        
+        try:
+            with open('resp_temp.txt', 'w', encoding='utf-8') as f:
+                f.write(content)
+                f.close()
+            with open('resp_temp.txt','r', encoding='utf-8',errors='ignore') as ff:
+                content = ff.read()
+                ff.close()
+        except:
+            pass
         return content, self.msg_history
 
     @backoff.on_exception(backoff.expo, (openai.RateLimitError, openai.APITimeoutError))
@@ -642,10 +651,22 @@ class LLMAgent:
                     continue
         return None
         
-        
+   
     @staticmethod
     def robust_extract_json(text):
         """鲁棒的 JSON 提取器，完美处理 LLM 输出的各类 LaTeX 公式和非法转义符"""
+        try:
+            loaded = json_repair.loads(text)
+            if isinstance(loaded, dict):
+                return loaded
+            elif isinstance(loaded, list):
+                for item in loaded:
+                    if isinstance(item, dict):
+                        return item
+                        break
+        except Exception as e:
+            pass
+        
         json_pattern = r"```json(.*?)```"
         matches = re.findall(json_pattern, text, re.DOTALL)
         
@@ -654,6 +675,7 @@ class LLMAgent:
             matches = re.findall(json_pattern, text, re.DOTALL)
             
         for json_string in matches:
+            
             json_string = json_string.strip()
             
             # 【终极修复】逐个检查所有的反斜杠及其后面的字符
@@ -669,15 +691,54 @@ class LLMAgent:
 
             # 正则匹配 \uXXXX 或者 \ 加任意单个字符，或者在结尾的 \
             json_string = re.sub(r'\\u[0-9a-fA-F]{4}|\\.|\\$', fix_escape, json_string)
-            
-            try:
-                # strict=False 允许字符串内部直接包含物理换行符
-                return json.loads(json_string, strict=False)
-            except json.JSONDecodeError:
+            try: 
+                return json_repair.loads(text)
+            except Exception as e:
                 try:
-                    # 兜底：清除非法的 ASCII 控制字符
-                    json_string_clean = re.sub(r"[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]", "", json_string)
-                    return json.loads(json_string_clean, strict=False)
+                    # strict=False 允许字符串内部直接包含物理换行符
+                    return json.loads(json_string, strict=False)
                 except json.JSONDecodeError:
-                    continue
+                    try:
+                        # 兜底：清除非法的 ASCII 控制字符
+                        json_string_clean = re.sub(r"[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]", "", json_string)
+                        return json.loads(json_string_clean, strict=False)
+                    except json.JSONDecodeError:
+                        continue
         return None
+    # def robust_extract_json(text):
+    #     """鲁棒的 JSON 提取器，完美处理 LLM 输出的各类 LaTeX 公式和非法转义符"""
+    #     json_pattern = r"```json(.*?)```"
+    #     matches = re.findall(json_pattern, text, re.DOTALL)
+        
+    #     if not matches:
+    #         json_pattern = r"\{.*?\}"
+    #         matches = re.findall(json_pattern, text, re.DOTALL)
+            
+    #     for json_string in matches:
+    #         json_string = json_string.strip()
+            
+    #         # 【终极修复】逐个检查所有的反斜杠及其后面的字符
+    #         def fix_escape(m):
+    #             val = m.group(0)
+    #             # 如果是合法的 JSON 转义序列，原样保留
+    #             if val in ['\\\\', '\\"', '\\/', '\\b', '\\f', '\\n', '\\r', '\\t']:
+    #                 return val
+    #             if val.startswith('\\u') and len(val) == 6:
+    #                 return val
+    #             # 如果是非法的（比如 \p, \l, \m, \| 等），额外添加一个反斜杠将其转义为字面量
+    #             return '\\' + val
+
+    #         # 正则匹配 \uXXXX 或者 \ 加任意单个字符，或者在结尾的 \
+    #         json_string = re.sub(r'\\u[0-9a-fA-F]{4}|\\.|\\$', fix_escape, json_string)
+            
+    #         try:
+    #             # strict=False 允许字符串内部直接包含物理换行符
+    #             return json.loads(json_string, strict=False)
+    #         except json.JSONDecodeError:
+    #             try:
+    #                 # 兜底：清除非法的 ASCII 控制字符
+    #                 json_string_clean = re.sub(r"[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]", "", json_string)
+    #                 return json.loads(json_string_clean, strict=False)
+    #             except json.JSONDecodeError:
+    #                 continue
+    #     return None

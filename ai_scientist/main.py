@@ -21,6 +21,7 @@ def main():
     # =========================================Parameter Configurations==============================================
     # Parameters for idea generation
     MODEL = 'claude-opus-4-6'
+    MODEL = 'glm-5'
     # MODEL = 'claude-opus-4-6'
     THEME_FILE_PATH = 'theme_idea_gen.txt'
     N_PARALLEL_IDEA_GENERATOR = 3
