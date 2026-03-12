@@ -106,6 +106,14 @@ class LLMAgent:
                 #base_url="https://newapi.baosiapi.com/v1"
                 base_url = "https://jeniya.top/v1"
             ), model
+        elif "glm" in model:
+            print(f"Using OpenAI API with {model}.")
+            return openai.OpenAI(
+                api_key = os.environ.get("GLM_API"),
+                #base_url="https://newapi.baosiapi.com/v1"
+                base_url = "https://jeniya.top/v1"
+            ), model
+        
         else:
             raise ValueError(f"Model {model} not supported.")
 
@@ -217,7 +225,7 @@ class LLMAgent:
             content = response.choices[0].message.content
             self.msg_history.append({"role": "assistant", "content": content})
 
-        elif "gemini" in self.client_model:
+        elif "gemini"  in self.client_model or "glm" in self.client_model:
             self.msg_history.append({"role": "user", "content": msg})
             response = self.client.chat.completions.create(
                 model=self.client_model,
@@ -273,160 +281,7 @@ class LLMAgent:
 
         self._log_interaction("SYSTEM MESSAGE", system_message)
         self._log_interaction("USER", msg)
-
-        if "xxxxx" in self.client_model:
-            self.msg_history.append({
-                "role": "user",
-                "content": [{"type": "text", "text": msg}]
-            })
-            response = self.client.messages.create(
-                model=self.client_model,
-                max_tokens=MAX_NUM_TOKENS,
-                temperature=self.temperature,
-                system=system_message,
-                messages=self.msg_history,
-                stream=True,       # 开启流式输出
-                timeout=600.0      # 增加 Timeout 限制 (600秒)
-            )
-            content = ""
-            for chunk in response:
-                if chunk.type == "content_block_delta":
-                    text = chunk.delta.text
-                    print(text, end="", flush=True)  # 控制台实时打印
-                    content += text
-            print() # 输出完毕后换行
-            
-            self.msg_history.append({
-                "role": "assistant",
-                "content": [{"type": "text", "text": content}]
-            })
-
-        elif 'gpt' in self.client_model:
-            self.msg_history.append({"role": "user", "content": msg})
-            response = self.client.chat.completions.create(
-                model=self.client_model,
-                messages=[
-                    {"role": "system", "content": system_message},
-                    *self.msg_history,
-                ],
-                temperature=self.temperature,
-                max_tokens=MAX_NUM_TOKENS,
-                n=1,
-                stop=None,
-                seed=0,
-                stream=True,
-                timeout=600.0
-            )
-            content = ""
-            for chunk in response:
-                if chunk.choices and len(chunk.choices) > 0:
-                    delta_content = chunk.choices[0].delta.content
-                    if delta_content:
-                        print(delta_content, end="", flush=True)
-                        content += delta_content
-            print()
-            self.msg_history.append({"role": "assistant", "content": content})
-
-        elif "o1" in self.client_model or "o3" in self.client_model:
-            self.msg_history.append({"role": "user", "content": msg})
-            response = self.client.chat.completions.create(
-                model=self.client_model,
-                messages=[
-                    {"role": "user", "content": system_message},
-                    *self.msg_history,
-                ],
-                temperature=1,
-                max_completion_tokens=MAX_NUM_TOKENS,
-                n=1,
-                seed=0,
-                stream=True,
-                timeout=600.0
-            )
-            content = ""
-            for chunk in response:
-                if chunk.choices and len(chunk.choices) > 0:
-                    delta_content = chunk.choices[0].delta.content
-                    if delta_content:
-                        print(delta_content, end="", flush=True)
-                        content += delta_content
-            print()
-            self.msg_history.append({"role": "assistant", "content": content})
-
-        elif self.client_model in ["meta-llama/llama-3.1-405b-instruct", "llama-3-1-405b-instruct"]:
-            self.msg_history.append({"role": "user", "content": msg})
-            response = self.client.chat.completions.create(
-                model="meta-llama/llama-3.1-405b-instruct",
-                messages=[
-                    {"role": "system", "content": system_message},
-                    *self.msg_history,
-                ],
-                temperature=self.temperature,
-                max_tokens=MAX_NUM_TOKENS,
-                n=1,
-                stop=None,
-                stream=True,
-                timeout=600.0
-            )
-            content = ""
-            for chunk in response:
-                if chunk.choices and len(chunk.choices) > 0:
-                    delta_content = chunk.choices[0].delta.content
-                    if delta_content:
-                        print(delta_content, end="", flush=True)
-                        content += delta_content
-            print()
-            self.msg_history.append({"role": "assistant", "content": content})
-
-        elif self.client_model in ["deepseek-chat", "deepseek-coder"]:
-            self.msg_history.append({"role": "user", "content": msg})
-            response = self.client.chat.completions.create(
-                model=self.client_model,
-                messages=[
-                    {"role": "system", "content": system_message},
-                    *self.msg_history,
-                ],
-                temperature=self.temperature,
-                max_tokens=MAX_NUM_TOKENS,
-                n=1,
-                stop=None,
-                stream=True,
-                timeout=600.0
-            )
-            content = ""
-            for chunk in response:
-                if chunk.choices and len(chunk.choices) > 0:
-                    delta_content = chunk.choices[0].delta.content
-                    if delta_content:
-                        print(delta_content, end="", flush=True)
-                        content += delta_content
-            print()
-            self.msg_history.append({"role": "assistant", "content": content})
-
-        elif self.client_model in ["deepseek-reasoner"]:
-            self.msg_history.append({"role": "user", "content": msg})
-            response = self.client.chat.completions.create(
-                model=self.client_model,
-                messages=[
-                    {"role": "system", "content": system_message},
-                    *self.msg_history,
-                ],
-                n=1,
-                stop=None,
-                stream=True,
-                timeout=600.0
-            )
-            content = ""
-            for chunk in response:
-                if chunk.choices and len(chunk.choices) > 0:
-                    # 对于 reasoner 模型，我们依然只提取 content（不提取 reasoning_content），以保持原逻辑一致
-                    delta_content = chunk.choices[0].delta.content
-                    if delta_content:
-                        print(delta_content, end="", flush=True)
-                        content += delta_content
-            print()
-            self.msg_history.append({"role": "assistant", "content": content})
-
-        elif "gemini" in self.client_model:
+        if "gemini" or 'glm' in self.client_model:
             self.msg_history.append({"role": "user", "content": msg})
             response = self.client.chat.completions.create(
                 model=self.client_model,
@@ -498,73 +353,6 @@ class LLMAgent:
             pass
         return content, self.msg_history
 
-    @backoff.on_exception(backoff.expo, (openai.RateLimitError, openai.APITimeoutError))
-    def get_batch_responses(self, msg, system_message, n_responses=1, print_debug=False):
-        """
-        获取批量的 LLM 响应 (Ensembling)。
-        注意：这会分叉产生多个返回上下文，不会自动修改主进程的 `self.msg_history` 状态以防止冲突。
-        """
-        # 在处理前，先根据上下文窗口裁剪历史记录
-        self._trim_history()
-
-        self._log_interaction(f"USER (BATCH request, n={n_responses})", msg)
-        
-        if 'gpt' in self.client_model:
-            temp_history = self.msg_history + [{"role": "user", "content": msg}]
-            response = self.client.chat.completions.create(
-                model=self.client_model,
-                messages=[
-                    {"role": "system", "content": system_message},
-                    *temp_history,
-                ],
-                temperature=self.temperature,
-                max_tokens=MAX_NUM_TOKENS,
-                n=n_responses,
-                stop=None,
-                seed=0,
-            )
-            content = [r.message.content for r in response.choices]
-            new_msg_history = [
-                temp_history + [{"role": "assistant", "content": c}] for c in content
-            ]
-        elif self.client_model == "llama-3-1-405b-instruct":
-            temp_history = self.msg_history + [{"role": "user", "content": msg}]
-            response = self.client.chat.completions.create(
-                model="meta-llama/llama-3.1-405b-instruct",
-                messages=[
-                    {"role": "system", "content": system_message},
-                    *temp_history,
-                ],
-                temperature=self.temperature,
-                max_tokens=MAX_NUM_TOKENS,
-                n=n_responses,
-                stop=None,
-            )
-            content = [r.message.content for r in response.choices]
-            new_msg_history = [
-                temp_history + [{"role": "assistant", "content": c}] for c in content
-            ]
-        else:
-            # Fallback：逐个请求
-            content, new_msg_history = [], []
-            for _ in range(n_responses):
-                # Temporarily save history to restore later, to prevent accumulating n copies
-                saved_history = list(self.msg_history)
-                c, hist = self.get_response(msg, system_message, print_debug=False)
-                content.append(c)
-                new_msg_history.append(hist)
-                self.msg_history = saved_history
-
-        self._log_interaction("ASSISTANT (BATCH responses)", str(content))
-
-        if print_debug:
-            print("\n" + "*" * 20 + " LLM BATCH START " + "*" * 20)
-            for j, m in enumerate(new_msg_history[0]):
-                print(f'{j}, {m["role"]}: {m["content"]}')
-            print(content)
-            print("*" * 21 + " LLM BATCH END " + "*" * 21 + "\n")
-
-        return content, new_msg_history
 
     @staticmethod
     def extract_json_between_markers(llm_output):
