@@ -1,0 +1,64 @@
+\section{Numerical Results}
+
+Evaluations are performed in a $1 \times 1$~km$^2$ area with $L=16$ Access Points (APs) and $K=8$ User Equipments (UEs) (unless specified otherwise). The channel follows the 3GPP TR 36.814 (UMi) path-loss model with 8 dB shadow fading and Rayleigh fast fading. Each AP is equipped with $N=4$ antennas. To address reproducibility and avoid scenario-specific bias, all results are averaged over 5 random large-scale fading seeds, ensuring geometry-independent evaluation.
+
+\subsection{Performance under Perfect and Imperfect CSI}
+To rigorously evaluate our approach against classical and deep learning state-of-the-art (SOTA), we compare the proposed QAT-GNN against: 1) Centralized MMSE (C-MMSE) with full-precision; 2) MMSE-PIC, a stronger non-linear interference cancellation baseline; 3) C-MMSE-MxQ, an SNR-adaptive quantized C-MMSE baseline; and 4) Dist-Full, an unquantized full-precision version of our deep learning model representing the performance upper bound of the proposed distributed architecture.
+
+\begin{figure}[t]
+    \centering
+    \input{fig1.tex}
+    \caption{BER performance under perfect CSI with $L=16, K=8$. All quantized schemes target approximately 96 bits per link.}
+    \label{fig:perfect_csi}
+\end{figure}
+
+Fig.~\ref{fig:perfect_csi} shows the BER under perfect CSI. The proposed QAT-GNN (average $96$ bits/link) significantly outperforms the improved C-MMSE-MxQ baseline at moderate to high SNR. While the unquantized, centralized C-MMSE and MMSE-PIC define the lower bounds with $\mathcal{O}((LN)^3)$ complexity, our proposed framework maintains a highly competitive BER with localized processing and severe fronthaul constraints (over $6\times$ compression compared to Dist-Full).
+
+\begin{figure}[t]
+    \centering
+    \input{fig2.tex}
+    \caption{BER performance under imperfect CSI ($\tau_{est}=0.05$). The proposed method exhibits significant gain over linear baselines by learning to suppress estimation noise.}
+    \label{fig:imperfect_csi}
+\end{figure}
+
+In Fig.~\ref{fig:imperfect_csi}, we evaluate imperfect CSI with error variance $\tau_{est}=0.05$. This scenario accounts for practical pilot contamination and estimation noise. The proposed framework demonstrates superior robustness, achieving a BER of $0.015$ at $10$~dBm, significantly outperforming full-precision C-MMSE ($0.057$) and the quantized baseline C-MMSE-MxQ ($0.087$). Noticeably, even the unquantized Dist-Full baseline suffers heavily from channel errors, whereas the proposed QAT-GNN effectively learns to perform task-oriented filtering, masking out noisy AP estimates.
+
+\subsection{Generalization and AP Dropout Robustness}
+\begin{figure}[t]
+    \centering
+    \input{fig3.tex}
+    \caption{Zero-shot generalization to $K=12$ users using the model trained on $K=8$ under imperfect CSI.}
+    \label{fig:generalization}
+\end{figure}
+
+The GNN was trained on a fixed $K=8$ setup. Thanks to the permutation-equivariant nature of the graph pooling and attention mechanisms, the model can natively handle varying user dimensions. Fig.~\ref{fig:generalization} confirms this zero-shot generalization to $K=12$ users. 
+
+\begin{figure}[t]
+    \centering
+    \input{fig6.tex}
+    \caption{BER degradation under varying AP Dropout Rates at $P_{tx}=10$ dBm, demonstrating system robustness to link failures.}
+    \label{fig:dropout}
+\end{figure}
+
+Furthermore, in practical CF-MIMO networks, fronthaul links may completely fail. Fig.~\ref{fig:dropout} evaluates the system under AP link failures (AP Dropout). While centralized linear methods would fail abruptly due to rank deficiency when losing too many antennas, our proposed GNN architecture gracefully degrades. Even at a severe $50\%$ AP dropout rate, the system remains operational, yielding a BER of $0.094$ at $10$~dBm (averaged across 5 random topological seeds).
+
+\subsection{Pareto Frontier, Ablation, and Complexity}
+\begin{figure}[t]
+    \centering
+    \input{fig4.tex}
+    \caption{Pareto front: Fronthaul bit-rate vs. BER at $P_{tx}=10$ dBm, obtained by varying the penalty $\lambda$ under imperfect CSI.}
+    \label{fig:pareto}
+\end{figure}
+
+Fig.~\ref{fig:pareto} illustrates the Pareto front for average bit-rate vs BER. By tuning the penalty factor $\lambda$ during training, our model maintains robust performance ($0.015$ BER) even as the bit budget decreases to 88.5 bits, unlike the uniform quantization baseline which degrades rapidly to $>0.15$ BER.
+
+\begin{figure}[t]
+    \centering
+    \input{fig5.tex}
+    \caption{Ablation study showing the impact of the MRC feature, bit-aware feature, and attention mechanism under imperfect CSI.}
+    \label{fig:ablation}
+\end{figure}
+
+Fig.~\ref{fig:ablation} provides an ablation study. It is observed that the Bit-Aware Attention is the most critical component, as its removal leads to significant performance loss (more than doubling the BER from $0.015$ to $0.036$ at 10 dBm). 
+
+Regarding end-to-end computational complexity, a standard full-precision centralized MMSE requires $\mathcal{O}((LN)^3)$ FLOPs for matrix inversion. In contrast, the proposed system operates via distributed processing: the AP-side Policy Network requires merely $\approx 18$k FLOPs per AP. At the CPU side, the graph aggregation and Transformer encoder scale at $\mathcal{O}(L^2 \cdot d + L K d)$ per layer. For large-scale Cell-Free systems where $L \gg K$, this linear-to-quadratic scaling in $L$ with small hidden dimension $d=128$ is far more computationally efficient than centralized cubic matrix inversions, establishing our approach as both communication- and computation-efficient.

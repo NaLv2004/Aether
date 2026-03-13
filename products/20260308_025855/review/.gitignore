@@ -1,0 +1,4 @@
+**pycache**/
+*.pyc
+pdfs/
+*.log

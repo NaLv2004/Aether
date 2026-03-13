@@ -1,0 +1,32 @@
+\section{System Model and Problem Formulation}
+
+We consider the uplink of a Cell-Free Massive MIMO system with $L$ distributed Access Points (APs) and $K$ single-antenna User Equipments (UEs). Each AP is equipped with $N$ antennas. 
+
+\subsection{Physical Layer Channel Model}
+The channel vector between user $k$ and AP $l$ is denoted as $\mathbf{h}_{lk} = \sqrt{\beta_{lk}} \mathbf{g}_{lk} \in \mathbb{C}^{N \times 1}$, where $\beta_{lk}$ represents the large-scale fading coefficient following the 3GPP TR 36.814 Urban Micro (UMi) path loss model with log-normal shadow fading, and $\mathbf{g}_{lk} \sim \mathcal{CN}(\mathbf{0}, \mathbf{R}_{lk})$ models the small-scale fast fading. Here, $\mathbf{R}_{lk}$ denotes the spatial correlation matrix at the AP array, reflecting practical dense antenna array deployments. 
+The collective channel matrix at AP $l$ from all $K$ users is defined as $\mathbf{H}_l = [\mathbf{h}_{l1}, \dots, \mathbf{h}_{lK}] \in \mathbb{C}^{N \times K}$. The received baseband signal at AP $l$ is:
+\begin{equation}
+    \mathbf{y}_l = \sum_{k=1}^K \sqrt{p} \mathbf{h}_{lk} s_k + \mathbf{n}_l = \mathbf{H}_l \mathbf{s} + \mathbf{n}_l,
+\end{equation}
+where $p$ is the uplink transmit power, $\mathbf{s} = [s_1, \dots, s_K]^T \in \mathcal{X}^K$ is the transmitted QPSK symbol vector, and $\mathbf{n}_l \sim \mathcal{CN}(\mathbf{0}, \sigma^2 \mathbf{I}_N)$ is the additive white Gaussian noise (AWGN) vector. In practical systems with imperfect CSI, the AP estimates the channel as $\hat{\mathbf{H}}_l = \mathbf{H}_l + \mathbf{E}_l$, where $\mathbf{E}_l$ represents the channel estimation error matrix with mutually independent entries drawn from $\mathcal{CN}(0, \tau_{est}^2)$.
+
+\subsection{Local Processing and Learnable Step Size Quantization (LSQ)}
+Due to the lack of global CSI and data at individual APs, computing the exact joint LMMSE receiver locally is infeasible. Therefore, each AP employs a local combiner based only on its local estimated channel $\hat{\mathbf{H}}_l$. Specifically, we use the local Maximal Ratio Combining (MRC) scheme to obtain an initial symbol estimate $\hat{\mathbf{s}}_l = \hat{\mathbf{H}}_l^H \mathbf{y}_l$.
+
+To satisfy the stringent fronthaul capacity constraints, the APs must quantize the received signal $\mathbf{y}_l$, the estimated channel $\hat{\mathbf{H}}_l$, and the local estimate $\hat{\mathbf{s}}_l$ before forwarding them to the CPU. We employ a Learnable Step Size Quantizer (LSQ) $\mathcal{Q}(\mathbf{x}; b, s)$ for any feature tensor $\mathbf{x}$. For a chosen bit-width $b \in \mathcal{B}$, the available quantization levels are $\mathcal{V} = \{v \in \mathbb{Z} : -2^{b-1} \le v \le 2^{b-1}-1\}$. The LSQ operation is defined as:
+\begin{equation}
+    \mathcal{Q}(\mathbf{x}; b, s) = \text{round}\left( \text{clamp}\left( \frac{\mathbf{x}}{s}, v_{min}, v_{max} \right) \right) \cdot s,
+\end{equation}
+where $s$ is a strictly positive, learnable scale factor parameterizing the quantizer's dynamic range. Unlike traditional fixed uniform quantizers, $s$ is optimized jointly with the neural network weights via backpropagation. Since the $\text{round}(\cdot)$ function is non-differentiable, we use the Straight-Through Estimator (STE) during training, implemented via the surrogate gradient: $\mathcal{Q}_{train}(\mathbf{x}) = \mathbf{x} + \text{stop\_gradient}(\mathcal{Q}(\mathbf{x}) - \mathbf{x})$.
+
+\subsection{Optimization Problem Formulation}
+The Central Processing Unit (CPU) receives the quantized feature sets $\mathcal{F}_l = \{\mathbf{y}_l^q, \hat{\mathbf{H}}_l^q, \hat{\mathbf{s}}_l^q\}$ from all APs to reconstruct the user symbols $\mathbf{s}$. Let $b_{l,i} \in \mathcal{B} = \{0, 4, 8, 12, 16\}$ be the selected bit-width for component $i \in \{y, H, s\}$ at AP $l$. Note that $b=0$ signifies that the component is entirely dropped. Our objective is to minimize the end-to-end detection Mean Squared Error (MSE) while strictly adhering to an average fronthaul bit budget $C_{target}$:
+\begin{align}
+    \min_{\Theta, \{b_{l,i}\}} \quad & \mathcal{L}_{MSE} = \mathbb{E} \left[ \left\| \mathbf{s} - \hat{\mathbf{s}}_{CPU}(\{\mathcal{F}_l\}_{l=1}^L; \Theta) \right\|^2 \right] \\
+    \text{s.t.} \quad & \frac{1}{L} \sum_{l=1}^L \sum_{i \in \{y, H, s\}} b_{l,i} \le C_{target},
+\end{align}
+where $\Theta$ encompasses all learnable parameters of the detector and quantizers. This constrained optimization is relaxed into an unconstrained Lagrangian objective function for end-to-end learning:
+\begin{equation}
+    \mathcal{L}_{total} = \mathcal{L}_{MSE} + \lambda \max\left(0, \frac{1}{L} \sum_{l=1}^L \sum_{i \in \{y, H, s\}} b_{l,i} - C_{target}\right)^2,
+\end{equation}
+where $\lambda$ is a tunable penalty factor that controls the trade-off between detection accuracy and fronthaul compression (Pareto front).

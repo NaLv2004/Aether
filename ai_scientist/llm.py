@@ -293,7 +293,7 @@ class LLMAgent:
                 max_tokens=MAX_NUM_TOKENS,
                 n=1,
                 stream=True,
-                timeout=600.0
+                timeout=1200.0
             )
             content = ""
             for chunk in response:
@@ -318,7 +318,7 @@ class LLMAgent:
                 max_tokens=MAX_NUM_TOKENS,
                 n=1,
                 stream=True,
-                timeout=600.0
+                timeout=1200.0
             )
             content = ""
             for chunk in response:

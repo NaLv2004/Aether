@@ -1,0 +1,20 @@
+\section{Introduction}
+
+The evolution toward the sixth generation (6G) of wireless networks is characterized by a fundamental paradigm shift from cell-centric architectures to user-centric Cell-Free Massive Multiple-Input Multiple-Output (MIMO) systems \cite{Ngo2017CellFree, Bjornson2020Scalable}. By deploying a large number of distributed Access Points (APs) that cooperatively serve User Equipments (UEs) via a Central Processing Unit (CPU), Cell-Free MIMO offers significant theoretical gains in spectral efficiency and macro-diversity \cite{Interdonato2019Ubiquitous}. However, the practical realization is constrained by the fronthaul capacity bottleneck. Transmitting full-precision in-phase and quadrature (IQ) samples from massive AP arrays imposes an unsustainable load on limited-capacity fronthaul links \cite{Bashar2019Fronthaul, Masoumi2020Performance}.
+
+Traditionally, fronthaul compression relies on fixed-rate quantization methods, which are fundamentally agnostic to the downstream detection task \cite{Schibisch2018OnlineLQ}. Conventional schemes typically assign equal bit-widths to all APs regardless of their instantaneous Channel State Information (CSI), leading to inefficient resource utilization. For instance, an AP experiencing deep fading contributes little to the final detection but consumes the same fronthaul bandwidth as a strong link, thereby wasting valuable fronthaul capacity.
+
+\subsection{Related Work}
+\subsubsection{Deep Learning for MIMO Detection}
+Deep learning (DL) has emerged as a powerful tool for physical layer optimization. Model-driven approaches, such as DetNet \cite{Samuel2019DetNet} and OAMP-Net2 \cite{He2020OAMPNet}, have been successfully applied to MIMO detection, demonstrating near-optimal performance with lower complexity than classical iterative methods. Recent works have explored Graph Neural Network (GNN)-enhanced detectors for decentralized MIMO systems \cite{Wei2020LearnedCG}, yet these primarily focus on the detection algorithm itself under ideal fronthaul assumptions, rather than the joint optimization with distributed quantization constraints.
+
+\subsubsection{Task-Oriented Communication}
+Task-Oriented Communication (TOC) leverages the Information Bottleneck (IB) principle to transmit only task-relevant features \cite{Shao2021TaskOrientedCF, Li2024TaskOriented}. While IB-based methods have been proposed for multi-device inference and semantic information recovery \cite{Beck2023SemanticIR}, there is a critical gap: existing frameworks often separate the resource allocation from the signal detection process or rely on static bit-allocation strategies that do not adapt to instantaneous CSI fluctuations.
+
+\subsection{Contributions}
+This paper proposes a Joint Quantization-Aware Training (QAT) framework for Cell-Free MIMO. Unlike prior works, we integrate a triple-head Resource Inference Module at each AP with a Mean-Field GNN at the CPU. The main contributions are summarized as follows:
+\begin{itemize}
+    \item We propose a differentiable triple-head bit-selection mechanism utilizing Gumbel-Softmax relaxation, enabling end-to-end training of discrete quantization levels $\{0, 4, 8, 12, 16\}$ bits for heterogeneous signal components (received signals, channel estimates, and local demodulation results).
+    \item We design a Mean-Field GNN detector that incorporates quantization precision as an attention bias. The architecture employs a Transformer encoder to robustly aggregate signals with heterogeneous quality, effectively ignoring silenced nodes.
+    \item We provide extensive numerical results averaged over multiple large-scale fading realizations. We compare the proposed method with strong baselines, including linear Minimum Mean Square Error with Parallel Interference Cancellation (MMSE-PIC). The system maintains robust performance even with $50\%$ AP dropout and achieves detection comparable to full-precision baselines with approximately $96$ bits per link, representing a $29\times$ reduction in load compared to full 32-bit representations.
+\end{itemize}
