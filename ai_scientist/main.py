@@ -170,7 +170,7 @@ def main():
         if i>=1:
             logger.info(f"Starting Rebuttal Review {i+1}/MAX_REBUTTAL_TURNS...")
             move_files(OUTPUT_PATH_SUB['rebuttal'], OUTPUT_PATH_SUB['review'])
-            run_review_workflow(workspace_dir=OUTPUT_PATH_SUB['review'], pdf_api_key=os.environ['JIANYI_API_KEY'],model_comprehensive='claude-opus-4-6',model_read_pdf='gemini-3.1-pro-preview' )
+            run_review_workflow(workspace_dir=OUTPUT_PATH_SUB['review'], pdf_api_key=os.environ['JIANYI_API_KEY'],model_comprehensive='gemini-3.1-pro-preview',model_read_pdf='gemini-3.1-pro-preview' )
             logger.info(f"Rebuttal Review {i+1}/MAX_REBUTTAL_TURNS Finished.")
             logger.info(f"Starting Rebuttal Update {i+1}/MAX_REBUTTAL_TURNS...")
             shutil.copy2(os.path.join(OUTPUT_PATH_SUB['review'], "review.txt"), os.path.join(OUTPUT_PATH_SUB['rebuttal'], "review.txt"))
